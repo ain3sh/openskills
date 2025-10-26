@@ -1,23 +1,6 @@
 import type { Skill } from '../types.js';
 
 /**
- * Parse skill names currently in AGENTS.md
- */
-export function parseCurrentSkills(content: string): string[] {
-  const skillNames: string[] = [];
-
-  // Match <skill><name>skill-name</name>...</skill>
-  const skillRegex = /<skill>[\s\S]*?<name>([^<]+)<\/name>[\s\S]*?<\/skill>/g;
-
-  let match;
-  while ((match = skillRegex.exec(content)) !== null) {
-    skillNames.push(match[1].trim());
-  }
-
-  return skillNames;
-}
-
-/**
  * Generate skills XML section for AGENTS.md
  */
 export function generateSkillsXml(skills: Skill[]): string {
@@ -26,7 +9,6 @@ export function generateSkillsXml(skills: Skill[]): string {
       (s) => `<skill>
 <name>${s.name}</name>
 <description>${s.description}</description>
-<location>${s.location}</location>
 </skill>`
     )
     .join('\n\n');
@@ -37,17 +19,23 @@ export function generateSkillsXml(skills: Skill[]): string {
 
 <!-- SKILLS_TABLE_START -->
 <usage>
-When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively. Skills provide specialized capabilities and domain knowledge.
+Skills provide specialized procedural guidance for complex tasks.
+Progressive disclosure: Skills expand detailed instructions only when loaded.
+Check available skills before starting complex work.
 
-How to use skills:
-- Invoke: Bash("openskills read <skill-name>")
-- The skill content will load with detailed instructions on how to complete the task
-- Base directory provided in output for resolving bundled resources (references/, scripts/, assets/)
+Load: openskills read <skill-name>
+List: openskills list
+Priority: .claude/skills/ (project) first, ~/.claude/skills/ (global) second
 
-Usage notes:
-- Only use skills listed in <available_skills> below
-- Do not invoke a skill that is already loaded in your context
-- Each skill invocation is stateless
+Rules:
+- Load only relevant skills for current task
+- Don't load skills already in context
+- Each load is stateless
+
+Resource resolution:
+- Base directory provided in read output
+- Relative paths in SKILL.md resolve from base directory
+- Example: references/guide.md → {base-directory}/references/guide.md
 </usage>
 
 <available_skills>
@@ -61,7 +49,7 @@ ${skillTags}
 }
 
 /**
- * Replace or add skills section in AGENTS.md
+ * Replace skills section in AGENTS.md between markers
  */
 export function replaceSkillsSection(content: string, newSection: string): string {
   const startMarker = '<skills_system';
@@ -87,8 +75,8 @@ export function replaceSkillsSection(content: string, newSection: string): strin
     return content.replace(regex, `${htmlStartMarker}\n${innerContent}\n${htmlEndMarker}`);
   }
 
-  // No markers found - append to end of file
-  return content.trimEnd() + '\n\n' + newSection + '\n';
+  // No markers found
+  throw new Error('No skills section markers found in AGENTS.md');
 }
 
 /**
@@ -116,6 +104,6 @@ export function removeSkillsSection(content: string): string {
     return content.replace(regex, `${htmlStartMarker}\n<!-- Skills section removed -->\n${htmlEndMarker}`);
   }
 
-  // No markers found - nothing to remove
-  return content;
+  // No markers found
+  throw new Error('No skills section markers found in AGENTS.md');
 }
