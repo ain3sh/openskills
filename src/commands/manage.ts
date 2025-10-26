@@ -46,7 +46,7 @@ export async function manageSkills(): Promise<void> {
       const skill = findSkill(skillName);
       if (skill) {
         rmSync(skill.baseDir, { recursive: true, force: true });
-        const location = skill.source.includes(process.cwd()) ? 'project' : 'global';
+        const location = skill.source.includes('/.claude/skills') ? 'project' : 'global';
         console.log(chalk.green(`✅ Removed: ${skillName} (${location})`));
       }
     }
