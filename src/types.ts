@@ -12,9 +12,7 @@ export interface SkillLocation {
 }
 
 export interface InstallOptions {
-  global?: boolean;
-  universal?: boolean;
-  yes?: boolean;
+  project?: boolean;
 }
 
 export interface SkillMetadata {
