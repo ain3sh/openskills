@@ -95,6 +95,8 @@ program
 program
   .command('tool-description')
   .description('Emit a dynamic Skill tool description listing available skills')
-  .action(toolDescription);
+  .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .option('-c, --compact', 'Emit one-line compact description', false)
+  .action((opts) => toolDescription(opts));
 
 program.parse();

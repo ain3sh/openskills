@@ -1,8 +1,9 @@
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 import chalk from 'chalk';
 import { findAllSkills, findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
+import { extractRelativeRefs } from '../utils/refs.js';
 
 interface ValidateOptions { all?: boolean; format?: string }
 
@@ -59,18 +60,19 @@ function validateOne(name: string) {
     const full = join(loc.baseDir, ref);
     if (!existsSync(full)) missing.push({ path: ref, exists: false });
   }
-  return { name, baseDir: loc.baseDir, missing, references: refs };
-}
-
-// Very lightweight ref extractor for references/, scripts/, assets/
-function extractRelativeRefs(mdBody: string): string[] {
-  const candidates = new Set<string>();
-
-  // Inline links and code blocks: anything looking like references/... scripts/... assets/...
-  const re = /(?:\b|\(|\s)((?:references|scripts|assets)\/[\w./-]+)\b/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(mdBody)) !== null) {
-    candidates.add(m[1]);
+  // Script checks
+  const scriptIssues: Issue[] = [];
+  for (const ref of refs.filter((r) => r.startsWith('scripts/'))) {
+    const full = join(loc.baseDir, ref);
+    if (!existsSync(full)) continue;
+    const text = readFileSync(full, 'utf-8');
+    if (!text.startsWith('#!')) scriptIssues.push({ path: ref + ' (missing shebang)', exists: true });
+    try {
+      const st = statSync(full);
+      const isExec = (st.mode & 0o111) !== 0;
+      if (!isExec) scriptIssues.push({ path: ref + ' (not executable)', exists: true });
+    } catch {}
   }
-  return Array.from(candidates);
+  return { name, baseDir: loc.baseDir, missing: [...missing, ...scriptIssues], references: refs };
 }
+

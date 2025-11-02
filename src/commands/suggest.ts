@@ -11,10 +11,12 @@ export function suggestSkills(query: string, options: SuggestOptions = {}): void
     const loc = findSkill(s.name);
     const content = loc ? readFileSync(loc.path, 'utf-8') : '';
     const { frontmatter } = parseFrontmatter<Record<string, any>>(content);
-    const text = [s.name, s.description, frontmatter?.when_to_use].filter(Boolean).join('\n');
+    const aliases = toArray((frontmatter as any)?.aliases);
+    const keywords = toArray((frontmatter as any)?.keywords);
+    const text = [s.name, s.description, frontmatter?.when_to_use, ...aliases, ...keywords].filter(Boolean).join('\n');
     const score = simpleScore(query, text);
-    const reasons = topMatches(query, text, ['name', 'description', 'when_to_use']);
-    return { name: s.name, description: s.description, score, reasons };
+    const reasons = topMatches(query, text, ['name', 'description', 'when_to_use','aliases','keywords']);
+    return { name: s.name, description: s.description, score, reasons, aliases, keywords };
   })
   .filter((r) => r.score > 0)
   .sort((a, b) => b.score - a.score)
@@ -62,4 +64,10 @@ function topMatches(query: string, text: string, fields: string[]): string[] {
 
 function escapeReg(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function toArray(v: unknown): string[] {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map(String);
+  return [String(v)];
 }

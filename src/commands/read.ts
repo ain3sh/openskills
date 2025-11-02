@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs';
 import { findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
-import type { ReadJsonOutput, ContextModifier } from '../types.js';
+import type { ReadJsonOutput, ContextModifier, SkillFrontmatter } from '../types.js';
+import { normalizePermissions } from '../utils/permissions.js';
 
 /**
  * Read skill to stdout (for AI agents)
@@ -22,25 +23,34 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
 
   const content = readFileSync(skill.path, 'utf-8');
 
-  const { frontmatter } = parseFrontmatter<Record<string, any>>(content);
+  const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
   const fmt = options?.format ?? 'text';
 
   if (fmt === 'json') {
     const allowed = frontmatter?.['allowed-tools'] ?? frontmatter?.allowed_tools;
+    const deny: unknown = (frontmatter as any)?.['deny-tools'] ?? (frontmatter as any)?.deny_tools;
     const disableInv = frontmatter?.['disable-model-invocation'] ?? frontmatter?.disable_model_invocation;
+    const reasoning = normalizeReasoningEffort(frontmatter);
+    const normalizedPermissions = normalizePermissions({ allowed, deny });
+
     const contextModifier: ContextModifier = {
       allowedTools: Array.isArray(allowed)
         ? allowed as string[]
         : (allowed ? [String(allowed)] : undefined),
       model: typeof frontmatter?.model === 'string' ? frontmatter.model : undefined,
       disableModelInvocation: disableInv != null ? Boolean(disableInv) : undefined,
+      reasoningEffort: reasoning ?? undefined,
+      mode: frontmatter?.mode,
+      tokens: frontmatter?.tokens,
+      normalizedPermissions,
     };
 
     const json: ReadJsonOutput = {
       skill: { name: frontmatter?.name || skillName, baseDir: skill.baseDir, version: frontmatter?.version },
       newMessages: [
         { role: 'user', content: `<command-message>The "${skillName}" skill is loading</command-message>`, isMeta: false },
-        { role: 'user', content, isMeta: true },
+        { role: 'user', content: `<!-- baseDir: ${skill.baseDir} -->\n${content}`, isMeta: true },
+        { role: 'user', content: `<metadata name=\"${frontmatter?.name || skillName}\" baseDir=\"${skill.baseDir}\" model=\"${contextModifier.model ?? ''}\" allowedTools=\"${(contextModifier.allowedTools||[]).join(',')}\"></metadata>`, isMeta: false },
       ],
       contextModifier,
     };
@@ -55,4 +65,13 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
   console.log(content);
   console.log('');
   console.log(`Skill read: ${skillName}`);
+}
+
+function normalizeReasoningEffort(fm?: SkillFrontmatter): ContextModifier['reasoningEffort'] | null {
+  if (!fm) return null;
+  const raw = (fm['reasoning-effort'] ?? (fm as any).reasoningEffort ?? fm.reasoning_effort);
+  if (!raw) return null;
+  const v = String(raw).toLowerCase();
+  if (['off','none','low','medium','high'].includes(v)) return v as any;
+  return null;
 }
