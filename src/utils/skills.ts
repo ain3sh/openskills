@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { getSearchDirs } from './dirs.js';
-import { extractYamlField } from './yaml.js';
+import { parseFrontmatter, extractYamlField } from './yaml.js';
 import type { Skill, SkillLocation } from '../types.js';
 
 /**
@@ -26,10 +26,15 @@ export function findAllSkills(): Skill[] {
         if (existsSync(skillPath)) {
           const content = readFileSync(skillPath, 'utf-8');
           const isProjectLocal = dir.includes(process.cwd());
+          const { frontmatter } = parseFrontmatter<Record<string, any>>(content);
+          const description =
+            typeof frontmatter?.description === 'string'
+              ? frontmatter.description
+              : extractYamlField(content, 'description');
 
           skills.push({
             name: entry.name,
-            description: extractYamlField(content, 'description'),
+            description,
             location: isProjectLocal ? 'project' : 'global',
             path: join(dir, entry.name),
           });

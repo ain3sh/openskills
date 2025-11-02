@@ -7,6 +7,7 @@ import { readSkill } from './commands/read.js';
 import { removeSkill } from './commands/remove.js';
 import { manageSkills } from './commands/manage.js';
 import { syncAgentsMd } from './commands/sync.js';
+import { describeSkills } from './commands/describe.js';
 
 const program = new Command();
 
@@ -35,7 +36,8 @@ program
 program
   .command('list')
   .description('List all installed skills')
-  .action(listSkills);
+  .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .action((opts) => listSkills(opts));
 
 program
   .command('install <source>')
@@ -48,7 +50,8 @@ program
 program
   .command('read <skill-name>')
   .description('Read skill to stdout (for AI agents)')
-  .action(readSkill);
+  .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .action((name, opts) => readSkill(name, opts));
 
 program
   .command('sync')
@@ -66,5 +69,10 @@ program
   .alias('rm')
   .description('Remove specific skill (for scripts, use manage for interactive)')
   .action(removeSkill);
+
+program
+  .command('describe [skill-name]')
+  .description('Describe installed skills in JSON (optionally a single skill)')
+  .action((name) => describeSkills(name));
 
 program.parse();

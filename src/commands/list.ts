@@ -4,10 +4,15 @@ import { findAllSkills } from '../utils/skills.js';
 /**
  * List all installed skills
  */
-export function listSkills(): void {
+export function listSkills(options?: { format?: string }): void {
   console.log(chalk.bold('Available Skills:\n'));
 
   const skills = findAllSkills();
+
+  if ((options?.format ?? '').toLowerCase() === 'json') {
+    console.log(JSON.stringify(skills, null, 2));
+    return;
+  }
 
   if (skills.length === 0) {
     console.log('No skills installed.\n');
