@@ -31,6 +31,7 @@ export interface SkillFrontmatter {
   allowed_tools?: string[] | string; // underscore version
   'allowed-tools'?: string[] | string; // hyphenated version
   version?: string;
+  license?: string;
   model?: string;
   disable_model_invocation?: boolean;
   'disable-model-invocation'?: boolean;
@@ -40,6 +41,9 @@ export interface SkillFrontmatter {
   tokens?: any;
   aliases?: string[] | string;
   keywords?: string[] | string;
+  enabled?: boolean;
+  hidden?: boolean;
+  unlisted?: boolean;
 }
 
 export interface ContextModifier {
@@ -71,5 +75,5 @@ export interface ReadJsonOutput {
 export interface ToolDescriptionJson {
   oneLine: string;
   detailed: string;
-  skills: Array<{ name: string; description: string }>;
+  skills: Array<{ name: string; description: string; version?: string; license?: string }>;
 }

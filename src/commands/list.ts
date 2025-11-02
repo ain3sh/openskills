@@ -1,20 +1,30 @@
 import chalk from 'chalk';
-import { findAllSkills } from '../utils/skills.js';
+import { findAllSkills, findSkill } from '../utils/skills.js';
+import { readFileSync } from 'fs';
+import { parseFrontmatter } from '../utils/yaml.js';
+import type { SkillFrontmatter } from '../types.js';
+import { isPresentable } from '../utils/presentability.js';
 
 /**
  * List all installed skills
  */
-export function listSkills(options?: { format?: string }): void {
+export function listSkills(options?: { format?: string; all?: boolean; includeHidden?: boolean; includeDisabled?: boolean }): void {
   console.log(chalk.bold('Available Skills:\n'));
 
-  const skills = findAllSkills();
+  const all = findAllSkills();
+  const filtered = all.filter((s) => {
+    const loc = findSkill(s.name);
+    const content = loc ? readFileSync(loc.path, 'utf-8') : '';
+    const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
+    return options?.all ? true : isPresentable(frontmatter, { includeHidden: options?.includeHidden, includeDisabled: options?.includeDisabled, requireDescription: true });
+  });
 
   if ((options?.format ?? '').toLowerCase() === 'json') {
-    console.log(JSON.stringify(skills, null, 2));
+    console.log(JSON.stringify(filtered, null, 2));
     return;
   }
 
-  if (skills.length === 0) {
+  if (filtered.length === 0) {
     console.log('No skills installed.\n');
     console.log('Install skills:');
     console.log(`  ${chalk.cyan('openskills install anthropics/skills')}         ${chalk.dim('# Project (default)')}`);
@@ -23,7 +33,7 @@ export function listSkills(options?: { format?: string }): void {
   }
 
   // Sort: project skills first, then global, alphabetically within each
-  const sorted = skills.sort((a, b) => {
+  const sorted = filtered.sort((a, b) => {
     if (a.location !== b.location) {
       return a.location === 'project' ? -1 : 1;
     }
@@ -41,8 +51,8 @@ export function listSkills(options?: { format?: string }): void {
   }
 
   // Summary
-  const projectCount = skills.filter(s => s.location === 'project').length;
-  const globalCount = skills.filter(s => s.location === 'global').length;
+  const projectCount = filtered.filter(s => s.location === 'project').length;
+  const globalCount = filtered.filter(s => s.location === 'global').length;
 
-  console.log(chalk.dim(`Summary: ${projectCount} project, ${globalCount} global (${skills.length} total)`));
+  console.log(chalk.dim(`Summary: ${projectCount} project, ${globalCount} global (${filtered.length} shown${options?.all ? '' : ` of ${all.length}`} )`));
 }
