@@ -35,12 +35,25 @@ export interface SkillFrontmatter {
   disable_model_invocation?: boolean;
   'disable-model-invocation'?: boolean;
   mode?: string | boolean;
+  reasoning_effort?: string;
+  'reasoning-effort'?: string;
+  tokens?: any;
+  aliases?: string[] | string;
+  keywords?: string[] | string;
 }
 
 export interface ContextModifier {
   allowedTools?: string[];
   model?: string;
   disableModelInvocation?: boolean;
+  reasoningEffort?: 'off' | 'none' | 'low' | 'medium' | 'high';
+  mode?: string | boolean;
+  tokens?: any;
+  normalizedPermissions?: {
+    tools?: string[];
+    shellAllowPatterns?: string[];
+    shellDenyPatterns?: string[];
+  }
 }
 
 export interface NewMessage {
@@ -53,4 +66,10 @@ export interface ReadJsonOutput {
   skill: { name: string; baseDir: string; version?: string };
   newMessages: NewMessage[];
   contextModifier?: ContextModifier;
+}
+
+export interface ToolDescriptionJson {
+  oneLine: string;
+  detailed: string;
+  skills: Array<{ name: string; description: string }>;
 }
