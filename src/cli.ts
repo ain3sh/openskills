@@ -40,6 +40,9 @@ program
   .command('list')
   .description('List all installed skills')
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
+  .option('--include-hidden', 'Include hidden skills', false)
+  .option('--include-disabled', 'Include disabled skills', false)
   .action((opts) => listSkills(opts));
 
 program
@@ -83,6 +86,7 @@ program
   .description('Validate referenced resources for a skill or all skills')
   .option('-a, --all', 'Validate all installed skills')
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .option('--lint-frontmatter', 'Also lint frontmatter fields for unknown keys and type issues', false)
   .action((name, opts) => validateSkills(name, opts));
 
 program
@@ -90,6 +94,7 @@ program
   .description('Suggest relevant skills for a user query')
   .option('-l, --limit <n>', 'Max results', (v) => parseInt(v, 10), 5)
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .option('--all', 'Do not filter by presentability (include hidden/disabled/undocumented)')
   .action((q, opts) => suggestSkills(q, opts));
 
 program
@@ -97,6 +102,21 @@ program
   .description('Emit a dynamic Skill tool description listing available skills')
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('-c, --compact', 'Emit one-line compact description', false)
+  .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
+  .option('--include-hidden', 'Include hidden skills', false)
+  .option('--include-disabled', 'Include disabled skills', false)
   .action((opts) => toolDescription(opts));
+
+program
+  .command('skill-prompt')
+  .description('Emit a meta-tool prompt snippet for presenting and using Skills')
+  .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
+  .option('--include-hidden', 'Include hidden skills', false)
+  .option('--include-disabled', 'Include disabled skills', false)
+  .action(async (opts) => {
+    const { skillPrompt } = await import('./commands/skill-prompt.js');
+    skillPrompt(opts);
+  });
 
 program.parse();

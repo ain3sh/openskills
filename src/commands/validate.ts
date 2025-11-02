@@ -5,7 +5,7 @@ import { findAllSkills, findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
 import { extractRelativeRefs } from '../utils/refs.js';
 
-interface ValidateOptions { all?: boolean; format?: string }
+interface ValidateOptions { all?: boolean; format?: string; lintFrontmatter?: boolean }
 
 type Issue = { path: string; exists: boolean };
 
@@ -22,11 +22,11 @@ export function validateSkills(nameOrOptions?: string | ValidateOptions, maybeOp
     process.exit(1);
   }
 
-  const reports = skills.map((name) => validateOne(name));
+  const reports = skills.map((name) => validateOne(name, { lintFrontmatter: opts.lintFrontmatter }));
 
   if ((opts.format || '').toLowerCase() === 'json') {
     console.log(JSON.stringify(reports, null, 2));
-    const ok = reports.every((r) => r.missing.length === 0);
+    const ok = reports.every((r) => r.missing.length === 0 && r.scriptIssues.length === 0 && (!r.frontmatterLint || (r.frontmatterLint.unknownKeys.length === 0 && r.frontmatterLint.typeErrors.length === 0)));
     process.exit(ok ? 0 : 2);
   }
 
@@ -46,13 +46,13 @@ export function validateSkills(nameOrOptions?: string | ValidateOptions, maybeOp
   process.exit(failures === 0 ? 0 : 2);
 }
 
-function validateOne(name: string) {
+function validateOne(name: string, options?: { lintFrontmatter?: boolean }) {
   const loc = findSkill(name);
   if (!loc) {
-    return { name, baseDir: '', missing: [{ path: '(skill not found)', exists: false }], references: [] as string[] };
+    return { name, baseDir: '', missing: [{ path: '(skill not found)', exists: false }], scriptIssues: [] as Issue[], references: [] as string[] };
   }
   const content = readFileSync(loc.path, 'utf-8');
-  const { body } = parseFrontmatter(content);
+  const { body, frontmatter } = parseFrontmatter(content);
 
   const refs = extractRelativeRefs(body);
   const missing: Issue[] = [];
@@ -73,6 +73,18 @@ function validateOne(name: string) {
       if (!isExec) scriptIssues.push({ path: ref + ' (not executable)', exists: true });
     } catch {}
   }
-  return { name, baseDir: loc.baseDir, missing: [...missing, ...scriptIssues], references: refs };
+  const report: any = { name, baseDir: loc.baseDir, missing, scriptIssues, references: refs };
+  if (options?.lintFrontmatter) {
+    const { lintFrontmatter } = requireFrontmatterLint();
+    report.frontmatterLint = lintFrontmatter(frontmatter as any);
+  }
+  return report;
+}
+
+function requireFrontmatterLint() {
+  // dynamic import to avoid cost unless requested
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const mod = require('../utils/frontmatterLint.js');
+  return mod;
 }
 
