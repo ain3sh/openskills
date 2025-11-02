@@ -8,6 +8,9 @@ import { removeSkill } from './commands/remove.js';
 import { manageSkills } from './commands/manage.js';
 import { syncAgentsMd } from './commands/sync.js';
 import { describeSkills } from './commands/describe.js';
+import { validateSkills } from './commands/validate.js';
+import { suggestSkills } from './commands/suggest.js';
+import { toolDescription } from './commands/tool-description.js';
 
 const program = new Command();
 
@@ -74,5 +77,24 @@ program
   .command('describe [skill-name]')
   .description('Describe installed skills in JSON (optionally a single skill)')
   .action((name) => describeSkills(name));
+
+program
+  .command('validate [skill-name]')
+  .description('Validate referenced resources for a skill or all skills')
+  .option('-a, --all', 'Validate all installed skills')
+  .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .action((name, opts) => validateSkills(name, opts));
+
+program
+  .command('suggest <query>')
+  .description('Suggest relevant skills for a user query')
+  .option('-l, --limit <n>', 'Max results', (v) => parseInt(v, 10), 5)
+  .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .action((q, opts) => suggestSkills(q, opts));
+
+program
+  .command('tool-description')
+  .description('Emit a dynamic Skill tool description listing available skills')
+  .action(toolDescription);
 
 program.parse();
