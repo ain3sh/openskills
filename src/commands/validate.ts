@@ -87,9 +87,14 @@ function requireFrontmatterLint() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const mod = require('../utils/frontmatterLint.js');
     return mod;
-  } catch (err) {
-    console.error('Failed to load frontmatterLint module:', err);
-    throw new Error('frontmatter linting is not available');
+  } catch (err: any) {
+    const code = err?.code;
+    const msg = String(err?.message || err);
+    if (code === 'MODULE_NOT_FOUND') {
+      throw new Error('frontmatter linting is not available - module not found');
+    }
+    console.error('Failed to load frontmatterLint:', msg);
+    throw new Error(`Failed to load frontmatterLint: ${msg}`);
   }
 }
 

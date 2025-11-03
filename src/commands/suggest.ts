@@ -51,8 +51,7 @@ function simpleScore(query: string, text: string): number {
   // token overlap
   const qTokens = q.split(/\W+/).filter(Boolean);
   for (const tok of qTokens) {
-    const escaped = escapeReg(tok);
-    const count = (t.match(new RegExp(`(?:^|\\\W)${escaped}(?:$|\\\W)`, 'g')) || []).length;
+    const count = countBoundedOccurrences(t, tok);
     score += Math.min(count, 3) * 1.0;
   }
   return score;
@@ -70,6 +69,30 @@ function topMatches(query: string, text: string, fields: string[]): string[] {
 
 function escapeReg(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isWordCharCode(cp: number): boolean {
+  // [a-z0-9_]
+  return (cp >= 48 && cp <= 57) || (cp >= 97 && cp <= 122) || cp === 95;
+}
+
+function countBoundedOccurrences(text: string, token: string): number {
+  if (!token) return 0;
+  if (token.length > 64) return 0; // cap token length
+  let count = 0;
+  let idx = 0;
+  const n = text.length;
+  const m = token.length;
+  while (count < 100) { // cap matches
+    idx = text.indexOf(token, idx);
+    if (idx === -1) break;
+    const leftOk = idx === 0 || !isWordCharCode(text.charCodeAt(idx - 1));
+    const rightIdx = idx + m;
+    const rightOk = rightIdx >= n || !isWordCharCode(text.charCodeAt(rightIdx));
+    if (leftOk && rightOk) count++;
+    idx = idx + (m || 1);
+  }
+  return count;
 }
 
 function toArray(v: unknown): string[] {
