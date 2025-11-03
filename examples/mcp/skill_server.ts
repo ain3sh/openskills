@@ -1,6 +1,11 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import {
+  ListToolsRequestSchema,
+  ListToolsResultSchema,
+  CallToolRequestSchema,
+  CallToolResultSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { spawn } from "node:child_process";
 
 type SkillInfo = { name: string; description?: string; version?: string; license?: string };
@@ -56,7 +61,10 @@ function skillDoc(skills: SkillInfo[]): string {
   return meta;
 }
 
-const server = new McpServer({ name: "openskills-mcp-server", version: "0.1.0" });
+const server = new Server(
+  { name: "openskills-mcp-server", version: "0.1.0" },
+  { capabilities: { tools: { listChanged: false } } }
+);
 
 let cachedSkills: SkillInfo[] = [];
 let cachedDescription = "";
@@ -66,63 +74,96 @@ async function initialize() {
   cachedSkills = skills;
   cachedDescription = description;
 
-  // Register Skill tool with dynamic description
-  server.registerTool(
-    {
-      name: "Skill",
-      description: skillDoc(cachedSkills),
-      inputSchema: z
-        .object({
-          command: z.string().min(1).describe("Exact skill name to load"),
-        })
-        .strict(),
-    },
-    async (input: { command: string }) => {
+  // tools/list handler
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const tools = [
+      {
+        name: "Skill",
+        description: skillDoc(cachedSkills),
+        inputSchema: {
+          type: "object",
+          properties: {
+            command: { type: "string" },
+          },
+        },
+      },
+      {
+        name: "skill_refresh",
+        description: "Refresh the Skill tool's cached skill list and return current metadata.",
+        inputSchema: { type: "object" },
+      },
+    ];
+    return ListToolsResultSchema.parse({ tools });
+  });
+
+  // tools/call handler
+  server.setRequestHandler(CallToolRequestSchema, async (req) => {
+    const { name, arguments: args } = req.params as any;
+    if (name === "skill_refresh") {
+      const refreshed = await listSkills();
+      cachedSkills = refreshed.skills;
+      cachedDescription = refreshed.description;
+      return CallToolResultSchema.parse({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ skills: cachedSkills, description: cachedDescription }),
+          },
+        ],
+      });
+    }
+
+    if (name === "Skill") {
+      const command = (args as any)?.command;
+      if (!command || typeof command !== "string") {
+        return CallToolResultSchema.parse({
+          content: [{ type: "text", text: JSON.stringify({ error: "Missing 'command' string" }) }],
+          isError: true,
+        });
+      }
+
       const known = new Set(cachedSkills.map((s) => s.name));
-      if (!known.has(input.command)) {
+      if (!known.has(command)) {
         const refreshed = await listSkills();
         cachedSkills = refreshed.skills;
         cachedDescription = refreshed.description;
         const known2 = new Set(cachedSkills.map((s) => s.name));
-        if (!known2.has(input.command)) {
-          return {
+        if (!known2.has(command)) {
+          return CallToolResultSchema.parse({
             content: [
               {
-                type: "json",
-                json: { error: `Unknown skill: ${input.command}`, knownSkills: Array.from(known2).sort() },
+                type: "text",
+                text: JSON.stringify({ error: `Unknown skill: ${command}`, knownSkills: Array.from(known2).sort() }),
               },
             ],
-          };
+            isError: true,
+          });
         }
       }
 
-      const { code, stdout, stderr } = await run("openskills", ["read", input.command, "--format=json"]);
+      const { code, stdout, stderr } = await run("openskills", ["read", command, "--format=json"]);
       if (code !== 0) {
-        return { content: [{ type: "json", json: { error: stderr || stdout || "failed to run openskills" } }] };
+        return CallToolResultSchema.parse({
+          content: [{ type: "text", text: JSON.stringify({ error: stderr || stdout || "failed to run openskills" }) }],
+          isError: true,
+        });
       }
       try {
         const payload = JSON.parse(stdout || "{}");
-        return { content: [{ type: "json", json: payload }] };
+        return CallToolResultSchema.parse({ content: [{ type: "text", text: JSON.stringify(payload) }] });
       } catch (e: any) {
-        return { content: [{ type: "json", json: { error: `invalid JSON from openskills: ${e?.message || e}` } }] };
+        return CallToolResultSchema.parse({
+          content: [{ type: "text", text: JSON.stringify({ error: `invalid JSON from openskills: ${e?.message || e}` }) }],
+          isError: true,
+        });
       }
     }
-  );
 
-  // Optional: refresh tool to update cache/description
-  server.registerTool(
-    {
-      name: "skill_refresh",
-      description: "Refresh the Skill tool's cached skill list and return current metadata.",
-      inputSchema: z.object({}).strict(),
-    },
-    async () => {
-      const refreshed = await listSkills();
-      cachedSkills = refreshed.skills;
-      cachedDescription = refreshed.description;
-      return { content: [{ type: "json", json: { skills: cachedSkills, description: cachedDescription } }] };
-    }
-  );
+    return CallToolResultSchema.parse({
+      content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }],
+      isError: true,
+    });
+  });
 }
 
 async function main() {
