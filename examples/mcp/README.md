@@ -1,13 +1,21 @@
-## Minimal MCP stdio skill server (example)
+## MCP stdio Skill meta-tool server (example)
 
-This directory contains a tiny MCP server example implemented with FastMCP (Python) over stdio.
+This directory contains a FastMCP (Python) server over stdio that exposes a single meta-tool named `Skill`.
 
-Purpose
-- Demonstrates how an agent can expose OpenSkills‑style tools via MCP without any network services.
-- Good for local dev or embedding alongside a repo.
+What it does
+- At startup, it generates a dynamic description by invoking:
+  - `openskills tool-description --format=json`
+- It exposes one tool: `Skill(command: string)`
+  - On call, it runs: `openskills read <command> --format=json`
+  - Returns the parsed JSON with `newMessages` (including hidden `isMeta: true` content) and a `contextModifier` for the host to apply
+- Also provides `skill_refresh()` to refresh the cached skill list
 
 Files
-- `skill_server.py` – minimal FastMCP server using stdio transport.
+- `skill_server.py` – stdio FastMCP server implementing the `Skill` tool
+
+Prereqs
+- Python 3.10+
+- `openskills` CLI available on PATH (install with `npm i -g openskills`)
 
 Run (local)
 ```bash
@@ -22,7 +30,7 @@ Use with MCP clients
 ```json
 {
   "mcpServers": {
-    "openskills-example": {
+    "openskills-skill": {
       "command": "python",
       "args": ["examples/mcp/skill_server.py"],
       "transport": { "stdio": true }
@@ -31,8 +39,13 @@ Use with MCP clients
 }
 ```
 
+Calling the tool
+- Tool name: `Skill`
+- Argument: `{ "command": "<skillName>" }`
+- Behavior: returns the JSON payload from `openskills read <skill> --format=json`
+
 Debugging
 - Launch your client with MCP debug flags (e.g., `--mcp-debug`) to see connection and capability logs.
 
 Notes
-- This example is intentionally minimal; extend with real tools/resources as needed.
+- The description is generated at startup; run `skill_refresh` to update the discovery cache at runtime.
