@@ -33,6 +33,13 @@ export function run(cmd: string, args: string[]): Promise<{ code: number; stdout
   });
 }
 
+export function buildMcpContent(payload: any): Array<{ type: string; [k: string]: any }> {
+  if (process.env.OPENSKILLS_MCP_JSON === "1") {
+    return [{ type: "json", json: payload }];
+  }
+  return [{ type: "text", text: JSON.stringify(payload) }];
+}
+
 async function listSkills(): Promise<{ skills: SkillInfo[]; description: string }> {
   const { code, stdout } = await run("openskills", ["tool-description", "--format=json"]);
   if (code !== 0) {
@@ -115,12 +122,7 @@ async function initialize() {
       cachedSkills = refreshed.skills;
       cachedDescription = refreshed.description;
       return CallToolResultSchema.parse({
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ skills: cachedSkills, description: cachedDescription }),
-          },
-        ],
+        content: buildMcpContent({ skills: cachedSkills, description: cachedDescription }),
       });
     }
 
@@ -128,7 +130,7 @@ async function initialize() {
       const command = extractCommand(args);
       if (!command) {
         return CallToolResultSchema.parse({
-          content: [{ type: "text", text: JSON.stringify({ error: "Missing 'command' string" }) }],
+          content: buildMcpContent({ error: "Missing 'command' string" }),
           isError: true,
         });
       }
@@ -141,12 +143,7 @@ async function initialize() {
         const known2 = new Set(cachedSkills.map((s) => s.name));
         if (!known2.has(command)) {
           return CallToolResultSchema.parse({
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify({ error: `Unknown skill: ${command}`, knownSkills: Array.from(known2).sort() }),
-              },
-            ],
+            content: buildMcpContent({ error: `Unknown skill: ${command}`, knownSkills: Array.from(known2).sort() }),
             isError: true,
           });
         }
@@ -155,16 +152,16 @@ async function initialize() {
       const { code, stdout, stderr } = await run("openskills", ["read", command, "--format=json"]);
       if (code !== 0) {
         return CallToolResultSchema.parse({
-          content: [{ type: "text", text: JSON.stringify({ error: stderr || stdout || "failed to run openskills" }) }],
+          content: buildMcpContent({ error: stderr || stdout || "failed to run openskills" }),
           isError: true,
         });
       }
       try {
         const payload = JSON.parse(stdout || "{}");
-        return CallToolResultSchema.parse({ content: [{ type: "text", text: JSON.stringify(payload) }] });
+        return CallToolResultSchema.parse({ content: buildMcpContent(payload) });
       } catch (e: any) {
         return CallToolResultSchema.parse({
-          content: [{ type: "text", text: JSON.stringify({ error: `invalid JSON from openskills: ${e?.message || e}` }) }],
+          content: buildMcpContent({ error: `invalid JSON from openskills: ${e?.message || e}` }),
           isError: true,
         });
       }

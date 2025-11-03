@@ -50,7 +50,7 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
       newMessages: [
         { role: 'user', content: `<command-message>The "${skillName}" skill is loading</command-message>`, isMeta: false },
         { role: 'user', content: `<!-- baseDir: ${skill.baseDir} -->\n${content}`, isMeta: true },
-        { role: 'user', content: `<metadata name=\"${frontmatter?.name || skillName}\" baseDir=\"${skill.baseDir}\" model=\"${contextModifier.model ?? ''}\" allowedTools=\"${(contextModifier.allowedTools||[]).join(',')}\"></metadata>`, isMeta: false },
+        { role: 'user', content: `<metadata name=\"${frontmatter?.name || skillName}\" baseDir=\"${skill.baseDir}\" model=\"${contextModifier.model ?? ''}\" allowedTools=\"${(contextModifier.allowedTools||[]).join(',')}\"></metadata>`, isMeta: true },
       ],
       contextModifier,
     };
