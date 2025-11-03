@@ -25,9 +25,12 @@ export function run(cmd: string, args: string[]): Promise<{ code: number; stdout
       });
       child.on("error", (err: any) => {
         const msg = String(err?.message || err);
+        // Log for diagnostics; result still returned to caller as structured error
+        console.error("Failed to spawn:", cmd, args.join(" "), "—", msg);
         resolve({ code: 127, stdout: "", stderr: msg });
       });
     } catch (e: any) {
+      console.error("Spawn exception:", cmd, args.join(" "), "—", String(e?.message || e));
       resolve({ code: 127, stdout: "", stderr: String(e?.message || e) });
     }
   });
