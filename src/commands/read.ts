@@ -35,8 +35,8 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
 
     const contextModifier: ContextModifier = {
       allowedTools: Array.isArray(allowed)
-        ? allowed as string[]
-        : (allowed ? [String(allowed)] : undefined),
+        ? (allowed as string[])
+        : (typeof allowed === 'string' ? [allowed] : undefined),
       model: typeof frontmatter?.model === 'string' ? frontmatter.model : undefined,
       disableModelInvocation: disableInv != null ? Boolean(disableInv) : undefined,
       reasoningEffort: reasoning ?? undefined,

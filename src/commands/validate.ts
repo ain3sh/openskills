@@ -82,9 +82,14 @@ function validateOne(name: string, options?: { lintFrontmatter?: boolean }) {
 }
 
 function requireFrontmatterLint() {
-  // dynamic import to avoid cost unless requested
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('../utils/frontmatterLint.js');
-  return mod;
+  try {
+    // dynamic import to avoid cost unless requested
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require('../utils/frontmatterLint.js');
+    return mod;
+  } catch (err) {
+    console.error('Failed to load frontmatterLint module:', err);
+    throw new Error('frontmatter linting is not available');
+  }
 }
 

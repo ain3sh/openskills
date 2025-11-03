@@ -9,8 +9,6 @@ import { isPresentable } from '../utils/presentability.js';
  * List all installed skills
  */
 export function listSkills(options?: { format?: string; all?: boolean; includeHidden?: boolean; includeDisabled?: boolean }): void {
-  console.log(chalk.bold('Available Skills:\n'));
-
   const all = findAllSkills();
   const filtered = all.filter((s) => {
     const loc = findSkill(s.name);
@@ -23,6 +21,8 @@ export function listSkills(options?: { format?: string; all?: boolean; includeHi
     console.log(JSON.stringify(filtered, null, 2));
     return;
   }
+
+  console.log(chalk.bold('Available Skills:\n'));
 
   if (filtered.length === 0) {
     console.log('No skills installed.\n');

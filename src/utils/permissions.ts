@@ -33,7 +33,7 @@ function toArray(v: unknown): string[] {
 }
 
 function parseOne(item: string, toolSet?: Set<string>, shellPatterns?: Set<string>) {
-  const m = /^(\w+)(?:\(([^)]*)\))?$/i.exec(item.trim());
+  const m = /^(\w+)(?:\(([^)]{0,1000})\))?$/i.exec(item.trim());
   if (!m) {
     if (toolSet) toolSet.add(item.trim());
     return;

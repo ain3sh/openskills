@@ -12,19 +12,24 @@ type SkillInfo = { name: string; description?: string; version?: string; license
 
 function run(cmd: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"], env: process.env });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.setEncoding("utf-8");
-    child.stderr.setEncoding("utf-8");
-    child.stdout.on("data", (d) => (stdout += String(d)));
-    child.stderr.on("data", (d) => (stderr += String(d)));
-    child.on("close", (code) => {
-      resolve({ code: code ?? 0, stdout, stderr });
-    });
-    child.on("error", (err: any) => {
-      resolve({ code: 1, stdout: "", stderr: String(err?.message || err) });
-    });
+    try {
+      const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"], env: process.env });
+      let stdout = "";
+      let stderr = "";
+      child.stdout.setEncoding("utf-8");
+      child.stderr.setEncoding("utf-8");
+      child.stdout.on("data", (d) => (stdout += String(d)));
+      child.stderr.on("data", (d) => (stderr += String(d)));
+      child.on("close", (code) => {
+        resolve({ code: code ?? 0, stdout, stderr });
+      });
+      child.on("error", (err: any) => {
+        const msg = String(err?.message || err);
+        resolve({ code: 127, stdout: "", stderr: msg });
+      });
+    } catch (e: any) {
+      resolve({ code: 127, stdout: "", stderr: String(e?.message || e) });
+    }
   });
 }
 
@@ -114,7 +119,7 @@ async function initialize() {
     }
 
     if (name === "Skill") {
-      const command = (args as any)?.command;
+      const command = (args as any)?.command ?? (args as any)?.name;
       if (!command || typeof command !== "string") {
         return CallToolResultSchema.parse({
           content: [{ type: "text", text: JSON.stringify({ error: "Missing 'command' string" }) }],
@@ -177,6 +182,10 @@ main().catch((err) => {
   process.exit(1);
 });
 
+let closed = false;
 process.stdin.on("close", () => {
-  server.close();
+  if (!closed) {
+    closed = true;
+    server.close();
+  }
 });

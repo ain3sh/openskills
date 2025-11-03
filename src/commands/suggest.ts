@@ -51,7 +51,8 @@ function simpleScore(query: string, text: string): number {
   // token overlap
   const qTokens = q.split(/\W+/).filter(Boolean);
   for (const tok of qTokens) {
-    const count = (t.match(new RegExp(`\\b${escapeReg(tok)}\\b`, 'g')) || []).length;
+    const escaped = escapeReg(tok);
+    const count = (t.match(new RegExp(`(?:^|\\\W)${escaped}(?:$|\\\W)`, 'g')) || []).length;
     score += Math.min(count, 3) * 1.0;
   }
   return score;
