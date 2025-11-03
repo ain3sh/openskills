@@ -10,7 +10,7 @@ import { spawn } from "node:child_process";
 
 type SkillInfo = { name: string; description?: string; version?: string; license?: string };
 
-function run(cmd: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+export function run(cmd: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     try {
       const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"], env: process.env });
@@ -66,6 +66,12 @@ function skillDoc(skills: SkillInfo[]): string {
   return meta;
 }
 
+export function extractCommand(args: unknown): string | undefined {
+  const a: any = args || {};
+  const cmd = a?.command ?? a?.name;
+  return typeof cmd === "string" ? cmd : undefined;
+}
+
 const server = new Server(
   { name: "openskills-mcp-server", version: "0.1.0" },
   { capabilities: { tools: { listChanged: false } } }
@@ -119,8 +125,8 @@ async function initialize() {
     }
 
     if (name === "Skill") {
-      const command = (args as any)?.command ?? (args as any)?.name;
-      if (!command || typeof command !== "string") {
+      const command = extractCommand(args);
+      if (!command) {
         return CallToolResultSchema.parse({
           content: [{ type: "text", text: JSON.stringify({ error: "Missing 'command' string" }) }],
           isError: true,
@@ -177,10 +183,12 @@ async function main() {
   await server.connect(transport);
 }
 
-main().catch((err) => {
-  console.error("MCP server failed to start:", err);
-  process.exit(1);
-});
+if (!process.env.OPENSKILLS_MCP_TEST) {
+  main().catch((err) => {
+    console.error("MCP server failed to start:", err);
+    process.exit(1);
+  });
+}
 
 let closed = false;
 process.stdin.on("close", () => {

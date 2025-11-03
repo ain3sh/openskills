@@ -5,7 +5,9 @@ This directory contains a Node/TypeScript MCP server (using the official TS SDK)
 What it does
 - At startup, it generates a dynamic description by invoking:
   - `openskills tool-description --format=json`
-- It exposes one tool: `Skill(command: string)`
+- It exposes one tool: `Skill`
+  - Canonical input schema: `{ command: string }` (per blog ground truth)
+  - Accepted alias for interop: `{ name: string }` (runtime convenience)
   - On call, it runs: `openskills read <command> --format=json`
   - Returns the parsed JSON with `newMessages` (including hidden `isMeta: true` content) and a `contextModifier` for the host to apply
 - Also provides `skill_refresh()` to refresh the cached skill list
@@ -65,7 +67,9 @@ Other configuration examples
 
 Calling the tool
 - Tool name: `Skill`
-- Argument: `{ "command": "<skillName>" }`
+- Arguments:
+  - Canonical: `{ "command": "<skillName>" }`
+  - Alias (also accepted): `{ "name": "<skillName>" }`
 - Behavior: returns the JSON payload from `openskills read <skill> --format=json`
 
 Debugging
@@ -77,3 +81,4 @@ Notes
   - Cline: https://docs.cline.bot/mcp/configuring-mcp-servers
   - Continue: https://docs.continue.dev/customize/deep-dives/mcp
   - FastMCP JSON config: https://gofastmcp.com/integrations/mcp-json-configuration
+ - Error behavior: If the `openskills` CLI is missing or cannot be executed, the server returns a structured error with exit code `127` from its internal runner. Install with `npm i -g openskills` and ensure it is on PATH.
