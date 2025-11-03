@@ -1,6 +1,6 @@
 ## MCP stdio Skill meta-tool server (example)
 
-This directory contains a FastMCP (Python) server over stdio that exposes a single meta-tool named `Skill`.
+This directory contains a Node/TypeScript MCP server (using the official TS SDK) over stdio that exposes a single meta-tool named `Skill`.
 
 What it does
 - At startup, it generates a dynamic description by invoking:
@@ -11,17 +11,17 @@ What it does
 - Also provides `skill_refresh()` to refresh the cached skill list
 
 Files
-- `skill_server.py` – stdio FastMCP server implementing the `Skill` tool
+- `skill_server.ts` – stdio MCP server implementing the `Skill` tool
 
 Prereqs
-- Python 3.10+
+- Node.js 20+
 - `openskills` CLI available on PATH (install with `npm i -g openskills`)
 
-Run (local)
+Build & run (local)
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install fastmcp
-python examples/mcp/skill_server.py
+npm install
+npm run build
+node dist/examples/mcp/skill_server.js
 ```
 
 Use with MCP clients
@@ -30,11 +30,7 @@ Use with MCP clients
 ```json
 {
   "mcpServers": {
-    "openskills-skill": {
-      "command": "python",
-      "args": ["examples/mcp/skill_server.py"],
-      "transport": { "stdio": true }
-    }
+    "openskills-skill": { "command": "node", "args": ["dist/examples/mcp/skill_server.js"], "transport": { "stdio": true } }
   }
 }
 ```
@@ -44,11 +40,7 @@ Other configuration examples
 ```json
 {
   "mcpServers": {
-    "openskills-skill": {
-      "command": "C:/Python312/python.exe",
-      "args": ["C:/path/to/repo/examples/mcp/skill_server.py"],
-      "transport": { "stdio": true }
-    }
+    "openskills-skill": { "command": "node", "args": ["C:/path/to/repo/dist/examples/mcp/skill_server.js"], "transport": { "stdio": true } }
   }
 }
 ```
@@ -57,12 +49,7 @@ Other configuration examples
 ```json
 {
   "mcpServers": {
-    "openskills-skill": {
-      "command": "python",
-      "args": ["examples/mcp/skill_server.py"],
-      "env": { "PATH": "/usr/local/bin:/opt/homebrew/bin:${PATH}" },
-      "transport": { "stdio": true }
-    }
+    "openskills-skill": { "command": "node", "args": ["dist/examples/mcp/skill_server.js"], "env": { "PATH": "/usr/local/bin:/opt/homebrew/bin:${PATH}" }, "transport": { "stdio": true } }
   }
 }
 ```
