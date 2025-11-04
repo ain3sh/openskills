@@ -87,3 +87,26 @@ export interface ToolDescriptionJson {
   detailed: string;
   skills: Array<{ name: string; description: string; version?: string; license?: string }>;
 }
+
+/**
+ * Skill error codes per blog spec
+ * Used for structured error reporting in validation
+ */
+export enum SkillErrorCode {
+  EMPTY_COMMAND = 1,           // No skill name provided
+  UNKNOWN_SKILL = 2,           // Skill not found in any source
+  LOAD_FAILED = 3,             // File read/parse error
+  INVOCATION_DISABLED = 4,     // disable-model-invocation: true
+  NOT_PROMPT_BASED = 5         // Missing description (not prompt-based)
+}
+
+/**
+ * Result of skill command validation
+ * Provides structured error information with actionable suggestions
+ */
+export interface SkillValidationResult {
+  valid: boolean;
+  errorCode?: SkillErrorCode;
+  message?: string;
+  suggestion?: string;
+}

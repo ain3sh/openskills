@@ -11,7 +11,7 @@ describe('read --format=json message visibility', () => {
     if (!existsSync(baseDir)) mkdirSync(baseDir, { recursive: true });
     writeFileSync(
       skillPath,
-      `---\nname: test-skill\ndescription: A test skill\nallowed-tools: [Read]\nmodel: fake-model\ndisable-model-invocation: true\n---\n\n# Body\nHello world.\n`
+      `---\nname: test-skill\ndescription: A test skill\nallowed-tools: [Read]\nmodel: fake-model\n---\n\n# Body\nHello world.\n`
     );
   });
 

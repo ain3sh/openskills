@@ -3,28 +3,41 @@ import { findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
 import type { ReadJsonOutput, ContextModifier, SkillFrontmatter } from '../types.js';
 import { normalizePermissions } from '../utils/permissions.js';
+import { validateSkillCommand } from '../utils/validation.js';
 
 /**
  * Read skill to stdout (for AI agents)
  */
 export function readSkill(skillName: string, options?: { format?: string }): void {
-  const skill = findSkill(skillName);
+  const fmt = options?.format ?? 'text';
 
-  if (!skill) {
-    console.error(`Error: Skill '${skillName}' not found`);
-    console.error('\nSearched:');
-    console.error('  .agent/skills/ (project universal)');
-    console.error('  ~/.agent/skills/ (global universal)');
-    console.error('  .claude/skills/ (project)');
-    console.error('  ~/.claude/skills/ (global)');
-    console.error('\nInstall skills: openskills install owner/repo');
-    process.exit(1);
+  // Validate skill command before reading
+  const validation = validateSkillCommand(skillName);
+  
+  if (!validation.valid) {
+    if (fmt === 'json') {
+      // Structured error output in JSON format
+      const error = {
+        error: validation.message,
+        errorCode: validation.errorCode,
+        suggestion: validation.suggestion
+      };
+      console.log(JSON.stringify(error, null, 2));
+    } else {
+      // Human-readable error output
+      console.error(`Error: ${validation.message}`);
+      if (validation.suggestion) {
+        console.error(`Suggestion: ${validation.suggestion}`);
+      }
+    }
+    process.exit(validation.errorCode || 1);
   }
 
-  const content = readFileSync(skill.path, 'utf-8');
+  // Validation passed - skill exists and is valid
+  const skill = findSkill(skillName)!; // Non-null assertion safe after validation
 
+  const content = readFileSync(skill.path, 'utf-8');
   const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
-  const fmt = options?.format ?? 'text';
 
   if (fmt === 'json') {
     const allowed = frontmatter?.['allowed-tools'] ?? frontmatter?.allowed_tools;
