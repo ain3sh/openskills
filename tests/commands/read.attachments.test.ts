@@ -1,18 +1,45 @@
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { writeFileSync, rmSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
+import { tmpdir } from 'os';
 
 describe('read --format=json attachments', () => {
-  const baseDir = join(process.cwd(), '.claude', 'skills', 'attach-test');
+  // Use tmpdir with unique name to avoid conflicts
+  const testDir = join(tmpdir(), `openskills-attach-test-${Date.now()}`);
+  const baseDir = join(testDir, '.claude', 'skills', 'attach-test');
   const skillPath = join(baseDir, 'SKILL.md');
+  let originalCwd: string;
+
+  beforeAll(() => {
+    originalCwd = process.cwd();
+    // Change to test directory for skill discovery
+    mkdirSync(testDir, { recursive: true });
+    process.chdir(testDir);
+  });
 
   beforeEach(() => {
     // Create fresh directory for each test
-    if (!existsSync(baseDir)) mkdirSync(baseDir, { recursive: true });
+    mkdirSync(baseDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    // Clean up skill file after each test
+    try {
+      if (existsSync(skillPath)) rmSync(skillPath, { force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   });
 
   afterAll(() => {
-    rmSync(join(process.cwd(), '.claude'), { recursive: true, force: true });
+    // Restore original directory
+    process.chdir(originalCwd);
+    // Remove entire test directory
+    try {
+      if (existsSync(testDir)) rmSync(testDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   });
 
   it('includes diagnostics attachment when skill has no version/license', async () => {

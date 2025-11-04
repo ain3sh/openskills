@@ -102,6 +102,7 @@ program
   .description('Emit a dynamic Skill tool description listing available skills')
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('-c, --compact', 'Emit one-line compact description', false)
+  .option('--max-chars <n>', 'Maximum characters (default: 15000)', (v) => parseInt(v, 10))
   .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
   .option('--include-hidden', 'Include hidden skills', false)
   .option('--include-disabled', 'Include disabled skills', false)
