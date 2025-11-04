@@ -1,8 +1,18 @@
+export type SkillSourceType = 'project' | 'user' | 'plugin' | 'builtin';
+
+export interface SkillSource {
+  type: SkillSourceType;
+  path: string;
+  priority: number; // Lower = higher priority (1 = highest)
+}
+
 export interface Skill {
   name: string;
   description: string;
   location: 'project' | 'global';
   path: string;
+  source?: SkillSourceType;  // Track where skill came from
+  sourceLabel?: string;       // e.g., "plugin:pdf-tools" or "builtin"
 }
 
 export interface SkillLocation {

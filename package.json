@@ -9,7 +9,8 @@
   },
   "files": [
     "dist",
-    "examples"
+    "examples",
+    "builtin-skills"
   ],
   "scripts": {
     "build": "tsup",
