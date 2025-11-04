@@ -1,3 +1,7 @@
+// Security constants to prevent ReDoS (Regular Expression Denial of Service)
+const MAX_TOOL_NAME_LENGTH = 50; // Max characters for tool name
+const MAX_PATTERN_LENGTH = 1000; // Max characters for scoped permission patterns
+
 export interface NormalizedPermissions {
   tools?: string[];
   shellAllowPatterns?: string[];
@@ -7,6 +11,11 @@ export interface NormalizedPermissions {
 /**
  * Parse allowed-tools/deny-tools patterns like:
  * - "Read", "Edit", "Execute(git*,node)", "Bash(pdftotext*)"
+ * 
+ * Security: Regex is bounded to prevent catastrophic backtracking (ReDoS)
+ * - Tool names limited to 50 chars
+ * - Scoped patterns limited to 1000 chars
+ * - Attack vector prevented: Tool names with 10,000+ word characters
  */
 export function normalizePermissions(input: { allowed?: unknown; deny?: unknown }): NormalizedPermissions {
   const out: NormalizedPermissions = {};
@@ -33,6 +42,7 @@ function toArray(v: unknown): string[] {
 }
 
 function parseOne(item: string, toolSet?: Set<string>, shellPatterns?: Set<string>) {
+  // Bounded regex: tool name max 50 chars, patterns max 1000 chars (prevents ReDoS)
   const m = /^(\w{1,50})(?:\(([^)]{0,1000})\))?$/i.exec(item.trim());
   if (!m) {
     if (toolSet) toolSet.add(item.trim());

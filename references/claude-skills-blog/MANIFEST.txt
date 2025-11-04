@@ -1,0 +1,73 @@
+CLAUDE SKILLS DEEP DIVE - REFERENCE MATERIALS
+==============================================
+
+Source: https://leehanchung.github.io/blogs/2025/10/26/claude-skills-deep-dive/
+Date Retrieved: 2025-11-04
+Purpose: Technical reference for OpenSkills parity implementation
+
+DIRECTORY STRUCTURE:
+-------------------
+references/claude-skills-blog/
+├── README.md                         - Index and overview
+├── MANIFEST.txt                      - This file
+├── blog-content-full.md              - Complete blog post (1,247 lines, 59KB) ⭐ PRIMARY REFERENCE
+├── blog-content.md                   - Brief summary (42 lines)
+└── [10 PNG diagrams]                 - All visual diagrams from blog
+
+DIAGRAMS (in order of appearance):
+----------------------------------
+01-claude-skill-flowchart.png         - Main architecture: How skills work
+02-claude-desktop-skill.png           - UI: Skill upload interface  
+03-claude-skill-package.png           - Structure: skill-creator package
+04-claude-skill-frontmatter.png       - Reference: Frontmatter fields
+05-command-chain-execution.png        - Pattern: Command Chain
+06-search-analyze-report.png          - Pattern: Search-Analyze-Report
+08-claude-skill-execution-flow.png    - Architecture: Tool vs Skill comparison
+09-script-automation.png              - Pattern: Script Automation
+10-read-process-write.png             - Pattern: Read-Process-Write
+11-turn-1-completion.png              - Flow: API message injection
+
+FILE SIZES:
+-----------
+Total directory size: 924KB
+- Text content: ~60KB
+- Diagrams: ~860KB (10 images)
+
+QUICK START:
+-----------
+1. Read README.md for conceptual overview
+2. Read blog-content-full.md for complete technical specification
+3. Reference diagrams as needed during implementation
+
+KEY SECTIONS IN blog-content-full.md:
+------------------------------------
+- Lines 1-100:     Overview (Skills vs Tools)
+- Lines 100-400:   Building Agent Skills (SKILL.md structure)
+- Lines 400-700:   Common Patterns & Advanced Patterns
+- Lines 700-1000:  Internal Architecture (meta-tool design)
+- Lines 1000-1200: Case Study: Complete execution lifecycle
+- Lines 1200-1247: Conclusion & References
+
+CRITICAL CONCEPTS TO UNDERSTAND:
+-------------------------------
+1. Skills = Prompt Templates (NOT executable code)
+2. Meta-tool architecture (Skill tool manages skills)
+3. Dual context modification (conversation + execution)
+4. Progressive disclosure (show minimal info first)
+5. Two-message injection (metadata visible, prompt hidden via isMeta flag)
+6. Frontmatter configuration vs markdown instructions
+7. Resource bundling: scripts/ references/ assets/
+
+STATUS:
+-------
+✅ All diagrams downloaded (10/10)
+✅ Complete blog content saved (1,247 lines)
+✅ Reference materials organized and indexed
+✅ Ready for systematic review and implementation planning
+
+NEXT STEPS:
+----------
+1. Deep analysis of blog content
+2. Map to current OpenSkills implementation
+3. Identify gaps and missing features
+4. Create comprehensive parity specification

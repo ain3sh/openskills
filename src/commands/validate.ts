@@ -81,6 +81,13 @@ function validateOne(name: string, options?: { lintFrontmatter?: boolean }) {
   return report;
 }
 
+/**
+ * Dynamically require frontmatterLint module
+ * 
+ * Security: Proper error code checking prevents misleading error messages
+ * - MODULE_NOT_FOUND: Module missing (expected in some builds)
+ * - Other errors: Genuine load failures (syntax errors, etc.)
+ */
 function requireFrontmatterLint() {
   try {
     // dynamic import to avoid cost unless requested
@@ -90,6 +97,7 @@ function requireFrontmatterLint() {
   } catch (err: any) {
     const code = err?.code;
     const msg = String(err?.message || err);
+    // Security: Distinguish MODULE_NOT_FOUND from other errors
     if (code === 'MODULE_NOT_FOUND') {
       throw new Error('frontmatter linting is not available - module not found');
     }

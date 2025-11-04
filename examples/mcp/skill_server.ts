@@ -10,6 +10,14 @@ import { spawn } from "node:child_process";
 
 type SkillInfo = { name: string; description?: string; version?: string; license?: string };
 
+/**
+ * Execute a command and capture stdout/stderr
+ * 
+ * Security: Proper error handling prevents silent failures
+ * - spawn() errors are caught and logged to stderr
+ * - Exceptions during spawn are caught and returned as structured errors
+ * - Exit code 127 indicates spawn failure (standard shell convention)
+ */
 export function run(cmd: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     try {
@@ -23,6 +31,7 @@ export function run(cmd: string, args: string[]): Promise<{ code: number; stdout
       child.on("close", (code) => {
         resolve({ code: code ?? 0, stdout, stderr });
       });
+      // Security: Handle spawn errors (file not found, permission denied, etc.)
       child.on("error", (err: any) => {
         const msg = String(err?.message || err);
         // Log for diagnostics; result still returned to caller as structured error
@@ -30,6 +39,7 @@ export function run(cmd: string, args: string[]): Promise<{ code: number; stdout
         resolve({ code: 127, stdout: "", stderr: msg });
       });
     } catch (e: any) {
+      // Security: Handle synchronous spawn exceptions
       console.error("Spawn exception:", cmd, args.join(" "), "—", String(e?.message || e));
       resolve({ code: 127, stdout: "", stderr: String(e?.message || e) });
     }
@@ -190,6 +200,8 @@ if (!process.env.OPENSKILLS_MCP_TEST) {
   });
 }
 
+// Security: Prevent double-close resource leak
+// Guard flag ensures server.close() is only called once
 let closed = false;
 process.stdin.on("close", () => {
   if (!closed) {

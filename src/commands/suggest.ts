@@ -4,6 +4,10 @@ import { parseFrontmatter } from '../utils/yaml.js';
 import type { SkillFrontmatter } from '../types.js';
 import { isPresentable } from '../utils/presentability.js';
 
+// Security constants to prevent ReDoS (Regular Expression Denial of Service)
+const MAX_TOKEN_LENGTH = 64; // Max characters per search token
+const MAX_MATCHES = 100; // Max occurrences to count per token
+
 interface SuggestOptions { format?: string; limit?: number; all?: boolean }
 
 export function suggestSkills(query: string, options: SuggestOptions = {}): void {
@@ -76,14 +80,24 @@ function isWordCharCode(cp: number): boolean {
   return (cp >= 48 && cp <= 57) || (cp >= 97 && cp <= 122) || cp === 95;
 }
 
+/**
+ * Count word-boundary-aware occurrences of a token in text
+ * 
+ * Security: Bounded to prevent ReDoS attacks
+ * - Token length capped at MAX_TOKEN_LENGTH (64 chars)
+ * - Match count capped at MAX_MATCHES (100)
+ * - Uses string.indexOf() instead of regex for O(n) performance
+ * 
+ * Attack vector prevented: Long tokens (>1000 chars) with repeated patterns
+ */
 function countBoundedOccurrences(text: string, token: string): number {
   if (!token) return 0;
-  if (token.length > 64) return 0; // cap token length
+  if (token.length > MAX_TOKEN_LENGTH) return 0; // Prevent long token attacks
   let count = 0;
   let idx = 0;
   const n = text.length;
   const m = token.length;
-  while (count < 100) { // cap matches
+  while (count < MAX_MATCHES) { // Prevent infinite loop attacks
     idx = text.indexOf(token, idx);
     if (idx === -1) break;
     const leftOk = idx === 0 || !isWordCharCode(text.charCodeAt(idx - 1));

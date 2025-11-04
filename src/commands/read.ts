@@ -33,6 +33,7 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
     const reasoning = normalizeReasoningEffort(frontmatter);
     const normalizedPermissions = normalizePermissions({ allowed, deny });
 
+    // Security: Proper type guards prevent undefined access in array operations
     const contextModifier: ContextModifier = {
       allowedTools: Array.isArray(allowed)
         ? (allowed as string[])
