@@ -37,6 +37,10 @@ describe('read --format=json message visibility', () => {
       const hiddenText = hidden.map((m: any) => String(m.content || '')).join('\n');
       expect(hiddenText).toContain('<!-- baseDir: ');
       expect(hiddenText).toContain('<metadata ');
+      
+      // Attachments may be present (diagnostics for missing version/license)
+      // This is okay - we're testing message visibility, not attachment presence
+      expect(payload.attachments === undefined || Array.isArray(payload.attachments)).toBe(true);
     } finally {
       logSpy.mockRestore();
     }

@@ -76,10 +76,20 @@ export interface NewMessage {
   isMeta?: boolean;
 }
 
+/**
+ * Attachment message for diagnostics, file references, or additional context
+ */
+export interface AttachmentMessage {
+  type: 'diagnostics' | 'file_reference' | 'context';
+  content: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface ReadJsonOutput {
   skill: { name: string; baseDir: string; version?: string };
   newMessages: NewMessage[];
   contextModifier?: ContextModifier;
+  attachments?: AttachmentMessage[];  // Optional: included when relevant
 }
 
 export interface ToolDescriptionJson {

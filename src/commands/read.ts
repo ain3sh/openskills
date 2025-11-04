@@ -1,9 +1,10 @@
 import { readFileSync } from 'fs';
 import { findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
-import type { ReadJsonOutput, ContextModifier, SkillFrontmatter } from '../types.js';
+import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, AttachmentMessage } from '../types.js';
 import { normalizePermissions } from '../utils/permissions.js';
 import { validateSkillCommand } from '../utils/validation.js';
+import { extractRelativeRefs } from '../utils/refs.js';
 
 /**
  * Read skill to stdout (for AI agents)
@@ -59,6 +60,36 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
       normalizedPermissions,
     };
 
+    // Collect attachments (diagnostics, file references)
+    const attachments: AttachmentMessage[] = [];
+    
+    // Add bundled resources as file references (if any exist)
+    const refs = extractRelativeRefs(content);
+    if (refs.length > 0) {
+      attachments.push({
+        type: 'file_reference',
+        content: `Bundled resources available in ${skill.baseDir}:\n${refs.map(r => `- ${r}`).join('\n')}`,
+        metadata: { files: refs, count: refs.length, baseDir: skill.baseDir }
+      });
+    }
+    
+    // Check for common issues and add diagnostics
+    const warnings: string[] = [];
+    if (!frontmatter?.version) {
+      warnings.push('Skill has no version field (recommended for tracking)');
+    }
+    if (!frontmatter?.license) {
+      warnings.push('Skill has no license field (recommended for distribution)');
+    }
+    
+    if (warnings.length > 0) {
+      attachments.push({
+        type: 'diagnostics',
+        content: warnings.join('\n'),
+        metadata: { level: 'warning', count: warnings.length }
+      });
+    }
+
     const json: ReadJsonOutput = {
       skill: { name: frontmatter?.name || skillName, baseDir: skill.baseDir, version: frontmatter?.version },
       newMessages: [
@@ -67,6 +98,7 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
         { role: 'user', content: `<metadata name=\"${frontmatter?.name || skillName}\" baseDir=\"${skill.baseDir}\" model=\"${contextModifier.model ?? ''}\" allowedTools=\"${(contextModifier.allowedTools||[]).join(',')}\"></metadata>`, isMeta: true },
       ],
       contextModifier,
+      attachments: attachments.length > 0 ? attachments : undefined,  // Only include if non-empty
     };
     console.log(JSON.stringify(json, null, 2));
     return;
