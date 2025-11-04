@@ -146,9 +146,9 @@ export function matchesPattern(name: string, pattern: string): boolean {
   
   // Escape regex special chars except * and ?
   const escaped = lowerPattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\\\$&')  // Escape special chars (double backslash for proper escaping)
-    .replace(/\*/g, '.*')                    // * becomes .*
-    .replace(/\?/g, '.');                    // ? becomes .
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')  // Escape special chars
+    .replace(/\*/g, '.*')                  // * becomes .*
+    .replace(/\?/g, '.');                  // ? becomes .
   
   // Create bounded regex
   const regex = new RegExp(`^${escaped}$`);

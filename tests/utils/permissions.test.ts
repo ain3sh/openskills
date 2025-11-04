@@ -66,6 +66,20 @@ describe('matchesPattern', () => {
     const longPattern = 'a'.repeat(101);
     expect(matchesPattern('anything', longPattern)).toBe(false);
   });
+
+  it('escapes literal dots correctly', () => {
+    // Test that literal dots in pattern don't match any character
+    expect(matchesPattern('test.file', 'test.file')).toBe(true);
+    expect(matchesPattern('testXfile', 'test.file')).toBe(false);  // Dot should NOT match X
+    expect(matchesPattern('test-file', 'test.file')).toBe(false);  // Dot should NOT match dash
+  });
+
+  it('escapes other special chars correctly', () => {
+    expect(matchesPattern('test[file]', 'test[file]')).toBe(true);
+    expect(matchesPattern('test(file)', 'test(file)')).toBe(true);
+    expect(matchesPattern('test+file', 'test+file')).toBe(true);
+    expect(matchesPattern('test$file', 'test$file')).toBe(true);
+  });
 });
 
 describe('checkSkillPermissions', () => {

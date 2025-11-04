@@ -2,9 +2,10 @@ import { readFileSync } from 'fs';
 import { findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
 import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, AttachmentMessage } from '../types.js';
-import { normalizePermissions } from '../utils/permissions.js';
+import { normalizePermissions, checkSkillPermissions } from '../utils/permissions.js';
 import { validateSkillCommand } from '../utils/validation.js';
 import { extractRelativeRefs } from '../utils/refs.js';
+import { loadConfig, configToPermissionRules } from '../utils/config.js';
 
 /**
  * Read skill to stdout (for AI agents)
@@ -36,6 +37,28 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
 
   // Validation passed - skill exists and is valid
   const skill = findSkill(skillName)!; // Non-null assertion safe after validation
+
+  // Check permissions from config file
+  const config = loadConfig();
+  const permissionRules = configToPermissionRules(config);
+  const permissionCheck = checkSkillPermissions(skillName, permissionRules);
+  
+  if (permissionCheck.behavior === 'deny') {
+    if (fmt === 'json') {
+      console.log(JSON.stringify({
+        error: permissionCheck.message || `Skill "${skillName}" is denied by permission rules`,
+        errorCode: 'PERMISSION_DENIED',
+        suggestion: 'Check your .openskills.json configuration'
+      }, null, 2));
+    } else {
+      console.error(`Error: ${permissionCheck.message || 'Permission denied'}`);
+      console.error('Suggestion: Check your .openskills.json configuration');
+    }
+    process.exit(1);
+  }
+  
+  // TODO: Handle 'ask' behavior with interactive prompt in future version
+  // For now, 'ask' defaults to allow
 
   const content = readFileSync(skill.path, 'utf-8');
   const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
@@ -87,6 +110,16 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
         type: 'diagnostics',
         content: warnings.join('\n'),
         metadata: { level: 'warning', count: warnings.length }
+      });
+    }
+    
+    // Add context attachment if additional context is provided
+    const contextField = frontmatter?.context || (frontmatter as any)?.['additional-context'];
+    if (contextField && typeof contextField === 'string') {
+      attachments.push({
+        type: 'context',
+        content: contextField,
+        metadata: { source: 'frontmatter' }
       });
     }
 

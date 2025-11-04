@@ -1,14 +1,23 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
-import { writeFileSync, rmSync, mkdirSync, existsSync } from 'fs';
+import { writeFileSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { tmpdir } from 'os';
 
 describe('read --format=json message visibility', () => {
-  const baseDir = join(process.cwd(), '.claude', 'skills', 'test-skill');
+  // Use tmpdir with unique name to avoid conflicts
+  const testDir = join(tmpdir(), `openskills-messages-test-${Date.now()}`);
+  const baseDir = join(testDir, '.claude', 'skills', 'test-skill');
   const skillPath = join(baseDir, 'SKILL.md');
+  let originalCwd: string;
 
   beforeAll(() => {
+    originalCwd = process.cwd();
+    // Change to test directory for skill discovery
+    mkdirSync(testDir, { recursive: true });
+    process.chdir(testDir);
+    
     // Create a fake skill folder/file
-    if (!existsSync(baseDir)) mkdirSync(baseDir, { recursive: true });
+    mkdirSync(baseDir, { recursive: true });
     writeFileSync(
       skillPath,
       `---\nname: test-skill\ndescription: A test skill\nallowed-tools: [Read]\nmodel: fake-model\n---\n\n# Body\nHello world.\n`
@@ -16,7 +25,14 @@ describe('read --format=json message visibility', () => {
   });
 
   afterAll(() => {
-    rmSync(join(process.cwd(), '.claude'), { recursive: true, force: true });
+    // Restore original directory
+    process.chdir(originalCwd);
+    // Remove entire test directory
+    try {
+      rmSync(testDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   });
 
   it('emits exactly one visible command-message and hides skill+metadata', async () => {
