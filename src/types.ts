@@ -110,3 +110,21 @@ export interface SkillValidationResult {
   message?: string;
   suggestion?: string;
 }
+
+/**
+ * Permission rule for skill access control
+ * Implements deny > allow > ask precedence
+ */
+export interface PermissionRule {
+  pattern: string;           // e.g., "pdf*", "*-creator", "plugin:*"
+  behavior: 'allow' | 'deny' | 'ask';
+  message?: string;
+}
+
+/**
+ * Permission check result
+ */
+export interface PermissionCheckResult {
+  behavior: 'allow' | 'deny' | 'ask';
+  message?: string;
+}
