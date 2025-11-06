@@ -34,14 +34,31 @@ export interface SkillMetadata {
 }
 
 // Parsed SKILL.md frontmatter (loosely based on blog spec)
+/**
+ * Complete SkillFrontmatter interface per blog spec
+ * Supports both naming conventions (hyphenated and underscored)
+ */
 export interface SkillFrontmatter {
+  // Required fields
   name: string;
   description: string;
+  
+  // Discovery & matching
   when_to_use?: string;
-  allowed_tools?: string[] | string; // underscore version
-  'allowed-tools'?: string[] | string; // hyphenated version
+  'when-to-use'?: string;
+  
+  // Tool permissions
+  allowed_tools?: string[] | string;
+  'allowed-tools'?: string[] | string;
+  
+  // Metadata
   version?: string;
   license?: string;
+  author?: string;
+  'created-at'?: string;
+  'updated-at'?: string;
+  
+  // Execution context
   model?: string;
   disable_model_invocation?: boolean;
   'disable-model-invocation'?: boolean;
@@ -49,11 +66,24 @@ export interface SkillFrontmatter {
   reasoning_effort?: string;
   'reasoning-effort'?: string;
   tokens?: any;
+  
+  // Discovery & search
   aliases?: string[] | string;
   keywords?: string[] | string;
+  tags?: string[] | string;
+  
+  // Visibility control
   enabled?: boolean;
   hidden?: boolean;
   unlisted?: boolean;
+  
+  // Context & attachments
+  context?: string;
+  'additional-context'?: string;
+  notes?: string;
+  
+  // Allow unknown fields for extensibility
+  [key: string]: unknown;
 }
 
 export interface ContextModifier {

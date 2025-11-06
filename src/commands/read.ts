@@ -6,11 +6,15 @@ import { normalizePermissions, checkSkillPermissions } from '../utils/permission
 import { validateSkillCommand } from '../utils/validation.js';
 import { extractRelativeRefs } from '../utils/refs.js';
 import { loadConfig, configToPermissionRules } from '../utils/config.js';
+import { askUserPermission } from '../utils/interactive.js';
 
 /**
  * Read skill to stdout (for AI agents)
  */
-export function readSkill(skillName: string, options?: { format?: string }): void {
+export async function readSkill(
+  skillName: string, 
+  options?: { format?: string; yes?: boolean }
+): Promise<void> {
   const fmt = options?.format ?? 'text';
 
   // Validate skill command before reading
@@ -57,8 +61,27 @@ export function readSkill(skillName: string, options?: { format?: string }): voi
     process.exit(1);
   }
   
-  // TODO: Handle 'ask' behavior with interactive prompt in future version
-  // For now, 'ask' defaults to allow
+  // Handle 'ask' behavior with interactive prompt
+  if (permissionCheck.behavior === 'ask') {
+    const approved = await askUserPermission(skillName, {
+      force: options?.yes,
+      nonInteractive: !process.stdin.isTTY
+    });
+    
+    if (!approved) {
+      if (fmt === 'json') {
+        console.log(JSON.stringify({
+          error: `User denied permission for skill "${skillName}"`,
+          errorCode: 'PERMISSION_DENIED',
+          suggestion: 'Add to allow rules in .openskills.json or use --yes flag'
+        }, null, 2));
+      } else {
+        console.error(`❌ Permission denied for skill: ${skillName}`);
+        console.error('💡 Tip: Add to .openskills.json allow rules to skip prompts');
+      }
+      process.exit(1);
+    }
+  }
 
   const content = readFileSync(skill.path, 'utf-8');
   const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);

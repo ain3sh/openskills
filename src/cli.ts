@@ -57,6 +57,7 @@ program
   .command('read <skill-name>')
   .description('Read skill to stdout (for AI agents)')
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .option('-y, --yes', 'Skip permission prompts (approve all skills)')
   .action((name, opts) => readSkill(name, opts));
 
 program

@@ -39,7 +39,7 @@ describe('read --format=json message visibility', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const mod = await import('../../src/commands/read.js');
     try {
-      mod.readSkill('test-skill', { format: 'json' });
+      await mod.readSkill('test-skill', { format: 'json', yes: true });
       expect(logSpy).toHaveBeenCalledTimes(1);
       const arg = String(logSpy.mock.calls[0][0] ?? '');
       const payload = JSON.parse(arg);

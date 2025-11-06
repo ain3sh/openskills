@@ -51,7 +51,7 @@ describe('read --format=json attachments', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const mod = await import('../../src/commands/read.js');
-      mod.readSkill('attach-test', { format: 'json' });
+      await mod.readSkill('attach-test', { format: 'json', yes: true });
       
       const output = JSON.parse(String(logSpy.mock.calls[0][0] ?? '{}'));
       
@@ -77,7 +77,7 @@ describe('read --format=json attachments', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const mod = await import('../../src/commands/read.js');
-      mod.readSkill('attach-test', { format: 'json' });
+      await mod.readSkill('attach-test', { format: 'json', yes: true });
       
       const output = JSON.parse(String(logSpy.mock.calls[0][0] ?? '{}'));
       
@@ -103,7 +103,7 @@ describe('read --format=json attachments', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const mod = await import('../../src/commands/read.js');
-      mod.readSkill('attach-test', { format: 'json' });
+      await mod.readSkill('attach-test', { format: 'json', yes: true });
       
       const output = JSON.parse(String(logSpy.mock.calls[0][0] ?? '{}'));
       
@@ -123,7 +123,7 @@ describe('read --format=json attachments', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       const mod = await import('../../src/commands/read.js');
-      mod.readSkill('attach-test', { format: 'json' });
+      await mod.readSkill('attach-test', { format: 'json', yes: true });
       
       const output = JSON.parse(String(logSpy.mock.calls[0][0] ?? '{}'));
       
