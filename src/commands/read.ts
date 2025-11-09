@@ -7,12 +7,45 @@ import { validateSkillCommand } from '../utils/validation.js';
 import { extractRelativeRefs } from '../utils/refs.js';
 import { loadConfig, configToPermissionRules } from '../utils/config.js';
 import { askUserPermission } from '../utils/interactive.js';
+import { telemetry } from '../utils/telemetry.js';
 
 /**
  * Read skill to stdout (for AI agents)
  */
 export async function readSkill(
   skillName: string, 
+  options?: { format?: string; yes?: boolean }
+): Promise<void> {
+  const startTime = Date.now();
+  const fmt = options?.format ?? 'text';
+  
+  try {
+    await readSkillInternal(skillName, options);
+    
+    // Track success
+    telemetry.log({
+      command: 'read',
+      skillName,
+      success: true,
+      duration: Date.now() - startTime
+    });
+  } catch (error) {
+    // Track failure
+    telemetry.log({
+      command: 'read',
+      skillName,
+      success: false,
+      duration: Date.now() - startTime
+    });
+    throw error;
+  }
+}
+
+/**
+ * Internal implementation of readSkill
+ */
+async function readSkillInternal(
+  skillName: string,
   options?: { format?: string; yes?: boolean }
 ): Promise<void> {
   const fmt = options?.format ?? 'text';
@@ -86,25 +119,27 @@ export async function readSkill(
   const content = readFileSync(skill.path, 'utf-8');
   const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
 
-  if (fmt === 'json') {
-    const allowed = frontmatter?.['allowed-tools'] ?? frontmatter?.allowed_tools;
-    const deny: unknown = (frontmatter as any)?.['deny-tools'] ?? (frontmatter as any)?.deny_tools;
-    const disableInv = frontmatter?.['disable-model-invocation'] ?? frontmatter?.disable_model_invocation;
-    const reasoning = normalizeReasoningEffort(frontmatter);
-    const normalizedPermissions = normalizePermissions({ allowed, deny });
+  // Build context modifier (used by both JSON and text outputs)
+  const allowed = frontmatter?.['allowed-tools'] ?? frontmatter?.allowed_tools;
+  const deny: unknown = (frontmatter as any)?.['deny-tools'] ?? (frontmatter as any)?.deny_tools;
+  const disableInv = frontmatter?.['disable-model-invocation'] ?? frontmatter?.disable_model_invocation;
+  const reasoning = normalizeReasoningEffort(frontmatter);
+  const normalizedPermissions = normalizePermissions({ allowed, deny });
 
-    // Security: Proper type guards prevent undefined access in array operations
-    const contextModifier: ContextModifier = {
-      allowedTools: Array.isArray(allowed)
-        ? (allowed as string[])
-        : (typeof allowed === 'string' ? [allowed] : undefined),
-      model: typeof frontmatter?.model === 'string' ? frontmatter.model : undefined,
-      disableModelInvocation: disableInv != null ? Boolean(disableInv) : undefined,
-      reasoningEffort: reasoning ?? undefined,
-      mode: frontmatter?.mode,
-      tokens: frontmatter?.tokens,
-      normalizedPermissions,
-    };
+  // Security: Proper type guards prevent undefined access in array operations
+  const contextModifier: ContextModifier = {
+    allowedTools: Array.isArray(allowed)
+      ? (allowed as string[])
+      : (typeof allowed === 'string' ? [allowed] : undefined),
+    model: typeof frontmatter?.model === 'string' ? frontmatter.model : undefined,
+    disableModelInvocation: disableInv != null ? Boolean(disableInv) : undefined,
+    reasoningEffort: reasoning ?? undefined,
+    mode: frontmatter?.mode,
+    tokens: frontmatter?.tokens,
+    normalizedPermissions,
+  };
+
+  if (fmt === 'json') {
 
     // Collect attachments (diagnostics, file references)
     const attachments: AttachmentMessage[] = [];
@@ -160,13 +195,26 @@ export async function readSkill(
     return;
   }
 
-  // Default: text output compatible with existing agents
-  console.log(`Reading: ${skillName}`);
-  console.log(`Base directory: ${skill.baseDir}`);
-  console.log('');
+  // Default: text output with clear boundaries for agents
+  const border = '═'.repeat(60);
+  console.log(`\n${border}`);
+  console.log(`📖 SKILL LOADED: ${skillName}`);
+  console.log(border);
+  console.log(`📁 Base directory: ${skill.baseDir}`);
+  if (frontmatter?.version) {
+    console.log(`📦 Version: ${frontmatter.version}`);
+  }
+  if (contextModifier.allowedTools && contextModifier.allowedTools.length > 0) {
+    console.log(`🛠️  Allowed tools: ${contextModifier.allowedTools.join(', ')}`);
+  }
+  console.log(`${border}\n`);
+  
   console.log(content);
-  console.log('');
-  console.log(`Skill read: ${skillName}`);
+  
+  console.log(`\n${border}`);
+  console.log(`✅ Skill "${skillName}" ready`);
+  console.log(`💡 Follow the instructions above to complete your task`);
+  console.log(`${border}\n`);
 }
 
 function normalizeReasoningEffort(fm?: SkillFrontmatter): ContextModifier['reasoningEffort'] | null {

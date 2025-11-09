@@ -9,11 +9,38 @@ import { ExitPromptError } from '@inquirer/core';
 import { hasValidFrontmatter, extractYamlField } from '../utils/yaml.js';
 import { ANTHROPIC_MARKETPLACE_SKILLS } from '../utils/marketplace-skills.js';
 import type { InstallOptions } from '../types.js';
+import { telemetry } from '../utils/telemetry.js';
 
 /**
  * Install skill from GitHub or Git URL
  */
 export async function installSkill(source: string, options: InstallOptions): Promise<void> {
+  const startTime = Date.now();
+  
+  try {
+    await installSkillInternal(source, options);
+    
+    // Track success
+    telemetry.log({
+      command: 'install',
+      success: true,
+      duration: Date.now() - startTime
+    });
+  } catch (error) {
+    // Track failure
+    telemetry.log({
+      command: 'install',
+      success: false,
+      duration: Date.now() - startTime
+    });
+    throw error;
+  }
+}
+
+/**
+ * Internal implementation of installSkill
+ */
+async function installSkillInternal(source: string, options: InstallOptions): Promise<void> {
   const folder = options.universal ? '.agent/skills' : '.claude/skills';
   const isProject = !options.global; // Default to project unless --global specified
   const targetDir = isProject

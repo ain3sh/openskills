@@ -1,7 +1,11 @@
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import type { PermissionRule } from '../types.js';
+import { FastCache } from './fastCache.js';
+
+// Cache for config loading (60 second TTL)
+const configCache = new FastCache<OpenskillsConfig>('config');
 
 /**
  * OpenSkills configuration structure
@@ -15,6 +19,9 @@ export interface OpenskillsConfig {
     };
   };
   tokenBudget?: number;
+  telemetry?: {
+    enabled?: boolean; // Default: true
+  };
 }
 
 /**
@@ -25,9 +32,52 @@ export interface OpenskillsConfig {
  * 2. Global config (~/.openskills.json)
  * 3. Project config (.openskills.json)
  * 
+ * Performance: Cached for 60 seconds, invalidates when config files change
+ * 
  * @returns Merged configuration
  */
 export function loadConfig(): OpenskillsConfig {
+  // Try cache first
+  const validator = () => {
+    // Hash of config file mtimes
+    const globalConfigPath = join(homedir(), '.openskills.json');
+    const projectConfigPath = join(process.cwd(), '.openskills.json');
+    const mtimes: string[] = [];
+    
+    if (existsSync(globalConfigPath)) {
+      try {
+        const stat = statSync(globalConfigPath);
+        mtimes.push(`global:${stat.mtime.toISOString()}`);
+      } catch {
+        // Ignore
+      }
+    }
+    
+    if (existsSync(projectConfigPath)) {
+      try {
+        const stat = statSync(projectConfigPath);
+        mtimes.push(`project:${stat.mtime.toISOString()}`);
+      } catch {
+        // Ignore
+      }
+    }
+    
+    return mtimes.join('|') || 'none';
+  };
+  
+  const cached = configCache.get('merged-config', validator);
+  if (cached) return cached;
+  
+  // Cache miss - load from files
+  const config = loadConfigInternal();
+  configCache.set('merged-config', config, validator());
+  return config;
+}
+
+/**
+ * Internal function to load config from files
+ */
+function loadConfigInternal(): OpenskillsConfig {
   // Default configuration
   const config: OpenskillsConfig = {
     permissions: {
@@ -92,6 +142,13 @@ function mergeConfig(target: OpenskillsConfig, source: Partial<OpenskillsConfig>
       }
     }
   }
+  
+  if (source.telemetry) {
+    if (!target.telemetry) target.telemetry = {};
+    if (source.telemetry.enabled !== undefined) {
+      target.telemetry.enabled = source.telemetry.enabled;
+    }
+  }
 }
 
 /**
@@ -117,4 +174,11 @@ export function configToPermissionRules(config: OpenskillsConfig): PermissionRul
   }
 
   return rules;
+}
+
+/**
+ * Clear config cache (useful for tests)
+ */
+export function clearConfigCache(): void {
+  configCache.clear('merged-config');
 }

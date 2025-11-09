@@ -1,16 +1,55 @@
-import { readFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { getAllSkillSources } from './dirs.js';
 import { parseFrontmatter, extractYamlField } from './yaml.js';
 import type { Skill, SkillLocation } from '../types.js';
+import { FastCache } from './fastCache.js';
+
+// Cache for skill discovery (60 second TTL)
+const skillCache = new FastCache<Skill[]>('skills');
 
 /**
  * Find all installed skills across all sources (project, user, plugin, builtin)
  * 
  * Implements multi-source discovery with priority-based deduplication:
  * First found wins (project > user > plugin > builtin)
+ * 
+ * Performance: Cached for 60 seconds, invalidates when skill directories change
  */
 export function findAllSkills(): Skill[] {
+  // Try cache first
+  const validator = () => {
+    // Hash of all skill source directory mtimes
+    const sources = getAllSkillSources();
+    const mtimes: string[] = [];
+    
+    for (const source of sources) {
+      try {
+        if (existsSync(source.path)) {
+          const stat = statSync(source.path);
+          mtimes.push(`${source.path}:${stat.mtime.toISOString()}`);
+        }
+      } catch {
+        // Ignore stat errors
+      }
+    }
+    
+    return mtimes.join('|');
+  };
+  
+  const cached = skillCache.get('all-skills', validator);
+  if (cached) return cached;
+  
+  // Cache miss - do expensive scan
+  const skills = scanAllSkills();
+  skillCache.set('all-skills', skills, validator());
+  return skills;
+}
+
+/**
+ * Internal function to scan filesystem for skills
+ */
+function scanAllSkills(): Skill[] {
   const skills: Skill[] = [];
   const seen = new Set<string>();
   const sources = getAllSkillSources();
@@ -69,8 +108,28 @@ export function findAllSkills(): Skill[] {
 /**
  * Find specific skill by name across all sources
  * Returns first match (priority: project > user > plugin > builtin)
+ * 
+ * Performance: Uses cached skill list if available, falls back to direct lookup
  */
 export function findSkill(skillName: string): SkillLocation | null {
+  // Try using cached skills first (fast path)
+  try {
+    const cached = skillCache.get('all-skills');
+    if (cached) {
+      const skill = cached.find(s => s.name === skillName);
+      if (skill) {
+        return {
+          path: join(skill.path, 'SKILL.md'),
+          baseDir: skill.path,
+          source: skill.path
+        };
+      }
+    }
+  } catch {
+    // Fall through to direct lookup
+  }
+  
+  // Direct filesystem lookup (cache miss or skill not in cache)
   const sources = getAllSkillSources();
 
   for (const source of sources) {

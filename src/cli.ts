@@ -1,16 +1,6 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { listSkills } from './commands/list.js';
-import { installSkill } from './commands/install.js';
-import { readSkill } from './commands/read.js';
-import { removeSkill } from './commands/remove.js';
-import { manageSkills } from './commands/manage.js';
-import { syncAgentsMd } from './commands/sync.js';
-import { describeSkills } from './commands/describe.js';
-import { validateSkills } from './commands/validate.js';
-import { suggestSkills } from './commands/suggest.js';
-import { toolDescription } from './commands/tool-description.js';
 
 const program = new Command();
 
@@ -39,11 +29,14 @@ program
 program
   .command('list')
   .description('List all installed skills')
-  .option('-f, --format <format>', 'Output format (text|json)', 'text')
+  .option('-f, --format <format>', 'Output format (text|json|agent-prompt)', 'text')
   .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
   .option('--include-hidden', 'Include hidden skills', false)
   .option('--include-disabled', 'Include disabled skills', false)
-  .action((opts) => listSkills(opts));
+  .action(async (opts) => {
+    const { listSkills } = await import('./commands/list.js');
+    listSkills(opts);
+  });
 
 program
   .command('install <source>')
@@ -51,36 +44,54 @@ program
   .option('-g, --global', 'Install globally (default: project install)')
   .option('-u, --universal', 'Install to .agent/skills/ (for universal AGENTS.md usage)')
   .option('-y, --yes', 'Skip interactive selection, install all skills found')
-  .action(installSkill);
+  .action(async (source, opts) => {
+    const { installSkill } = await import('./commands/install.js');
+    await installSkill(source, opts);
+  });
 
 program
   .command('read <skill-name>')
   .description('Read skill to stdout (for AI agents)')
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('-y, --yes', 'Skip permission prompts (approve all skills)')
-  .action((name, opts) => readSkill(name, opts));
+  .action(async (name, opts) => {
+    const { readSkill } = await import('./commands/read.js');
+    await readSkill(name, opts);
+  });
 
 program
   .command('sync')
   .description('Update AGENTS.md with installed skills (interactive, pre-selects current state)')
   .option('-y, --yes', 'Skip interactive selection, sync all skills')
-  .action(syncAgentsMd);
+  .action(async (opts) => {
+    const { syncAgentsMd } = await import('./commands/sync.js');
+    await syncAgentsMd(opts);
+  });
 
 program
   .command('manage')
   .description('Interactively manage (remove) installed skills')
-  .action(manageSkills);
+  .action(async () => {
+    const { manageSkills } = await import('./commands/manage.js');
+    await manageSkills();
+  });
 
 program
   .command('remove <skill-name>')
   .alias('rm')
   .description('Remove specific skill (for scripts, use manage for interactive)')
-  .action(removeSkill);
+  .action(async (name) => {
+    const { removeSkill } = await import('./commands/remove.js');
+    removeSkill(name);
+  });
 
 program
   .command('describe [skill-name]')
   .description('Describe installed skills in JSON (optionally a single skill)')
-  .action((name) => describeSkills(name));
+  .action(async (name) => {
+    const { describeSkills } = await import('./commands/describe.js');
+    describeSkills(name);
+  });
 
 program
   .command('validate [skill-name]')
@@ -88,7 +99,10 @@ program
   .option('-a, --all', 'Validate all installed skills')
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('--lint-frontmatter', 'Also lint frontmatter fields for unknown keys and type issues', false)
-  .action((name, opts) => validateSkills(name, opts));
+  .action(async (name, opts) => {
+    const { validateSkills } = await import('./commands/validate.js');
+    validateSkills(name, opts);
+  });
 
 program
   .command('suggest <query>')
@@ -96,7 +110,10 @@ program
   .option('-l, --limit <n>', 'Max results', (v) => parseInt(v, 10), 5)
   .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('--all', 'Do not filter by presentability (include hidden/disabled/undocumented)')
-  .action((q, opts) => suggestSkills(q, opts));
+  .action(async (q, opts) => {
+    const { suggestSkills } = await import('./commands/suggest.js');
+    suggestSkills(q, opts);
+  });
 
 program
   .command('tool-description')
@@ -107,7 +124,10 @@ program
   .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
   .option('--include-hidden', 'Include hidden skills', false)
   .option('--include-disabled', 'Include disabled skills', false)
-  .action((opts) => toolDescription(opts));
+  .action(async (opts) => {
+    const { toolDescription } = await import('./commands/tool-description.js');
+    toolDescription(opts);
+  });
 
 program
   .command('skill-prompt')
@@ -119,6 +139,18 @@ program
   .action(async (opts) => {
     const { skillPrompt } = await import('./commands/skill-prompt.js');
     skillPrompt(opts);
+  });
+
+program
+  .command('telemetry')
+  .description('View and manage usage telemetry')
+  .option('--stats', 'Show usage statistics (default)', false)
+  .option('--clear', 'Clear all telemetry data')
+  .option('--disable', 'Disable telemetry collection')
+  .option('--enable', 'Enable telemetry collection')
+  .action(async (opts) => {
+    const { telemetryCommand } = await import('./commands/telemetry.js');
+    telemetryCommand(opts);
   });
 
 program.parse();

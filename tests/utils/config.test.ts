@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { writeFileSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { loadConfig, configToPermissionRules } from '../../src/utils/config.js';
+import { loadConfig, configToPermissionRules, clearConfigCache } from '../../src/utils/config.js';
 
 describe('loadConfig', () => {
   const testDir = join(tmpdir(), `openskills-config-test-${Date.now()}`);
@@ -12,6 +12,11 @@ describe('loadConfig', () => {
     originalCwd = process.cwd();
     mkdirSync(testDir, { recursive: true });
     process.chdir(testDir);
+  });
+  
+  beforeEach(() => {
+    // Clear cache before each test to ensure clean state
+    clearConfigCache();
   });
 
   afterAll(() => {
@@ -53,6 +58,14 @@ describe('loadConfig', () => {
   });
 
   it('handles invalid JSON gracefully', () => {
+    // Delete file first to ensure clean state (cache invalidation)
+    try {
+      rmSync(join(testDir, '.openskills.json'));
+    } catch {
+      // File might not exist
+    }
+    
+    // Now write invalid JSON
     writeFileSync(join(testDir, '.openskills.json'), 'invalid json{');
     
     // Should not throw, return defaults

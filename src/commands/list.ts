@@ -4,11 +4,38 @@ import { readFileSync } from 'fs';
 import { parseFrontmatter } from '../utils/yaml.js';
 import type { SkillFrontmatter } from '../types.js';
 import { isPresentable } from '../utils/presentability.js';
+import { telemetry } from '../utils/telemetry.js';
 
 /**
  * List all installed skills
  */
 export function listSkills(options?: { format?: string; all?: boolean; includeHidden?: boolean; includeDisabled?: boolean }): void {
+  const startTime = Date.now();
+  
+  try {
+    listSkillsInternal(options);
+    
+    // Track success
+    telemetry.log({
+      command: 'list',
+      success: true,
+      duration: Date.now() - startTime
+    });
+  } catch (error) {
+    // Track failure
+    telemetry.log({
+      command: 'list',
+      success: false,
+      duration: Date.now() - startTime
+    });
+    throw error;
+  }
+}
+
+/**
+ * Internal implementation of listSkills
+ */
+function listSkillsInternal(options?: { format?: string; all?: boolean; includeHidden?: boolean; includeDisabled?: boolean }): void {
   const all = findAllSkills();
   const filtered = all.filter((s) => {
     const loc = findSkill(s.name);
@@ -17,8 +44,25 @@ export function listSkills(options?: { format?: string; all?: boolean; includeHi
     return options?.all ? true : isPresentable(frontmatter, { includeHidden: options?.includeHidden, includeDisabled: options?.includeDisabled, requireDescription: true });
   });
 
-  if ((options?.format ?? '').toLowerCase() === 'json') {
+  const format = (options?.format ?? '').toLowerCase();
+  
+  if (format === 'json') {
     console.log(JSON.stringify(filtered, null, 2));
+    return;
+  }
+  
+  if (format === 'agent-prompt') {
+    // Output pure <available_skills> XML for agent re-injection
+    console.log('<available_skills>');
+    for (const skill of filtered) {
+      console.log(`<skill>`);
+      console.log(`<name>${skill.name}</name>`);
+      console.log(`<description>${skill.description}</description>`);
+      console.log(`<location>${skill.location}</location>`);
+      console.log(`</skill>`);
+      console.log('');
+    }
+    console.log('</available_skills>');
     return;
   }
 
