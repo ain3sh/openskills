@@ -6,10 +6,16 @@
 
 **The closest implementation matching Claude Code's skills system** — same prompt format, same marketplace, same folders, just using CLI instead of tools.
 
+Install (no Node.js required):
+
+```bash
+curl -fsSL https://ain3sh.com/openskills/install.sh | bash
+```
+
+Alternative (npm):
+
 ```bash
 npm i -g openskills
-openskills install anthropics/skills
-openskills sync
 ```
 
 > **Found this useful?** Follow [@nummanthinks](https://x.com/nummanthinks) for more AI tooling!
@@ -51,6 +57,14 @@ OpenSkills replicates Claude Code's skills system with **100% compatibility**:
 ## Quick Start
 
 ### 1. Install
+
+Option A — Binaries (recommended for end users):
+
+```bash
+curl -fsSL https://ain3sh.com/openskills/install.sh | bash
+```
+
+Option B — npm (developers):
 
 ```bash
 npm i -g openskills
@@ -449,9 +463,111 @@ This loads comprehensive instructions on:
 
 ---
 
+## 📊 Usage Telemetry
+
+OpenSkills includes **privacy-first usage tracking** to help understand skill adoption:
+
+### What's Tracked (Minimal)
+- Command name (`read`, `list`, `install`)
+- Skill name (if applicable)
+- Success/failure status
+- Agent platform (Cursor, Windsurf, Factory, etc.)
+- Duration (milliseconds)
+
+### What's NOT Tracked
+- No file paths or user data
+- No repository information
+- No PII (personally identifiable information)
+- All data stays local: `~/.openskills/telemetry/`
+
+### View Your Stats
+```bash
+openskills telemetry --stats
+```
+
+Output:
+```
+📊 OpenSkills Usage Statistics
+
+Total invocations: 45
+Most used skills:
+  1. pdf (23 times)
+  2. xlsx (12 times)
+  3. hello-world (10 times)
+
+Success rate: 97.8%
+By agent: cursor (67%), factory (33%)
+Average response: 156ms
+```
+
+### Disable Telemetry
+```bash
+openskills telemetry --disable
+```
+
+Telemetry is **enabled by default** but can be disabled anytime. Clear data with `--clear`.
+
+---
+
+## 🤖 Enhanced Agent Experience
+
+### Clear Output Boundaries
+Skills load with clear visual markers for easy parsing:
+
+```
+════════════════════════════════════════════════════════════
+📖 SKILL LOADED: pdf-analyzer
+════════════════════════════════════════════════════════════
+📁 Base directory: /project/.claude/skills/pdf-analyzer
+📦 Version: 2.1.0
+🛠️  Allowed tools: Bash, Read
+════════════════════════════════════════════════════════════
+
+<skill instructions>
+
+════════════════════════════════════════════════════════════
+✅ Skill "pdf-analyzer" ready
+💡 Follow the instructions above to complete your task
+════════════════════════════════════════════════════════════
+```
+
+### Agent-Friendly List Format
+Agents can refresh skills mid-conversation:
+
+```bash
+openskills list
+```
+
+Produces JSON with both the `<skills_instructions>` block and the `<available_skills>` XML ready for injection:
+
+```json
+{
+  "instructions": "<skills_instructions>...",
+  "available_skills_xml": "<available_skills>...</available_skills>",
+  "skills": [
+    { "name": "pdf", "description": "Comprehensive PDF manipulation...", "location": "project" }
+  ]
+}
+```
+
+---
+
+## ⚡ Performance
+
+OpenSkills is optimized for speed:
+
+- **Smart Caching:** Skills and configs cached for 60s (auto-invalidates on changes)
+- **Lazy Loading:** Commands loaded only when executed
+- **Fast Path:** Built-in skills optimized for instant access
+
+Cache location: `/tmp/.openskills-cache/` (auto-cleans via OS)
+
+---
+
 ## Requirements
 
-- **Node.js** 20.6+ (for ora dependency)
+- Binaries: no runtime required (single executable)
+- npm install: **Node.js** 20.6+ (for ora dependency)
 - **Git** (for cloning repositories)
 
 ---

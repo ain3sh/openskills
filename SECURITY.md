@@ -11,6 +11,49 @@ We provide security updates for the latest version.
 
 ## Security Considerations
 
+### ReDoS (Regular Expression Denial of Service) Protection
+
+OpenSkills implements strict bounds on all regular expressions to prevent catastrophic backtracking attacks:
+
+✅ **Protections in place:**
+- **Path extraction** (`src/utils/refs.ts`): Limited to 100 chars per segment, max 10 nested levels
+- **Permission parsing** (`src/utils/permissions.ts`): Tool names capped at 50 chars, scoped patterns at 1000 chars
+- **Token matching** (`src/commands/suggest.ts`): Tokens capped at 64 chars, max 100 matches per token
+- All regex patterns use bounded quantifiers for O(n) linear time complexity
+
+🔒 **Attack vectors prevented:**
+- Long nested paths like `"scripts/" + "a/".repeat(1000)`
+- Malicious tool names with 10,000+ characters
+- Repeated pattern attacks in search/suggest functionality
+
+### Resource Leak Prevention
+
+OpenSkills prevents resource leaks in MCP server operation:
+
+✅ **Protections in place:**
+- **Double-close guard**: `stdin.on("close")` handler uses flag to prevent multiple `server.close()` calls
+- **Spawn error handling**: All `child_process.spawn()` calls include `error` event handlers
+- **Structured error codes**: Exit code 127 for spawn failures (standard shell convention)
+- **Stderr logging**: All spawn errors logged for diagnostics
+
+### Safe Module Loading
+
+Dynamic `require()` calls properly distinguish error types:
+
+✅ **Protections in place:**
+- **MODULE_NOT_FOUND**: Detected via `err.code === 'MODULE_NOT_FOUND'`
+- **Other errors**: Syntax errors, permission errors reported separately
+- **Meaningful messages**: Different error messages for different failure modes
+
+### Type Safety
+
+Proper type guards prevent undefined access errors:
+
+✅ **Protections in place:**
+- `allowed-tools` validated as Array/string/undefined before use
+- No unsafe array spreads on potentially undefined values
+- Comprehensive type checking for frontmatter fields
+
 ### Git Credentials
 
 OpenSkills clones repositories from GitHub. To protect your security:
@@ -46,6 +89,29 @@ We follow responsible disclosure practices:
 - Security issues are patched before public disclosure
 - Reporter receives credit (unless anonymity is requested)
 - Timeline for disclosure is coordinated with reporter
+
+### Security Testing
+
+OpenSkills includes comprehensive security tests:
+
+```bash
+# Run all security tests
+npm test tests/security
+
+# Individual test suites
+npm test tests/security/redos.test.ts      # ReDoS protection
+npm test tests/security/spawn.test.ts      # Resource leaks
+npm test tests/security/require.test.ts    # Module loading
+```
+
+**Test coverage:**
+- ReDoS attack vectors with malicious inputs
+- Spawn failure scenarios and error handling  
+- Resource leak prevention (double-close guards)
+- Dynamic module loading edge cases
+- Type safety and undefined access prevention
+
+All security tests must pass before any release.
 
 ### Security Best Practices
 
