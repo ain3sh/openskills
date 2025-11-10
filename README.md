@@ -314,6 +314,33 @@ Browse the full collection at [github.com/anthropics/skills](https://github.com/
 
 ---
 
+## 📚 Documentation
+
+### For Agent Developers
+
+**[Agent Integration Guide](./docs/AGENT_INTEGRATION.md)** — Comprehensive guide for integrating OpenSkills into your AI agent:
+- How to implement `contextModifier` (tool filtering, model override, reasoning effort)
+- Three-message pattern explained
+- Handling attachments
+- Python/Node.js/Cursor/Aider examples
+- Security best practices
+- Troubleshooting
+
+**Quick Links:**
+- [contextModifier Implementation](./docs/AGENT_INTEGRATION.md#implementing-contextmodifier)
+- [Integration Examples](./docs/AGENT_INTEGRATION.md#integration-examples)
+- [Error Codes Reference](./docs/AGENT_INTEGRATION.md#error-codes)
+
+### For Skill Authors
+
+Use the `skill-creator` skill for comprehensive authoring guidance:
+```bash
+openskills install anthropics/skills --skills skill-creator
+openskills read skill-creator
+```
+
+---
+
 ## Advanced Features
 
 ### Agent-Friendly Output
