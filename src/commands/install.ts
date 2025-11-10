@@ -41,7 +41,7 @@ export async function installSkill(source: string, options: InstallOptions): Pro
  * Internal implementation of installSkill
  */
 async function installSkillInternal(source: string, options: InstallOptions): Promise<void> {
-  const folder = options.universal ? '.agent/skills' : '.claude/skills';
+  const folder = options.universal ? '.agent/skills' : '.openskills/skills';
   const isProject = !options.global; // Default to project unless --global specified
   const targetDir = isProject
     ? join(process.cwd(), folder)

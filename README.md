@@ -29,7 +29,7 @@ OpenSkills implements [Anthropic's Agent Skills specification](https://www.anthr
 ✅ **100% Format Compatibility** — Same SKILL.md format, same `<available_skills>` XML, same progressive disclosure  
 ✅ **Universal Agent Support** — Works with Claude Code, Cursor, Windsurf, Aider, and any agent with CLI access  
 ✅ **GitHub Skill Marketplace** — Install from [anthropics/skills](https://github.com/anthropics/skills) or any GitHub repo  
-✅ **Same Folder Structure** — Uses `.claude/skills/` by default (or `.agent/skills/` for multi-agent setups)  
+✅ **Same Folder Structure** — Uses `.openskills/skills/` by default (also reads `.agent/skills/` and `.claude/skills/` for compatibility)  
 ✅ **Bundled Resources** — Full support for `scripts/`, `references/`, and `assets/` directories  
 ✅ **Zero Dependencies** — Single binary executable or npm package  
 
@@ -98,7 +98,7 @@ When the user asks you to work with PDFs, follow these steps:
 |---------|-------------|------------|
 | **Format** | SKILL.md (YAML + Markdown) | SKILL.md (YAML + Markdown) ✅ |
 | **Invocation** | `Skill("name")` tool | `openskills read name` CLI |
-| **Folder** | `.claude/skills/` | `.claude/skills/` ✅ |
+| **Folder** | `.claude/skills/` | `.openskills/skills/` (reads `.claude/skills/` too) ✅ |
 | **Discovery** | `<available_skills>` XML | `<available_skills>` XML ✅ |
 | **Marketplace** | Built-in | GitHub (anthropics/skills) |
 | **Resources** | `scripts/`, `references/`, `assets/` | `scripts/`, `references/`, `assets/` ✅ |
@@ -155,7 +155,7 @@ This updates your `AGENTS.md` with the `<available_skills>` block. Done! Your ag
 ```bash
 # Install skills (interactive TUI)
 openskills install <github-repo>
-openskills install <github-repo> --global  # Install to ~/.claude/skills
+openskills install <github-repo> --global  # Install to ~/.openskills/skills
 openskills install <github-repo> --universal  # Install to .agent/skills (advanced)
 
 # List installed skills
@@ -200,16 +200,16 @@ openskills tui
 
 ```bash
 openskills install anthropics/skills
-# → Installs to ./.claude/skills/ (gitignored)
+# → Installs to ./.openskills/skills/ (gitignored)
 ```
 
-**Best for:** Single-agent projects, Claude Code compatibility
+**Best for:** Project-specific skills, no conflict with Claude Code
 
 ### Global Install
 
 ```bash
 openskills install anthropics/skills --global
-# → Installs to ~/.claude/skills/ (shared across projects)
+# → Installs to ~/.openskills/skills/ (shared across projects)
 ```
 
 **Best for:** Personal skill library, CLI usage
@@ -226,10 +226,12 @@ openskills install anthropics/skills --universal
 **Why?** Prevents duplicate skill listings when Claude Code shows its native marketplace plugins alongside AGENTS.md skills.
 
 **Search Priority:**
-1. `./.agent/skills/` (project universal)
-2. `~/.agent/skills/` (global universal)
-3. `./.claude/skills/` (project Claude)
-4. `~/.claude/skills/` (global Claude)
+1. `./.openskills/skills/` (project - default)
+2. `./.agent/skills/` (project universal)
+3. `~/.openskills/skills/` (global - default)
+4. `~/.agent/skills/` (global universal)
+5. `./.claude/skills/` (project Claude - compatibility)
+6. `~/.claude/skills/` (global Claude - compatibility)
 
 Skills with the same name only appear once (highest priority wins).
 
@@ -471,7 +473,7 @@ Example output:
 {
   "skill": {
     "name": "pdf",
-    "baseDir": "/project/.claude/skills/pdf",
+    "baseDir": "/project/.openskills/skills/pdf",
     "version": "2.1.0"
   },
   "content": "...",

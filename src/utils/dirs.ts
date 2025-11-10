@@ -7,7 +7,8 @@ import type { SkillSource } from '../types.js';
  * Get skills directory path
  */
 export function getSkillsDir(projectLocal: boolean = false, universal: boolean = false): string {
-  const folder = universal ? '.agent/skills' : '.claude/skills';
+  // Default to .openskills for new installations (avoid conflict with Claude Code)
+  const folder = universal ? '.agent/skills' : '.openskills/skills';
   return projectLocal
     ? join(process.cwd(), folder)
     : join(homedir(), folder);
@@ -32,13 +33,15 @@ export function getAllSkillSources(): SkillSource[] {
   const builtinPath = builtinCandidates.find((p) => existsSync(p)) || join(__dirname, '../builtin-skills');
 
   return [
-    // Priority 1-2: Project (highest)
-    { type: 'project', path: join(process.cwd(), '.agent/skills'), priority: 1 },
-    { type: 'project', path: join(process.cwd(), '.claude/skills'), priority: 2 },
+    // Priority 1-3: Project (highest)
+    { type: 'project', path: join(process.cwd(), '.openskills/skills'), priority: 1 },
+    { type: 'project', path: join(process.cwd(), '.agent/skills'), priority: 2 },
+    { type: 'project', path: join(process.cwd(), '.claude/skills'), priority: 3 },
     
-    // Priority 3-4: User  
-    { type: 'user', path: join(homedir(), '.agent/skills'), priority: 3 },
-    { type: 'user', path: join(homedir(), '.claude/skills'), priority: 4 },
+    // Priority 4-6: User  
+    { type: 'user', path: join(homedir(), '.openskills/skills'), priority: 4 },
+    { type: 'user', path: join(homedir(), '.agent/skills'), priority: 5 },
+    { type: 'user', path: join(homedir(), '.claude/skills'), priority: 6 },
     
     // Priority 5+: Plugins (discovered dynamically)
     ...discoverPluginSkills(),
@@ -54,12 +57,13 @@ export function getAllSkillSources(): SkillSource[] {
  */
 function discoverPluginSkills(): SkillSource[] {
   const pluginDirs = [
+    join(homedir(), '.openskills/plugins'),
     join(homedir(), '.claude/plugins'),
     join(homedir(), '.agent/plugins'),
   ];
   
   const sources: SkillSource[] = [];
-  let priority = 5;
+  let priority = 7;
   
   for (const pluginDir of pluginDirs) {
     if (!existsSync(pluginDir)) continue;
@@ -92,9 +96,11 @@ function discoverPluginSkills(): SkillSource[] {
  */
 export function getSearchDirs(): string[] {
   return [
-    join(process.cwd(), '.agent/skills'),   // 1. Project universal (.agent)
-    join(homedir(), '.agent/skills'),        // 2. Global universal (.agent)
-    join(process.cwd(), '.claude/skills'),  // 3. Project claude
-    join(homedir(), '.claude/skills'),       // 4. Global claude
+    join(process.cwd(), '.openskills/skills'),  // 1. Project openskills (default)
+    join(process.cwd(), '.agent/skills'),        // 2. Project universal (.agent)
+    join(homedir(), '.openskills/skills'),       // 3. Global openskills (default)
+    join(homedir(), '.agent/skills'),            // 4. Global universal (.agent)
+    join(process.cwd(), '.claude/skills'),       // 5. Project claude (compatibility)
+    join(homedir(), '.claude/skills'),           // 6. Global claude (compatibility)
   ];
 }
