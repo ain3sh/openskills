@@ -165,4 +165,13 @@ if (process.argv.length <= 2) {
   process.exit(0);
 }
 
-await program.parseAsync(process.argv);
+try {
+  await program.parseAsync(process.argv);
+} catch (error) {
+  const err = error instanceof Error ? error : new Error(String(error));
+  console.error(`Error: ${err.message}`);
+  if (err.stack) {
+    console.error(err.stack);
+  }
+  process.exit(1);
+}

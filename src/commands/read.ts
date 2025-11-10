@@ -72,8 +72,21 @@ async function readSkillInternal(
     process.exit(validation.errorCode || 1);
   }
 
-  // Validation passed - skill exists and is valid
-  const skill = findSkill(skillName)!; // Non-null assertion safe after validation
+  // Validation passed - skill should exist, but re-check to guard against TOCTOU changes
+  const skill = findSkill(skillName);
+  if (!skill) {
+    if (fmt === 'json') {
+      console.log(JSON.stringify({
+        error: `Unknown skill: ${skillName}`,
+        errorCode: 2,
+        suggestion: 'Run "openskills list" to see available skills'
+      }, null, 2));
+    } else {
+      console.error(`Error: Unknown skill: ${skillName}`);
+      console.error('Suggestion: Run "openskills list" to see available skills');
+    }
+    process.exit(2);
+  }
 
   // Check permissions from config file
   const config = loadConfig();

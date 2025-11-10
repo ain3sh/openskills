@@ -93,10 +93,11 @@ function isWordCharCode(cp: number): boolean {
 function countBoundedOccurrences(text: string, token: string): number {
   if (!token) return 0;
   if (token.length > MAX_TOKEN_LENGTH) return 0; // Prevent long token attacks
+  const m = token.length;
+  if (m === 0) return 0; // Defensive: ensures forward progress
   let count = 0;
   let idx = 0;
   const n = text.length;
-  const m = token.length;
   while (count < MAX_MATCHES) { // Prevent infinite loop attacks
     idx = text.indexOf(token, idx);
     if (idx === -1) break;
@@ -104,7 +105,7 @@ function countBoundedOccurrences(text: string, token: string): number {
     const rightIdx = idx + m;
     const rightOk = rightIdx >= n || !isWordCharCode(text.charCodeAt(rightIdx));
     if (leftOk && rightOk) count++;
-    idx = idx + (m || 1);
+    idx += m;
   }
   return count;
 }
