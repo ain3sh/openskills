@@ -3,7 +3,6 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: {
     cli: 'src/cli.ts',
-    'examples/mcp/skill_server': 'examples/mcp/skill_server.ts',
   },
   format: ['esm'],
   target: 'node18',

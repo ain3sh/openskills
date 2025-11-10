@@ -13,15 +13,12 @@ import { buildSkillToolDescription, buildCompactDescription } from '../utils/ski
  * "subject to a token budget limit of 15,000 characters by default"
  */
 export function toolDescription(options?: { 
-  format?: string; 
   compact?: boolean; 
   all?: boolean; 
   includeHidden?: boolean; 
   includeDisabled?: boolean;
   maxChars?: number;
 }): void {
-  const format = (options?.format || 'text').toLowerCase();
-  
   // Build descriptions using progressive disclosure with token budget
   const oneLine = buildCompactDescription({
     includeHidden: options?.includeHidden,
@@ -35,36 +32,38 @@ export function toolDescription(options?: {
     all: options?.all,
   });
 
-  // For JSON output, also include skill metadata
-  if (format === 'json') {
-    const raw = findAllSkills().sort((a, b) => a.name.localeCompare(b.name));
-    const skills = raw
-      .map((s) => {
-        const loc = findSkill(s.name);
-        const content = loc ? readFileSync(loc.path, 'utf-8') : '';
-        const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
-        return { base: s, fm: frontmatter };
-      })
-      .filter(({ fm }) => options?.all ? true : isPresentable(fm, { 
-        includeHidden: options?.includeHidden, 
-        includeDisabled: options?.includeDisabled, 
-        requireDescription: true 
-      }))
-      .map(({ base, fm }) => ({
-        name: base.name,
-        description: fm?.description || base.description,
-        version: fm?.version,
-        license: fm?.license,
-      }));
-    
-    const json: ToolDescriptionJson = {
-      oneLine,
-      detailed,
-      skills,
-    };
-    console.log(JSON.stringify(json, null, 2));
+  if (options?.compact) {
+    console.log(oneLine);
     return;
   }
 
-  console.log(options?.compact ? oneLine : detailed);
+  const raw = findAllSkills().sort((a, b) => a.name.localeCompare(b.name));
+  const skills = raw
+    .map((s) => {
+      const loc = findSkill(s.name);
+      const content = loc ? readFileSync(loc.path, 'utf-8') : '';
+      const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
+      return { base: s, fm: frontmatter };
+    })
+    .filter(({ fm }) => options?.all ? true : isPresentable(fm, { 
+      includeHidden: options?.includeHidden, 
+      includeDisabled: options?.includeDisabled, 
+      requireDescription: true 
+    }))
+    .map(({ base, fm }) => ({
+      name: base.name,
+      description: fm?.description || base.description,
+      version: fm?.version,
+      license: fm?.license,
+    }));
+
+  const json: ToolDescriptionJson = {
+    oneLine,
+    instructions: detailed.instructions,
+    available_skills_xml: detailed.availableSkillsXml,
+    truncated: detailed.truncated,
+    detailed: detailed.detailed,
+    skills,
+  };
+  console.log(JSON.stringify(json, null, 2));
 }

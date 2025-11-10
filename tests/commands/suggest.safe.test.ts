@@ -21,7 +21,7 @@ describe('suggestSkills safe counting', () => {
   it('returns quickly and outputs JSON for long inputs', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
-      suggestSkills('token', { all: true, format: 'json', limit: 1 });
+      suggestSkills('token', { all: true, limit: 1 });
       expect(log).toHaveBeenCalledTimes(1);
       const out = String(log.mock.calls[0][0] ?? '');
       const arr = JSON.parse(out);

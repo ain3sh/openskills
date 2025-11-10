@@ -4,7 +4,7 @@ import { parseFrontmatter } from '../utils/yaml.js';
 import type { SkillFrontmatter } from '../types.js';
 import { isPresentable } from '../utils/presentability.js';
 
-export function skillPrompt(options?: { format?: string; all?: boolean; includeHidden?: boolean; includeDisabled?: boolean }): void {
+export function skillPrompt(options?: { all?: boolean; includeHidden?: boolean; includeDisabled?: boolean }): void {
   const raw = findAllSkills().sort((a, b) => a.name.localeCompare(b.name));
   const items = raw.map((s) => {
     const loc = findSkill(s.name);
@@ -26,10 +26,8 @@ export function skillPrompt(options?: { format?: string; all?: boolean; includeH
     bulletLines,
   ].join('\n');
 
-  const format = (options?.format || 'text').toLowerCase();
-  if (format === 'json') {
-    console.log(JSON.stringify({ prompt, skills: items.map(({ s, fm }) => ({ name: s.name, description: fm?.description || s.description })) }, null, 2));
-    return;
-  }
-  console.log(prompt);
+  console.log(JSON.stringify({
+    prompt,
+    skills: items.map(({ s, fm }) => ({ name: s.name, description: fm?.description || s.description })),
+  }, null, 2));
 }

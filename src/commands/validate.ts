@@ -1,11 +1,10 @@
 import { readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
-import chalk from 'chalk';
 import { findAllSkills, findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
 import { extractRelativeRefs } from '../utils/refs.js';
 
-interface ValidateOptions { all?: boolean; format?: string; lintFrontmatter?: boolean }
+interface ValidateOptions { all?: boolean; lintFrontmatter?: boolean }
 
 type Issue = { path: string; exists: boolean };
 
@@ -24,26 +23,14 @@ export function validateSkills(nameOrOptions?: string | ValidateOptions, maybeOp
 
   const reports = skills.map((name) => validateOne(name, { lintFrontmatter: opts.lintFrontmatter }));
 
-  if ((opts.format || '').toLowerCase() === 'json') {
-    console.log(JSON.stringify(reports, null, 2));
-    const ok = reports.every((r) => r.missing.length === 0 && r.scriptIssues.length === 0 && (!r.frontmatterLint || (r.frontmatterLint.unknownKeys.length === 0 && r.frontmatterLint.typeErrors.length === 0)));
-    process.exit(ok ? 0 : 2);
-  }
+  const ok = reports.every((r) =>
+    r.missing.length === 0 &&
+    r.scriptIssues.length === 0 &&
+    (!r.frontmatterLint || (r.frontmatterLint.unknownKeys.length === 0 && r.frontmatterLint.typeErrors.length === 0))
+  );
 
-  // Text output
-  let failures = 0;
-  for (const r of reports) {
-    console.log(chalk.bold(`\n${r.name}`));
-    console.log(chalk.dim(`Base: ${r.baseDir}`));
-    if (r.missing.length === 0) {
-      console.log(chalk.green('  ✅ All referenced resources exist'));
-    } else {
-      failures += r.missing.length;
-      console.log(chalk.red(`  ❌ Missing ${r.missing.length} resource(s):`));
-      for (const m of r.missing) console.log(`    - ${m.path}`);
-    }
-  }
-  process.exit(failures === 0 ? 0 : 2);
+  console.log(JSON.stringify({ ok, reports }, null, 2));
+  process.exit(ok ? 0 : 2);
 }
 
 function validateOne(name: string, options?: { lintFrontmatter?: boolean }) {

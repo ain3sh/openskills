@@ -43,7 +43,7 @@ A. Core SKILL.md Parsing
 •  ✅ {baseDir} resolution - Prepended to skill content
 
 B. JSON Outputs (Headless Agent Support)
-•  ✅ `read --format=json` - Returns 3-message structure:
+•  ✅ `read` - Returns 3-message structure:
     ```json
     {
     "skill": { "name", "baseDir", "version" },
@@ -61,15 +61,15 @@ B. JSON Outputs (Headless Agent Support)
     }
     ```
 
-•  ✅ `list --format=json` - Non-interactive structured output
-•  ✅ `describe --format=json` - Skill metadata export
-•  ✅ `suggest --format=json` - Semantic search with scoring
-•  ✅ `validate --format=json` - Categorized issues (missing/scriptIssues/frontmatterLint)
-•  ✅ `tool-description --format=json` - Compact/detailed with license/version
+•  ✅ `list` - Non-interactive structured output
+•  ✅ `describe` - Skill metadata export
+•  ✅ `suggest` - Semantic search with scoring
+•  ✅ `validate` - Categorized issues (missing/scriptIssues/frontmatterLint)
+•  ✅ `tool-description` - Compact/detailed with license/version
 •  ✅ `skill-prompt` - LLM-focused meta-prompt generator
 
 C. Message Injection Architecture
-•  ✅ Two-message pattern implemented in read --format=json:
+•  ✅ Two-message pattern implemented in read output:
     1. Metadata message (isMeta: false) - visible
     2. Skill prompt (isMeta: true) - hidden from UI
     3. Metadata XML (isMeta: true) - structured data
@@ -150,7 +150,7 @@ I. MCP Meta-Tool Server
     •  Official SDK (@modelcontextprotocol/sdk)
     •  Skill tool with dynamic description from tool-description
     •  skill_refresh for cache updates
-    •  Invokes openskills read --format=json
+    •  Invokes openskills read
     •  Environment-gated JSON content (OPENSKILLS_MCP_JSON=1)
 
 J. Factory Slash Command

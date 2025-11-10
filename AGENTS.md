@@ -202,12 +202,12 @@ PR #2: 4 remaining security issues after attempted fixes
 
 #### Step 3.1: API Documentation
 - [ ] Create `docs/API.md` with JSON schemas for:
-  - `read --format=json` output (ReadJsonOutput)
-  - `describe --format=json` output
-  - `suggest --format=json` output
-  - `validate --format=json` output
-  - `tool-description --format=json` output
-  - `list --format=json` output
+  - `read` output (ReadJsonOutput)
+  - `describe` output
+  - `suggest` output
+  - `validate` output
+  - `tool-description` output
+  - `list` output
 - [ ] Add TypeScript type definitions for all schemas
 - [ ] Include example JSON outputs
 - [ ] Document error response formats
@@ -395,12 +395,12 @@ Before claiming parity complete, verify against blog post:
 - [ ] Ask behavior ⚠️
 
 ### JSON Outputs
-- [ ] read --format=json (3-message structure) ✓
-- [ ] describe --format=json ✓
-- [ ] suggest --format=json ✓
-- [ ] validate --format=json ✓
-- [ ] tool-description --format=json ✓
-- [ ] list --format=json ✓
+- [ ] read (3-message structure) ✓
+- [ ] describe ✓
+- [ ] suggest ✓
+- [ ] validate ✓
+- [ ] tool-description ✓
+- [ ] list ✓
 
 ### MCP Server
 - [ ] TypeScript implementation ✓

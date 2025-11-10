@@ -203,36 +203,31 @@ Skill read: hello-world
 - Explicit "ready" confirmation
 - Action prompt at the end
 
-### 4.2: Agent-Prompt Format
+### 4.2: Agent Snapshot Format
 
-New list format for agents to refresh skills mid-conversation:
+Agents refresh the skill list mid-conversation via:
 
 ```bash
-openskills list --format=agent-prompt
+openskills list
 ```
 
 Output:
-```xml
-<available_skills>
-<skill>
-<name>pdf</name>
-<description>Comprehensive PDF manipulation toolkit...</description>
-<location>project</location>
-</skill>
-
-<skill>
-<name>xlsx</name>
-<description>Spreadsheet creation and analysis...</description>
-<location>project</location>
-</skill>
-</available_skills>
+```json
+{
+  "instructions": "<skills_instructions>...",
+  "available_skills_xml": "<available_skills>...</available_skills>",
+  "skills": [
+    { "name": "pdf", "description": "Comprehensive PDF manipulation toolkit...", "location": "project" },
+    { "name": "xlsx", "description": "Spreadsheet creation and analysis...", "location": "project" }
+  ]
+}
 ```
 
 #### Use Case
 Agent can invoke this mid-conversation to see updated skill list:
 ```
 User: "I just installed a new skill, can you see it?"
-Agent: Bash("openskills list --format=agent-prompt")
+Agent: Bash("openskills list")
 Agent: "Yes! I see the new 'pdf-analyzer' skill..."
 ```
 
