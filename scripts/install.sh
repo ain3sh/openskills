@@ -33,8 +33,14 @@ echo ""
 
 echo "🔍 Fetching latest release…"
 LATEST_URL="https://api.github.com/repos/$REPO/releases/latest"
-ASSET_PATTERN="openskills-$PLATFORM-$ARCH_NAME\""
-DOWNLOAD_URL=$(curl -fsSL "$LATEST_URL" | grep -m1 "browser_download_url.*$ASSET_PATTERN" | cut -d '"' -f 4)
+SUFFIX="openskills-$PLATFORM-$ARCH_NAME"
+
+# Prefer jq for robust JSON parsing; fallback to grep -F
+if command -v jq >/dev/null 2>&1; then
+  DOWNLOAD_URL=$(curl -fsSL "$LATEST_URL" | jq -r --arg suffix "$SUFFIX" '.assets[].browser_download_url | select(endswith($suffix))' | head -n1)
+else
+  DOWNLOAD_URL=$(curl -fsSL "$LATEST_URL" | grep -F "browser_download_url" | grep -F "$SUFFIX" | head -n1 | cut -d '"' -f 4)
+fi
 
 if [ -z "${DOWNLOAD_URL:-}" ]; then
   echo "❌ Could not find a binary for $PLATFORM-$ARCH_NAME"
@@ -50,7 +56,10 @@ fi
 mkdir -p "$INSTALL_DIR"
 echo "📥 Downloading: $DOWNLOAD_URL"
 curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_DIR/$BINARY_NAME"
-chmod +x "$INSTALL_DIR/$BINARY_NAME"
+if ! chmod +x "$INSTALL_DIR/$BINARY_NAME"; then
+  echo "❌ Failed to mark binary executable: $INSTALL_DIR/$BINARY_NAME"
+  exit 1
+fi
 
 echo "✅ Installed to: $INSTALL_DIR/$BINARY_NAME"
 echo ""

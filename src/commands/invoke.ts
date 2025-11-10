@@ -29,8 +29,16 @@ export async function invokeSkill(skillName: string, options: InvokeOptions = {}
     process.exit(validation.errorCode || 1);
   }
 
-  // Resolve location
-  const loc = findSkill(skillName)!;
+  // Resolve location (double-checked at runtime for safety)
+  const loc = findSkill(skillName);
+  if (!loc) {
+    console.log(JSON.stringify({
+      error: `Unknown skill: ${skillName}`,
+      errorCode: 2,
+      suggestion: 'Run "openskills list" to see available skills'
+    }, null, 2));
+    process.exit(2);
+  }
 
   // Load config and permissions
   const config = loadConfig();

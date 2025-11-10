@@ -97,8 +97,8 @@ function loadConfigInternal(): OpenskillsConfig {
       const globalConfig = JSON.parse(readFileSync(globalConfigPath, 'utf-8'));
       mergeConfig(config, globalConfig);
     } catch (err) {
-      // Ignore invalid JSON in global config
-      console.warn(`Warning: Failed to parse ${globalConfigPath}`);
+      // Invalid JSON: Warn clearly and continue with defaults (non-fatal)
+      console.warn(`Warning: Failed to parse ${globalConfigPath} (invalid JSON) - using defaults`);
     }
   }
 
@@ -109,8 +109,8 @@ function loadConfigInternal(): OpenskillsConfig {
       const projectConfig = JSON.parse(readFileSync(projectConfigPath, 'utf-8'));
       mergeConfig(config, projectConfig);
     } catch (err) {
-      // Ignore invalid JSON in project config
-      console.warn(`Warning: Failed to parse ${projectConfigPath}`);
+      // Invalid JSON: Warn clearly and continue with merged config (non-fatal)
+      console.warn(`Warning: Failed to parse ${projectConfigPath} (invalid JSON) - using merged defaults`);
     }
   }
 
