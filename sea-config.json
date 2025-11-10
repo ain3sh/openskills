@@ -1,0 +1,6 @@
+{
+  "main": "dist/sea/cli.cjs",
+  "output": "dist/sea/openskills.blob",
+  "disableExperimentalSEAWarning": true,
+  "useCodeCache": true
+}

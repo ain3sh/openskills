@@ -15,12 +15,15 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "build:sea:bundle": "node scripts/build-sea.mjs",
+    "build:sea:blob": "node --experimental-sea-config sea-config.json",
+    "build:sea:inject": "node scripts/sea-inject.mjs",
+    "build:sea:current": "npm run build:sea:bundle && npm run build:sea:inject",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm run build && npm test",
-    "mcp:skill": "node dist/examples/mcp/skill_server.js"
+    "prepublishOnly": "npm run typecheck && npm run build && npm test"
   },
   "keywords": [
     "anthropic",
@@ -52,11 +55,12 @@
     "chalk": "^5.6.2",
     "commander": "^12.1.0",
     "ora": "^9.0.0",
-    "yaml": "^2.6.0",
-    "@modelcontextprotocol/sdk": "^0.6.0"
+    "yaml": "^2.6.0"
   },
   "devDependencies": {
     "@types/node": "^24.9.1",
+    "esbuild": "^0.24.0",
+    "postject": "^1.0.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.3"

@@ -1,0 +1,70 @@
+name: release-sea
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build:sea:current
+      - name: Rename artifact
+        run: |
+          mv dist/sea/openskills dist/sea/openskills-linux-$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/')
+          sha256sum dist/sea/openskills-* > dist/sea/checksums-linux.txt
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/sea/openskills-linux-*
+            dist/sea/checksums-linux.txt
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build:sea:current
+      - name: Rename artifact
+        run: |
+          ARCH=$(uname -m)
+          [[ "$ARCH" == "x86_64" ]] && ARCH_OUT="x64" || ARCH_OUT="arm64"
+          mv dist/sea/openskills dist/sea/openskills-darwin-$ARCH_OUT
+          shasum -a 256 dist/sea/openskills-* > dist/sea/checksums-darwin.txt
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/sea/openskills-darwin-*
+            dist/sea/checksums-darwin.txt
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build:sea:current
+      - name: Rename artifact
+        shell: bash
+        run: |
+          mv dist/sea/openskills.exe dist/sea/openskills-win32-x64.exe
+          certutil -hashfile dist/sea/openskills-win32-x64.exe SHA256 > dist/sea/checksums-win32.txt
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/sea/openskills-win32-x64.exe
+            dist/sea/checksums-win32.txt
