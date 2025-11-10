@@ -12,10 +12,19 @@ const MAX_DESCRIPTION_CHARS = 15000;
 
 interface SkillEntry {
   name: string;
+  displayName: string; // May be plugin-qualified (plugin:skill)
   description: string;
+  whenToUse?: string;
   isMode: boolean;
   version?: string;
   license?: string;
+}
+
+export interface SkillToolDescriptionPayload {
+  instructions: string;
+  availableSkillsXml: string;
+  detailed: string;
+  truncated: boolean;
 }
 
 /**
@@ -40,7 +49,7 @@ export function buildSkillToolDescription(
     includeDisabled?: boolean;
     all?: boolean;
   }
-): string {
+): SkillToolDescriptionPayload {
   const maxChars = options?.maxChars ?? MAX_DESCRIPTION_CHARS;
   
   // Load and filter skills
@@ -63,9 +72,16 @@ export function buildSkillToolDescription(
       continue;
     }
     
+    // Compute display name: prefix with plugin name when sourced from plugin
+    const pluginName = skill.source === 'plugin' ? (skill.sourceLabel?.replace(/^plugin:/, '') || '') : '';
+    const displayName = pluginName ? `${pluginName}:${skill.name}` : skill.name;
+    const whenToUse = (frontmatter as any)?.when_to_use ?? (frontmatter as any)?.['when-to-use'];
+
     entries.push({
       name: skill.name,
+      displayName,
       description: frontmatter?.description || skill.description,
+      whenToUse: typeof whenToUse === 'string' ? whenToUse : undefined,
       isMode: Boolean(frontmatter?.mode),
       version: frontmatter?.version,
       license: frontmatter?.license,
@@ -77,68 +93,71 @@ export function buildSkillToolDescription(
   const regularCommands = entries.filter(e => !e.isMode);
   
   // Build description with XML structure and progressive truncation
-  const instructions = buildInstructions();
+  let instructions = buildInstructions();
   const closingTag = '</available_skills>';
   const truncationNote = '<!-- truncated: more skills available -->\n';
-  
-  // Start with instructions
-  let description = instructions;
-  description += '<available_skills>\n';
-  
-  // Calculate remaining budget for skills
-  const baseLength = description.length + closingTag.length;
-  const remainingBudget = maxChars - baseLength;
-  
-  // If instructions alone exceed budget, truncate them
-  if (baseLength > maxChars) {
-    // Minimal version: just the tags
-    description = '<skills_instructions>Skills available. Invoke with command name.</skills_instructions>\n\n';
-    description += '<available_skills>\n';
+
+  // Calculate baseline length and fallback when instructions exceed budget
+  const initialLength = instructions.length + '<available_skills>\n'.length + closingTag.length;
+  if (initialLength > maxChars) {
+    instructions = '<skills_instructions>Skills available. Invoke with command name.</skills_instructions>\n\n';
   }
-  
-  let currentLength = description.length;
-  
-  // Add mode commands first (higher priority)
+
+  let skillsXml = '<available_skills>\n';
+  let currentLength = instructions.length + skillsXml.length;
+  let truncated = false;
+
+  const hasSpace = (additional: number) => currentLength + additional + closingTag.length <= maxChars;
+
+  const append = (text: string) => {
+    skillsXml += text;
+    currentLength += text.length;
+  };
+
+  // Mode commands first
   if (modeCommands.length > 0) {
     const modeHeader = '<mode_commands>\n';
     const modeFooter = '</mode_commands>\n\n';
-    
-    if (currentLength + modeHeader.length + modeFooter.length + closingTag.length < maxChars) {
-      description += modeHeader;
-      currentLength += modeHeader.length;
-      
+    const headerSpace = modeHeader.length + modeFooter.length;
+    if (hasSpace(headerSpace)) {
+      append(modeHeader);
       for (const entry of modeCommands) {
         const formatted = formatSkillEntry(entry);
-        const neededSpace = formatted.length + modeFooter.length + closingTag.length + truncationNote.length;
-        
-        if (currentLength + neededSpace > maxChars) {
-          description += truncationNote;
+        const neededSpace = formatted.length + modeFooter.length + truncationNote.length;
+        if (!hasSpace(neededSpace)) {
+          append(truncationNote);
+          truncated = true;
           break;
         }
-        description += formatted;
-        currentLength += formatted.length;
+        append(formatted);
       }
-      
-      description += modeFooter;
-      currentLength += modeFooter.length;
+      append(modeFooter);
     }
   }
-  
-  // Add regular commands (with truncation)
+
   for (const entry of regularCommands) {
     const formatted = formatSkillEntry(entry);
-    const neededSpace = formatted.length + closingTag.length + truncationNote.length;
-    
-    if (currentLength + neededSpace > maxChars) {
-      description += truncationNote;
+    const neededSpace = formatted.length + truncationNote.length;
+    if (!hasSpace(neededSpace)) {
+      append(truncationNote);
+      truncated = true;
       break;
     }
-    description += formatted;
-    currentLength += formatted.length;
+    append(formatted);
   }
-  
-  description += closingTag;
-  return description;
+
+  // Ensure closing tag fits (should be guaranteed by hasSpace checks)
+  if (!hasSpace(0)) {
+    truncated = true;
+  }
+  skillsXml += closingTag;
+
+  return {
+    instructions,
+    availableSkillsXml: skillsXml,
+    detailed: instructions + skillsXml,
+    truncated,
+  };
 }
 
 /**
@@ -172,7 +191,9 @@ Important:
  * Format: "{name}": {description}
  */
 function formatSkillEntry(entry: SkillEntry): string {
-  let line = `"${entry.name}": ${entry.description}`;
+  // Append when_to_use guidance when present per blog behavior
+  const desc = entry.whenToUse ? `${entry.description} - ${entry.whenToUse}` : entry.description;
+  let line = `"${entry.displayName}": ${desc}`;
   
   // Add metadata if present
   const metadata: string[] = [];
@@ -206,7 +227,9 @@ export function buildCompactDescription(options?: { includeHidden?: boolean; inc
       includeDisabled: options?.includeDisabled,
       requireDescription: true
     })) {
-      names.push(skill.name);
+      const pluginName = skill.source === 'plugin' ? (skill.sourceLabel?.replace(/^plugin:/, '') || '') : '';
+      const display = pluginName ? `${pluginName}:${skill.name}` : skill.name;
+      names.push(display);
     }
   }
   

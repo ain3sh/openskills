@@ -29,7 +29,6 @@ program
 program
   .command('list')
   .description('List all installed skills')
-  .option('-f, --format <format>', 'Output format (text|json|agent-prompt)', 'text')
   .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
   .option('--include-hidden', 'Include hidden skills', false)
   .option('--include-disabled', 'Include disabled skills', false)
@@ -52,11 +51,20 @@ program
 program
   .command('read <skill-name>')
   .description('Read skill to stdout (for AI agents)')
-  .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('-y, --yes', 'Skip permission prompts (approve all skills)')
   .action(async (name, opts) => {
     const { readSkill } = await import('./commands/read.js');
     await readSkill(name, opts);
+  });
+
+program
+  .command('invoke <skill-name>')
+  .description('Invoke a skill and emit strict Skill Tool payload (JSON)')
+  .option('-a, --args <args>', 'Optional arguments string for metadata display')
+  .option('-y, --yes', 'Skip permission prompts (approve all skills)')
+  .action(async (name, opts) => {
+    const { invokeSkill } = await import('./commands/invoke.js');
+    await invokeSkill(name, { args: opts.args, yes: opts.yes });
   });
 
 program
@@ -97,7 +105,6 @@ program
   .command('validate [skill-name]')
   .description('Validate referenced resources for a skill or all skills')
   .option('-a, --all', 'Validate all installed skills')
-  .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('--lint-frontmatter', 'Also lint frontmatter fields for unknown keys and type issues', false)
   .action(async (name, opts) => {
     const { validateSkills } = await import('./commands/validate.js');
@@ -108,7 +115,6 @@ program
   .command('suggest <query>')
   .description('Suggest relevant skills for a user query')
   .option('-l, --limit <n>', 'Max results', (v) => parseInt(v, 10), 5)
-  .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('--all', 'Do not filter by presentability (include hidden/disabled/undocumented)')
   .action(async (q, opts) => {
     const { suggestSkills } = await import('./commands/suggest.js');
@@ -117,8 +123,9 @@ program
 
 program
   .command('tool-description')
+  .alias('discover')
+  .alias('skill-discover')
   .description('Emit a dynamic Skill tool description listing available skills')
-  .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('-c, --compact', 'Emit one-line compact description', false)
   .option('--max-chars <n>', 'Maximum characters (default: 15000)', (v) => parseInt(v, 10))
   .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
@@ -132,7 +139,6 @@ program
 program
   .command('skill-prompt')
   .description('Emit a meta-tool prompt snippet for presenting and using Skills')
-  .option('-f, --format <format>', 'Output format (text|json)', 'text')
   .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
   .option('--include-hidden', 'Include hidden skills', false)
   .option('--include-disabled', 'Include disabled skills', false)
@@ -153,4 +159,10 @@ program
     telemetryCommand(opts);
   });
 
-program.parse();
+if (process.argv.length <= 2) {
+  const { runInteractiveShell } = await import('./commands/tui.js');
+  await runInteractiveShell();
+  process.exit(0);
+}
+
+await program.parseAsync(process.argv);

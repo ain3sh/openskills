@@ -26,6 +26,16 @@ export function getSkillsDir(projectLocal: boolean = false, universal: boolean =
  * and built-in skills to build the available skills list"
  */
 export function getAllSkillSources(): SkillSource[] {
+  const builtinCandidates = [
+    // Repo root during development
+    join(process.cwd(), 'builtin-skills'),
+    // When running from src (ts-node)
+    join(__dirname, '../../builtin-skills'),
+    // When running from dist bundle
+    join(__dirname, '../builtin-skills'),
+  ];
+  const builtinPath = builtinCandidates.find((p) => existsSync(p)) || join(__dirname, '../builtin-skills');
+
   return [
     // Priority 1-2: Project (highest)
     { type: 'project', path: join(process.cwd(), '.agent/skills'), priority: 1 },
@@ -39,8 +49,7 @@ export function getAllSkillSources(): SkillSource[] {
     ...discoverPluginSkills(),
     
     // Priority 99: Built-in (lowest)
-    // Path: from dist/ (bundled) -> ../builtin-skills
-    { type: 'builtin', path: join(__dirname, '../builtin-skills'), priority: 99 },
+    { type: 'builtin', path: builtinPath, priority: 99 },
   ];
 }
 

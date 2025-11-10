@@ -17,7 +17,7 @@ export async function readSkill(
   options?: { format?: string; yes?: boolean }
 ): Promise<void> {
   const startTime = Date.now();
-  const fmt = options?.format ?? 'text';
+  const fmt = options?.format ?? 'json';
   
   try {
     await readSkillInternal(skillName, options);
@@ -48,7 +48,7 @@ async function readSkillInternal(
   skillName: string,
   options?: { format?: string; yes?: boolean }
 ): Promise<void> {
-  const fmt = options?.format ?? 'text';
+  const fmt = options?.format ?? 'json';
 
   // Validate skill command before reading
   const validation = validateSkillCommand(skillName);
@@ -128,9 +128,7 @@ async function readSkillInternal(
 
   // Security: Proper type guards prevent undefined access in array operations
   const contextModifier: ContextModifier = {
-    allowedTools: Array.isArray(allowed)
-      ? (allowed as string[])
-      : (typeof allowed === 'string' ? [allowed] : undefined),
+    allowedTools: normalizeAllowedTools(allowed),
     model: typeof frontmatter?.model === 'string' ? frontmatter.model : undefined,
     disableModelInvocation: disableInv != null ? Boolean(disableInv) : undefined,
     reasoningEffort: reasoning ?? undefined,
@@ -224,4 +222,11 @@ function normalizeReasoningEffort(fm?: SkillFrontmatter): ContextModifier['reaso
   const v = String(raw).toLowerCase();
   if (['off','none','low','medium','high'].includes(v)) return v as any;
   return null;
+}
+
+function normalizeAllowedTools(value: unknown): string[] | undefined {
+  if (value == null) return undefined;
+  if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
+  const s = String(value);
+  return s.split(',').map((p) => p.trim()).filter(Boolean);
 }

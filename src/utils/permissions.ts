@@ -41,7 +41,10 @@ export function normalizePermissions(input: { allowed?: unknown; deny?: unknown 
 function toArray(v: unknown): string[] {
   if (v == null) return [];
   if (Array.isArray(v)) return v.map(String);
-  return [String(v)];
+  // Support comma-separated strings ("Read,Write,Execute(git:*)")
+  const s = String(v);
+  if (s.includes(',')) return s.split(',').map((p) => p.trim()).filter(Boolean);
+  return [s.trim()];
 }
 
 function parseOne(item: string, toolSet?: Set<string>, shellPatterns?: Set<string>) {

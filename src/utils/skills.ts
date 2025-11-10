@@ -112,11 +112,27 @@ function scanAllSkills(): Skill[] {
  * Performance: Uses cached skill list if available, falls back to direct lookup
  */
 export function findSkill(skillName: string): SkillLocation | null {
+  // Support fully qualified plugin skill names: "pluginName:skill"
+  let pluginPrefix: string | undefined;
+  let shortName = skillName;
+  if (skillName.includes(':')) {
+    const [p, s] = skillName.split(':', 2);
+    if (p && s) {
+      pluginPrefix = p;
+      shortName = s;
+    }
+  }
   // Try using cached skills first (fast path)
   try {
     const cached = skillCache.get('all-skills');
     if (cached) {
-      const skill = cached.find(s => s.name === skillName);
+      const skill = cached.find(s => {
+        if (pluginPrefix && s.source === 'plugin') {
+          const pluginName = s.sourceLabel?.replace(/^plugin:/, '') || '';
+          return s.name === shortName && pluginName === pluginPrefix;
+        }
+        return s.name === skillName;
+      });
       if (skill) {
         return {
           path: join(skill.path, 'SKILL.md'),
@@ -135,11 +151,21 @@ export function findSkill(skillName: string): SkillLocation | null {
   for (const source of sources) {
     if (!existsSync(source.path)) continue;
 
-    const skillPath = join(source.path, skillName, 'SKILL.md');
+    const nameToFind = pluginPrefix && source.type === 'plugin'
+      ? shortName
+      : (pluginPrefix ? '__skip_non_plugin__' : skillName);
+
+    if (nameToFind === '__skip_non_plugin__') continue;
+
+    const skillPath = join(source.path, nameToFind, 'SKILL.md');
     if (existsSync(skillPath)) {
+      if (pluginPrefix && source.type === 'plugin') {
+        const pluginName = basename(dirname(source.path));
+        if (pluginName !== pluginPrefix) continue;
+      }
       return {
         path: skillPath,
-        baseDir: join(source.path, skillName),
+        baseDir: join(source.path, nameToFind),
         source: source.path,
       };
     }

@@ -102,7 +102,7 @@ export interface ContextModifier {
 
 export interface NewMessage {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | { type: 'command_permissions'; allowedTools?: string[]; model?: string | null };
   isMeta?: boolean;
 }
 
@@ -124,6 +124,9 @@ export interface ReadJsonOutput {
 
 export interface ToolDescriptionJson {
   oneLine: string;
+  instructions: string;
+  available_skills_xml: string;
+  truncated: boolean;
   detailed: string;
   skills: Array<{ name: string; description: string; version?: string; license?: string }>;
 }
