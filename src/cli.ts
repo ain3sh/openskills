@@ -159,19 +159,22 @@ program
     telemetryCommand(opts);
   });
 
-if (process.argv.length <= 2) {
-  const { runInteractiveShell } = await import('./commands/tui.js');
-  await runInteractiveShell();
-  process.exit(0);
-}
-
-try {
-  await program.parseAsync(process.argv);
-} catch (error) {
-  const err = error instanceof Error ? error : new Error(String(error));
-  console.error(`Error: ${err.message}`);
-  if (err.stack) {
-    console.error(err.stack);
+// Wrap in async IIFE for CJS compatibility (SEA binary requires CJS format)
+(async () => {
+  if (process.argv.length <= 2) {
+    const { runInteractiveShell } = await import('./commands/tui.js');
+    await runInteractiveShell();
+    process.exit(0);
   }
-  process.exit(1);
-}
+
+  try {
+    await program.parseAsync(process.argv);
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error(`Error: ${err.message}`);
+    if (err.stack) {
+      console.error(err.stack);
+    }
+    process.exit(1);
+  }
+})();
