@@ -100,19 +100,24 @@ export interface ContextModifier {
   }
 }
 
+export type AttachmentType = 'diagnostic' | 'reference' | 'context';
+
 export interface NewMessage {
   role: 'user' | 'assistant' | 'system';
   content: string | { type: 'command_permissions'; allowedTools?: string[]; model?: string | null };
   isMeta?: boolean;
+  attachmentType?: AttachmentType;
+  metadata?: Record<string, unknown>;
 }
 
 /**
- * Attachment message for diagnostics, file references, or additional context
+ * Attachment message mirrored in both JSON output and injected messages
  */
-export interface AttachmentMessage {
-  type: 'diagnostics' | 'file_reference' | 'context';
+export interface AttachmentMessage extends Omit<NewMessage, 'content' | 'role' | 'attachmentType' | 'isMeta'> {
+  role: 'user';
+  isMeta: true;
   content: string;
-  metadata?: Record<string, unknown>;
+  attachmentType: AttachmentType;
 }
 
 export interface ReadJsonOutput {

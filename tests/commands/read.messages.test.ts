@@ -20,7 +20,7 @@ describe('read --format=json message visibility', () => {
     mkdirSync(baseDir, { recursive: true });
     writeFileSync(
       skillPath,
-      `---\nname: test-skill\ndescription: A test skill\nallowed-tools: [Read]\nmodel: fake-model\n---\n\n# Body\nHello world.\n`
+      `---\nname: test-skill\ndescription: A test skill\nversion: 1.0.0\nlicense: MIT\n---\n\n# Body\nHello world.\n`
     );
   });
 
@@ -48,15 +48,15 @@ describe('read --format=json message visibility', () => {
       const hidden = msgs.filter((m: any) => m.isMeta);
       expect(visible.length).toBe(1);
       expect(String(visible[0]?.content || '')).toContain('<command-message>');
-      // Two hidden: body and metadata
-      expect(hidden.length).toBe(2);
-      const hiddenText = hidden.map((m: any) => String(m.content || '')).join('\n');
+
+      // Hidden should contain exactly the skill prompt (no permissions/attachments)
+      expect(hidden.length).toBe(1);
+      const hiddenText = String(hidden[0]?.content || '');
       expect(hiddenText).toContain('<!-- baseDir: ');
-      expect(hiddenText).toContain('<metadata ');
+      expect(hiddenText).toContain('Hello world.');
       
-      // Attachments may be present (diagnostics for missing version/license)
-      // This is okay - we're testing message visibility, not attachment presence
-      expect(payload.attachments === undefined || Array.isArray(payload.attachments)).toBe(true);
+      // Attachments should be omitted for fully specified skills
+      expect(payload.attachments).toBeUndefined();
     } finally {
       logSpy.mockRestore();
     }

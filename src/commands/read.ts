@@ -132,7 +132,8 @@ async function readSkillInternal(
   }
 
   const content = readFileSync(skill.path, 'utf-8');
-  const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
+  const { frontmatter, body } = parseFrontmatter<SkillFrontmatter>(content);
+  const skillBody = body ?? '';
 
   // Build context modifier (used by both JSON and text outputs)
   const allowed = frontmatter?.['allowed-tools'] ?? frontmatter?.allowed_tools;
@@ -155,7 +156,7 @@ async function readSkillInternal(
   if (fmt === 'json') {
 
     // Build attachments using elegant pure functions
-    const refs = extractRelativeRefs(content);
+    const refs = extractRelativeRefs(skillBody);
     const diagnostics = collectDiagnostics(frontmatter);
     
     const attachments = buildAttachments({
@@ -167,22 +168,15 @@ async function readSkillInternal(
     });
 
     // START with TWO messages per blog line 692: "two separate user messages"
-    const newMessages: NewMessage[] = [
-      { role: 'user', content: `<command-message>The "${skillName}" skill is loading</command-message>`, isMeta: false },
-      { role: 'user', content: `<!-- baseDir: ${skill.baseDir} -->\n${content}`, isMeta: true },
-    ];
+    const visibleMeta = [
+      `<command-message>The "${frontmatter?.name || skillName}" skill is loading</command-message>`,
+      `<command-name>${frontmatter?.name || skillName}</command-name>`,
+    ].join('\n');
 
-    // CONDITIONALLY add attachment messages (blog lines 774)
-    // Only if attachments exist (diagnostics, file references, additional context)
-    if (attachments && attachments.length > 0) {
-      for (const attachment of attachments) {
-        newMessages.push({
-          role: 'user',
-          content: typeof attachment === 'string' ? attachment : JSON.stringify(attachment),
-          isMeta: true
-        });
-      }
-    }
+    const newMessages: NewMessage[] = [
+      { role: 'user', content: visibleMeta, isMeta: false },
+      { role: 'user', content: `<!-- baseDir: ${skill.baseDir} -->\n${skillBody}`, isMeta: true },
+    ];
 
     // CONDITIONALLY add permissions message - same logic as invoke.ts for consistency
     if ((contextModifier.allowedTools && contextModifier.allowedTools.length > 0) || contextModifier.model) {
@@ -195,6 +189,11 @@ async function readSkillInternal(
         },
         isMeta: true
       });
+    }
+
+    // CONDITIONALLY add attachment messages (blog lines 768-785)
+    if (attachments.length > 0) {
+      newMessages.push(...attachments);
     }
 
     const json: ReadJsonOutput = {

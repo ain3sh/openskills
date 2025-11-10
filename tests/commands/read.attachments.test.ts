@@ -58,7 +58,7 @@ describe('read --format=json attachments', () => {
       expect(output.attachments).toBeDefined();
       expect(output.attachments.length).toBeGreaterThan(0);
       
-      const diagnostic = output.attachments.find((a: any) => a.type === 'diagnostics');
+      const diagnostic = output.attachments.find((a: any) => a.attachmentType === 'diagnostic');
       expect(diagnostic).toBeDefined();
       // With default verbosity='warnings', only warning-level diagnostics are included
       expect(diagnostic.content).toContain('version'); // warning level
@@ -84,7 +84,7 @@ describe('read --format=json attachments', () => {
       
       expect(output.attachments).toBeDefined();
       
-      const fileRef = output.attachments.find((a: any) => a.type === 'file_reference');
+      const fileRef = output.attachments.find((a: any) => a.attachmentType === 'reference');
       expect(fileRef).toBeDefined();
       expect(fileRef.content).toContain('references/config.json');
       expect(fileRef.content).toContain('scripts/helper.py');
@@ -131,9 +131,9 @@ describe('read --format=json attachments', () => {
       expect(output.attachments).toBeDefined();
       expect(output.attachments.length).toBe(2);  // diagnostics + file_reference
       
-      const types = output.attachments.map((a: any) => a.type);
-      expect(types).toContain('diagnostics');
-      expect(types).toContain('file_reference');
+      const types = output.attachments.map((a: any) => a.attachmentType);
+      expect(types).toContain('diagnostic');
+      expect(types).toContain('reference');
     } finally {
       logSpy.mockRestore();
     }

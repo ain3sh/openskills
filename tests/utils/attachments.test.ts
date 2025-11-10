@@ -48,7 +48,7 @@ describe('Attachment Building', () => {
       expect(attachments).toHaveLength(2);
       
       // Find diagnostics attachment
-      const diagAttachment = attachments.find(a => a.type === 'diagnostics');
+      const diagAttachment = attachments.find(a => a.attachmentType === 'diagnostic');
       expect(diagAttachment).toBeDefined();
       expect(diagAttachment!.content).toContain('[ERROR]');
       expect(diagAttachment!.content).not.toContain('[WARNING]');
@@ -66,7 +66,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      const diagAttachment = attachments.find(a => a.type === 'diagnostics');
+      const diagAttachment = attachments.find(a => a.attachmentType === 'diagnostic');
       expect(diagAttachment).toBeDefined();
       expect(diagAttachment!.content).toContain('[ERROR]');
       expect(diagAttachment!.content).toContain('[WARNING]');
@@ -84,7 +84,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      const diagAttachment = attachments.find(a => a.type === 'diagnostics');
+      const diagAttachment = attachments.find(a => a.attachmentType === 'diagnostic');
       expect(diagAttachment).toBeDefined();
       expect(diagAttachment!.content).toContain('[ERROR]');
       expect(diagAttachment!.content).toContain('[WARNING]');
@@ -107,7 +107,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      expect(attachments.every(a => a.type !== 'file_reference')).toBe(true);
+      expect(attachments.every(a => a.attachmentType !== 'reference')).toBe(true);
     });
 
     it('should respect includeFileReferences=true even with verbosity=none', () => {
@@ -124,7 +124,7 @@ describe('Attachment Building', () => {
       });
 
       expect(attachments).toHaveLength(1);
-      expect(attachments[0].type).toBe('file_reference');
+      expect(attachments[0].attachmentType).toBe('reference');
     });
 
     it('should respect includeDiagnostics=false override', () => {
@@ -140,7 +140,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      expect(attachments.every(a => a.type !== 'diagnostics')).toBe(true);
+      expect(attachments.every(a => a.attachmentType !== 'diagnostic')).toBe(true);
     });
 
     it('should respect includeDiagnostics=true even with verbosity=none', () => {
@@ -173,8 +173,10 @@ describe('Attachment Building', () => {
         options
       });
 
-      const fileAttachment = attachments.find(a => a.type === 'file_reference');
+      const fileAttachment = attachments.find(a => a.attachmentType === 'reference');
       expect(fileAttachment).toBeDefined();
+      expect(fileAttachment!.role).toBe('user');
+      expect(fileAttachment!.isMeta).toBe(true);
       expect(fileAttachment!.content).toContain('/path/to/skill');
       expect(fileAttachment!.content).toContain('- scripts/extract.py');
       expect(fileAttachment!.content).toContain('- references/api.md');
@@ -193,7 +195,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      expect(attachments.every(a => a.type !== 'file_reference')).toBe(true);
+      expect(attachments.every(a => a.attachmentType !== 'reference')).toBe(true);
     });
   });
 
@@ -208,8 +210,10 @@ describe('Attachment Building', () => {
         options
       });
 
-      const diagAttachment = attachments.find(a => a.type === 'diagnostics');
+      const diagAttachment = attachments.find(a => a.attachmentType === 'diagnostic');
       expect(diagAttachment!.metadata.level).toBe('error');
+      expect(diagAttachment!.role).toBe('user');
+      expect(diagAttachment!.isMeta).toBe(true);
     });
 
     it('should set overall level to warning when no errors but warnings present', () => {
@@ -224,7 +228,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      const diagAttachment = attachments.find(a => a.type === 'diagnostics');
+      const diagAttachment = attachments.find(a => a.attachmentType === 'diagnostic');
       expect(diagAttachment!.metadata.level).toBe('warning');
     });
 
@@ -240,7 +244,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      const diagAttachment = attachments.find(a => a.type === 'diagnostics');
+      const diagAttachment = attachments.find(a => a.attachmentType === 'diagnostic');
       expect(diagAttachment!.metadata.level).toBe('info');
     });
 
@@ -254,7 +258,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      expect(attachments.every(a => a.type !== 'diagnostics')).toBe(true);
+      expect(attachments.every(a => a.attachmentType !== 'diagnostic')).toBe(true);
     });
   });
 
@@ -339,7 +343,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      const fileAttachment = attachments.find(a => a.type === 'file_reference');
+      const fileAttachment = attachments.find(a => a.attachmentType === 'reference');
       expect(fileAttachment!.metadata.count).toBe(100);
       expect(fileAttachment!.metadata.files).toHaveLength(100);
     });
@@ -360,7 +364,7 @@ describe('Attachment Building', () => {
         options
       });
 
-      const fileAttachment = attachments.find(a => a.type === 'file_reference');
+      const fileAttachment = attachments.find(a => a.attachmentType === 'reference');
       expect(fileAttachment!.content).toContain('file with spaces.py');
       expect(fileAttachment!.content).toContain('unicode-文件.md');
     });

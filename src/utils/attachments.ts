@@ -110,7 +110,9 @@ function filterDiagnosticsByVerbosity(
  */
 function buildFileReferenceAttachment(baseDir: string, files: string[]): AttachmentMessage {
   return {
-    type: 'file_reference',
+    role: 'user',
+    isMeta: true,
+    attachmentType: 'reference',
     content: `Bundled resources available in ${baseDir}:\n${files.map(f => `- ${f}`).join('\n')}`,
     metadata: {
       files,
@@ -141,7 +143,9 @@ function buildDiagnosticsAttachment(diagnostics: Diagnostic[]): AttachmentMessag
   );
 
   return {
-    type: 'diagnostics',
+    role: 'user',
+    isMeta: true,
+    attachmentType: 'diagnostic',
     content: formattedLines.join('\n'),
     metadata: {
       level: overallLevel,

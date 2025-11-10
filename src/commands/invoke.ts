@@ -15,7 +15,8 @@ export interface InvokeOptions { args?: string; yes?: boolean; attachments?: Att
  * Invoke a skill and emit strict Skill Tool contract payload (JSON)
  * - Message 1: visible metadata (<command-message>, <command-name>, optional <command-args>)
  * - Message 2: hidden SKILL.md prompt body only (no frontmatter)
- * - Message 3: hidden structured command_permissions object
+ * - Message 3: (conditional) hidden command_permissions object when allowed-tools/model override
+ * - Message 4+: (conditional) hidden attachment messages when resources/diagnostics exist
  */
 export async function invokeSkill(skillName: string, options: InvokeOptions = {}): Promise<void> {
   // Validate command
@@ -122,18 +123,6 @@ export async function invokeSkill(skillName: string, options: InvokeOptions = {}
     { role: 'user', content: `<!-- baseDir: ${loc.baseDir} -->\n${body}`, isMeta: true }, // Message 2: Hidden skill prompt
   ];
 
-  // CONDITIONALLY add attachment messages (blog lines 774)
-  // Only if attachments exist (diagnostics, file references, additional context)
-  if (attachments && attachments.length > 0) {
-    for (const attachment of attachments) {
-      newMessages.push({
-        role: 'user',
-        content: typeof attachment === 'string' ? attachment : JSON.stringify(attachment),
-        isMeta: true
-      });
-    }
-  }
-
   // CONDITIONALLY add permissions message (blog lines 773-783)
   // Only if skill declares allowed-tools OR model override
   if ((allowedTools && allowedTools.length > 0) || model) {
@@ -146,6 +135,11 @@ export async function invokeSkill(skillName: string, options: InvokeOptions = {}
       },
       isMeta: true
     });
+  }
+
+  // CONDITIONALLY add attachment messages (blog lines 768-785)
+  if (attachments.length > 0) {
+    newMessages.push(...attachments);
   }
 
   const json: ReadJsonOutput = {
