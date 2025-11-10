@@ -106,7 +106,8 @@ function countBoundedOccurrences(text: string, token: string): number {
     const rightIdx = idx + m;
     const rightOk = rightIdx >= n || !isWordCharCode(text.charCodeAt(rightIdx));
     if (leftOk && rightOk) count++;
-    idx += m;
+    // Use Math.max for clarity (ensures forward progress even if m becomes 0 somehow)
+    idx = idx + Math.max(m, 1);
   }
   return count;
 }

@@ -43,7 +43,11 @@ function toArray(v: unknown): string[] {
   if (Array.isArray(v)) return v.map(String);
   // Support comma-separated strings ("Read,Write,Execute(git:*)")
   const s = String(v);
-  if (s.includes(',')) return s.split(',').map((p) => p.trim()).filter(Boolean);
+  if (s.includes(',')) {
+    const result = s.split(',').map((p) => p.trim()).filter(Boolean);
+    // Handle edge case: string of only commas (e.g., ',,,') returns empty array
+    return result.length > 0 ? result : [s.trim()];
+  }
   return [s.trim()];
 }
 

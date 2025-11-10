@@ -35,11 +35,12 @@ echo "🔍 Fetching latest release…"
 LATEST_URL="https://api.github.com/repos/$REPO/releases/latest"
 SUFFIX="openskills-$PLATFORM-$ARCH_NAME"
 
-# Prefer jq for robust JSON parsing; fallback to grep -F
+# Prefer jq for robust JSON parsing; fallback to grep -F (fixed string, no regex)
 if command -v jq >/dev/null 2>&1; then
   DOWNLOAD_URL=$(curl -fsSL "$LATEST_URL" | jq -r --arg suffix "$SUFFIX" '.assets[].browser_download_url | select(endswith($suffix))' | head -n1)
 else
-  DOWNLOAD_URL=$(curl -fsSL "$LATEST_URL" | grep -F "browser_download_url" | grep -F "$SUFFIX" | head -n1 | cut -d '"' -f 4)
+  # Using grep -F for literal string matching (prevents injection via SUFFIX)
+  DOWNLOAD_URL=$(curl -fsSL "$LATEST_URL" | grep -F "browser_download_url" | grep -F -- "$SUFFIX" | head -n1 | cut -d '"' -f 4)
 fi
 
 if [ -z "${DOWNLOAD_URL:-}" ]; then

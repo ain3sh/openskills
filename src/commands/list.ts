@@ -66,7 +66,7 @@ function listSkillsInternal(options?: ListOptions): void {
       continue;
     }
     const allowedField = frontmatter?.['allowed-tools'] ?? (frontmatter as any)?.allowed_tools;
-    const allowedTools = normalizeToolsField(allowedField);
+    const allowedTools = allowedField ? normalizeToolsField(allowedField) : undefined;
     summaries.push({
       name: skill.name,
       description: frontmatter?.description || skill.description,
