@@ -1,20 +1,21 @@
 import { readFileSync } from 'fs';
 import { findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
-import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, AttachmentMessage } from '../types.js';
+import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, AttachmentVerbosity } from '../types.js';
 import { normalizePermissions, checkSkillPermissions } from '../utils/permissions.js';
 import { validateSkillCommand } from '../utils/validation.js';
 import { extractRelativeRefs } from '../utils/refs.js';
 import { loadConfig, configToPermissionRules } from '../utils/config.js';
 import { askUserPermission } from '../utils/interactive.js';
 import { telemetry } from '../utils/telemetry.js';
+import { buildAttachments, collectDiagnostics } from '../utils/attachments.js';
 
 /**
  * Read skill to stdout (for AI agents)
  */
 export async function readSkill(
   skillName: string, 
-  options?: { format?: string; yes?: boolean }
+  options?: { format?: string; yes?: boolean; attachments?: AttachmentVerbosity }
 ): Promise<void> {
   const startTime = Date.now();
   const fmt = options?.format ?? 'json';
@@ -46,9 +47,10 @@ export async function readSkill(
  */
 async function readSkillInternal(
   skillName: string,
-  options?: { format?: string; yes?: boolean }
+  options?: { format?: string; yes?: boolean; attachments?: AttachmentVerbosity }
 ): Promise<void> {
   const fmt = options?.format ?? 'json';
+  const attachmentVerbosity = options?.attachments ?? 'warnings';
 
   // Validate skill command before reading
   const validation = validateSkillCommand(skillName);
@@ -152,45 +154,17 @@ async function readSkillInternal(
 
   if (fmt === 'json') {
 
-    // Collect attachments (diagnostics, file references)
-    const attachments: AttachmentMessage[] = [];
-    
-    // Add bundled resources as file references (if any exist)
+    // Build attachments using elegant pure functions
     const refs = extractRelativeRefs(content);
-    if (refs.length > 0) {
-      attachments.push({
-        type: 'file_reference',
-        content: `Bundled resources available in ${skill.baseDir}:\n${refs.map(r => `- ${r}`).join('\n')}`,
-        metadata: { files: refs, count: refs.length, baseDir: skill.baseDir }
-      });
-    }
+    const diagnostics = collectDiagnostics(frontmatter);
     
-    // Check for common issues and add diagnostics
-    const warnings: string[] = [];
-    if (!frontmatter?.version) {
-      warnings.push('Skill has no version field (recommended for tracking)');
-    }
-    if (!frontmatter?.license) {
-      warnings.push('Skill has no license field (recommended for distribution)');
-    }
-    
-    if (warnings.length > 0) {
-      attachments.push({
-        type: 'diagnostics',
-        content: warnings.join('\n'),
-        metadata: { level: 'warning', count: warnings.length }
-      });
-    }
-    
-    // Add context attachment if additional context is provided
-    const contextField = frontmatter?.context || (frontmatter as any)?.['additional-context'];
-    if (contextField && typeof contextField === 'string') {
-      attachments.push({
-        type: 'context',
-        content: contextField,
-        metadata: { source: 'frontmatter' }
-      });
-    }
+    const attachments = buildAttachments({
+      frontmatter,
+      baseDir: skill.baseDir,
+      resources: refs,
+      diagnostics,
+      options: { verbosity: attachmentVerbosity }
+    });
 
     const json: ReadJsonOutput = {
       skill: { name: frontmatter?.name || skillName, baseDir: skill.baseDir, version: frontmatter?.version },

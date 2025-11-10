@@ -56,6 +56,7 @@ program
   .command('read <skill-name>')
   .description('Read skill to stdout (for AI agents)')
   .option('-y, --yes', 'Skip permission prompts (approve all skills)')
+  .option('--attachments <level>', 'Attachment verbosity: none|errors|warnings|full (default: warnings)')
   .action(async (name, opts) => {
     const { readSkill } = await import('./commands/read.js');
     await readSkill(name, opts);
@@ -66,9 +67,10 @@ program
   .description('Invoke a skill and emit strict Skill Tool payload (JSON)')
   .option('-a, --args <args>', 'Optional arguments string for metadata display')
   .option('-y, --yes', 'Skip permission prompts (approve all skills)')
+  .option('--attachments <level>', 'Attachment verbosity: none|errors|warnings|full (default: warnings)')
   .action(async (name, opts) => {
     const { invokeSkill } = await import('./commands/invoke.js');
-    await invokeSkill(name, { args: opts.args, yes: opts.yes });
+    await invokeSkill(name, { args: opts.args, yes: opts.yes, attachments: opts.attachments });
   });
 
 program

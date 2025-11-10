@@ -1,14 +1,15 @@
 import { readFileSync } from 'fs';
 import { findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
-import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, AttachmentMessage, NewMessage } from '../types.js';
+import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, NewMessage, AttachmentVerbosity } from '../types.js';
 import { normalizePermissions, checkSkillPermissions } from '../utils/permissions.js';
 import { validateSkillCommand } from '../utils/validation.js';
 import { extractRelativeRefs } from '../utils/refs.js';
 import { loadConfig, configToPermissionRules } from '../utils/config.js';
 import { askUserPermission } from '../utils/interactive.js';
+import { buildAttachments, collectDiagnostics } from '../utils/attachments.js';
 
-export interface InvokeOptions { args?: string; yes?: boolean; }
+export interface InvokeOptions { args?: string; yes?: boolean; attachments?: AttachmentVerbosity; }
 
 /**
  * Invoke a skill and emit strict Skill Tool contract payload (JSON)
@@ -95,22 +96,18 @@ export async function invokeSkill(skillName: string, options: InvokeOptions = {}
     normalizedPermissions,
   };
 
-  // Attachments (file references, diagnostics, context)
-  const attachments: AttachmentMessage[] = [];
+  // Build attachments using elegant pure functions
   const refs = extractRelativeRefs(body);
-  if (refs.length > 0) {
-    attachments.push({
-      type: 'file_reference',
-      content: `Bundled resources available in ${loc.baseDir}:\n${refs.map(r => `- ${r}`).join('\n')}`,
-      metadata: { files: refs, count: refs.length, baseDir: loc.baseDir }
-    });
-  }
-  const warn: string[] = [];
-  if (!frontmatter?.version) warn.push('Skill has no version field (recommended for tracking)');
-  if (!frontmatter?.license) warn.push('Skill has no license field (recommended for distribution)');
-  if (warn.length) attachments.push({ type: 'diagnostics', content: warn.join('\n'), metadata: { level: 'warning', count: warn.length } });
-  const contextField = frontmatter?.context || (frontmatter as any)?.['additional-context'];
-  if (contextField && typeof contextField === 'string') attachments.push({ type: 'context', content: contextField, metadata: { source: 'frontmatter' } });
+  const diagnostics = collectDiagnostics(frontmatter);
+  const attachmentVerbosity = options.attachments ?? 'warnings';
+  
+  const attachments = buildAttachments({
+    frontmatter,
+    baseDir: loc.baseDir,
+    resources: refs,
+    diagnostics,
+    options: { verbosity: attachmentVerbosity }
+  });
 
   // Build messages per contract
   const visibleMeta = [

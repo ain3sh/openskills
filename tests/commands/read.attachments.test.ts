@@ -60,9 +60,10 @@ describe('read --format=json attachments', () => {
       
       const diagnostic = output.attachments.find((a: any) => a.type === 'diagnostics');
       expect(diagnostic).toBeDefined();
-      expect(diagnostic.content).toContain('version');
-      expect(diagnostic.content).toContain('license');
+      // With default verbosity='warnings', only warning-level diagnostics are included
+      expect(diagnostic.content).toContain('version'); // warning level
       expect(diagnostic.metadata.level).toBe('warning');
+      // Note: license is info-level, not included with verbosity='warnings'
     } finally {
       logSpy.mockRestore();
     }

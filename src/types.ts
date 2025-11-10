@@ -171,3 +171,24 @@ export interface PermissionCheckResult {
   behavior: 'allow' | 'deny' | 'ask';
   message?: string;
 }
+
+/**
+ * Attachment verbosity level
+ * Controls the level of detail in attachment messages
+ * 
+ * - none: No attachments (minimal output)
+ * - errors: Only critical diagnostics (errors)
+ * - warnings: Errors + warnings (default, balanced)
+ * - full: All diagnostics + file references + context
+ */
+export type AttachmentVerbosity = 'none' | 'errors' | 'warnings' | 'full';
+
+/**
+ * Options for controlling attachment generation
+ * Provides fine-grained control over what gets included
+ */
+export interface AttachmentOptions {
+  verbosity: AttachmentVerbosity;
+  includeFileReferences?: boolean;  // Override: include bundled resource list
+  includeDiagnostics?: boolean;      // Override: include diagnostic messages
+}
