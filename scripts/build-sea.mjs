@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { build } from 'esbuild';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
+
+// Read version from package.json at build time
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 async function main() {
   mkdirSync('dist/sea', { recursive: true });
@@ -15,6 +18,9 @@ async function main() {
     legalComments: 'none',
     external: [],
     logLevel: 'info',
+    define: {
+      '__VERSION__': JSON.stringify(pkg.version)
+    },
   });
 }
 

@@ -1,12 +1,7 @@
 import { join, basename, dirname } from 'path';
 import { homedir } from 'os';
 import { existsSync, readdirSync } from 'fs';
-import { fileURLToPath } from 'url';
 import type { SkillSource } from '../types.js';
-
-// ES module compatibility: get __dirname equivalent
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /**
  * Get skills directory path
