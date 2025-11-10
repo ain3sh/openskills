@@ -1,6 +1,6 @@
 <!-- OpenSkills Generated - Do Not Edit Manually -->
-<!-- Last Updated: 2025-11-10T17:38:53.582Z -->
-<!-- Skills Count: 4 -->
+<!-- Last Updated: 2025-11-10T17:47:05.223Z -->
+<!-- Skills Count: 2 -->
 
 <skills_system priority="1">
 
@@ -24,20 +24,8 @@ Usage notes:
 <available_skills>
 
 <skill>
-<name>test-clean</name>
-<description>Test skill with no warnings</description>
-<location>project</location>
-</skill>
-
-<skill>
-<name>test-perms</name>
-<description>Test skill with permissions</description>
-<location>project</location>
-</skill>
-
-<skill>
-<name>test-two-msg</name>
-<description>Test skill</description>
+<name>skill-creator</name>
+<description>Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Claude's capabilities with specialized knowledge, workflows, or tool integrations.</description>
 <location>project</location>
 </skill>
 
