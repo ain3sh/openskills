@@ -38,7 +38,7 @@ export async function askUserPermission(
   
   // Interactive prompt with timeout
   try {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: NodeJS.Timeout | undefined;
     const answer = await Promise.race([
       confirm({
         message: `Allow skill "${skillName}" to execute?`,
@@ -50,7 +50,10 @@ export async function askUserPermission(
     ]);
     
     // Clear timeout to prevent resource leak
-    clearTimeout(timeoutId!);
+    // Note: timeoutId is always assigned before race completes (Promise constructor is synchronous)
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
     return answer;
   } catch (error) {
     if (error instanceof Error && error.message === 'Timeout') {

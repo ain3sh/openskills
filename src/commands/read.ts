@@ -239,7 +239,12 @@ function normalizeReasoningEffort(fm?: SkillFrontmatter): ContextModifier['reaso
 
 function normalizeAllowedTools(value: unknown): string[] | undefined {
   if (value == null) return undefined;
-  if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
-  const s = String(value);
-  return s.split(',').map((p) => p.trim()).filter(Boolean);
+  if (Array.isArray(value)) {
+    const result = value.map((v) => String(v).trim()).filter(Boolean);
+    return result.length > 0 ? result : undefined;
+  }
+  const s = String(value).trim();
+  if (!s) return undefined;  // Handle empty string
+  const result = s.split(',').map((p) => p.trim()).filter(Boolean);
+  return result.length > 0 ? result : undefined;  // Handle comma-only strings
 }
