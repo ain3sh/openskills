@@ -116,11 +116,37 @@ export async function invokeSkill(skillName: string, options: InvokeOptions = {}
     options.args ? `<command-args>${options.args}</command-args>` : null,
   ].filter(Boolean).join('\n');
 
+  // START with TWO messages per blog line 692: "two separate user messages"
   const newMessages: NewMessage[] = [
-    { role: 'user', content: visibleMeta, isMeta: false },
-    { role: 'user', content: `<!-- baseDir: ${loc.baseDir} -->\n${body}`, isMeta: true },
-    { role: 'user', content: { type: 'command_permissions', allowedTools, model: model ?? null }, isMeta: true },
+    { role: 'user', content: visibleMeta, isMeta: false },  // Message 1: Visible metadata
+    { role: 'user', content: `<!-- baseDir: ${loc.baseDir} -->\n${body}`, isMeta: true }, // Message 2: Hidden skill prompt
   ];
+
+  // CONDITIONALLY add attachment messages (blog lines 774)
+  // Only if attachments exist (diagnostics, file references, additional context)
+  if (attachments && attachments.length > 0) {
+    for (const attachment of attachments) {
+      newMessages.push({
+        role: 'user',
+        content: typeof attachment === 'string' ? attachment : JSON.stringify(attachment),
+        isMeta: true
+      });
+    }
+  }
+
+  // CONDITIONALLY add permissions message (blog lines 773-783)
+  // Only if skill declares allowed-tools OR model override
+  if ((allowedTools && allowedTools.length > 0) || model) {
+    newMessages.push({
+      role: 'user',
+      content: {
+        type: 'command_permissions',
+        allowedTools: allowedTools || [],
+        model: model || null
+      },
+      isMeta: true
+    });
+  }
 
   const json: ReadJsonOutput = {
     skill: { name: frontmatter?.name || skillName, baseDir: loc.baseDir, version: frontmatter?.version },

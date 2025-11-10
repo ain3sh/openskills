@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
-import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, AttachmentVerbosity } from '../types.js';
+import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, AttachmentVerbosity, NewMessage } from '../types.js';
 import { normalizePermissions, checkSkillPermissions } from '../utils/permissions.js';
 import { validateSkillCommand } from '../utils/validation.js';
 import { extractRelativeRefs } from '../utils/refs.js';
@@ -166,13 +166,40 @@ async function readSkillInternal(
       options: { verbosity: attachmentVerbosity }
     });
 
+    // START with TWO messages per blog line 692: "two separate user messages"
+    const newMessages: NewMessage[] = [
+      { role: 'user', content: `<command-message>The "${skillName}" skill is loading</command-message>`, isMeta: false },
+      { role: 'user', content: `<!-- baseDir: ${skill.baseDir} -->\n${content}`, isMeta: true },
+    ];
+
+    // CONDITIONALLY add attachment messages (blog lines 774)
+    // Only if attachments exist (diagnostics, file references, additional context)
+    if (attachments && attachments.length > 0) {
+      for (const attachment of attachments) {
+        newMessages.push({
+          role: 'user',
+          content: typeof attachment === 'string' ? attachment : JSON.stringify(attachment),
+          isMeta: true
+        });
+      }
+    }
+
+    // CONDITIONALLY add permissions message - same logic as invoke.ts for consistency
+    if ((contextModifier.allowedTools && contextModifier.allowedTools.length > 0) || contextModifier.model) {
+      newMessages.push({
+        role: 'user',
+        content: {
+          type: 'command_permissions',
+          allowedTools: contextModifier.allowedTools || [],
+          model: contextModifier.model || null
+        },
+        isMeta: true
+      });
+    }
+
     const json: ReadJsonOutput = {
       skill: { name: frontmatter?.name || skillName, baseDir: skill.baseDir, version: frontmatter?.version },
-      newMessages: [
-        { role: 'user', content: `<command-message>The "${skillName}" skill is loading</command-message>`, isMeta: false },
-        { role: 'user', content: `<!-- baseDir: ${skill.baseDir} -->\n${content}`, isMeta: true },
-        { role: 'user', content: `<metadata name=\"${frontmatter?.name || skillName}\" baseDir=\"${skill.baseDir}\" model=\"${contextModifier.model ?? ''}\" allowedTools=\"${(contextModifier.allowedTools||[]).join(',')}\"></metadata>`, isMeta: true },
-      ],
+      newMessages,
       contextModifier,
       attachments: attachments.length > 0 ? attachments : undefined,  // Only include if non-empty
     };
