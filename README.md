@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/openskills.svg)](https://www.npmjs.com/package/openskills)
 [![npm downloads](https://img.shields.io/npm/dm/openskills.svg)](https://www.npmjs.com/package/openskills)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Tests](https://img.shields.io/badge/tests-165%20passing-brightgreen)](https://github.com/ain3sh/openskills)
 
 **Universal skills loader for AI coding agents** — brings Anthropic's Claude Skills system to any agent (Cursor, Windsurf, Aider, etc.) with complete parity to Claude Code's implementation.
 

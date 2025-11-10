@@ -4,3 +4,12 @@ dist/
 *.log
 .openskills-temp/
 .claude/
+*.bak
+*.tmp
+*~
+.env
+.env.local
+coverage/
+*.tgz
+npm-debug.log*
+yarn-error.log*
