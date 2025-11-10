@@ -314,55 +314,71 @@ Browse the full collection at [github.com/anthropics/skills](https://github.com/
 
 ---
 
-## 📚 Documentation
+## 📚 For Agent Developers
 
-### For Agent Developers
+### JSON Output Reference
 
-**[Agent Integration Guide](./docs/AGENT_INTEGRATION.md)** — Comprehensive guide for integrating OpenSkills into your AI agent:
-- How to implement `contextModifier` (tool filtering, model override, reasoning effort)
-- Three-message pattern explained
-- Handling attachments
-- Python/Node.js/Cursor/Aider examples
-- Security best practices
-- Troubleshooting
+OpenSkills is a CLI that outputs JSON. What you do with it is your choice.
 
-**Quick Links:**
-- [contextModifier Implementation](./docs/AGENT_INTEGRATION.md#implementing-contextmodifier)
-- [Integration Examples](./docs/AGENT_INTEGRATION.md#integration-examples)
-- [Error Codes Reference](./docs/AGENT_INTEGRATION.md#error-codes)
-
-### For Skill Authors
-
-Use the `skill-creator` skill for comprehensive authoring guidance:
+#### Discover Skills
 ```bash
-openskills install anthropics/skills --skills skill-creator
-openskills read skill-creator
+openskills list
 ```
+
+Returns: Array of skills with metadata (name, description, version, etc.)
+
+#### Invoke Skill
+```bash
+openskills invoke <skill-name> --yes
+```
+
+Returns:
+```json
+{
+  "skill": { 
+    "name": "pdf", 
+    "baseDir": "/path/to/skills/pdf",
+    "version": "2.1.0"
+  },
+  "newMessages": [
+    {
+      "role": "user",
+      "content": "<command-message>The \"pdf\" skill is loading</command-message>",
+      "isMeta": false
+    },
+    {
+      "role": "user", 
+      "content": "<!-- SKILL.md instructions here -->",
+      "isMeta": true
+    },
+    {
+      "role": "user",
+      "content": "<metadata name=\"pdf\" baseDir=\"...\" allowedTools=\"...\"></metadata>",
+      "isMeta": true
+    }
+  ],
+  "contextModifier": {
+    "allowedTools": ["Bash", "Read"],
+    "model": "claude-3-7-sonnet-20250219",
+    "reasoningEffort": "high"
+  }
+}
+```
+
+**What is contextModifier?**
+
+Metadata about what the skill wants. Your agent decides whether to:
+- Enforce it strictly (like Claude Code does)
+- Use as a suggestion
+- Ignore entirely
+
+**No rules. Your agent, your call.**
+
+The three-message pattern mirrors Claude Code's Skill tool output exactly. Message 1 is visible to users (`isMeta: false`), messages 2-3 are hidden but sent to the API (`isMeta: true`).
 
 ---
 
 ## Advanced Features
-
-### Agent-Friendly Output
-
-Skills load with clear boundaries for easy parsing:
-
-```
-════════════════════════════════════════════════════════════
-📖 SKILL LOADED: pdf
-════════════════════════════════════════════════════════════
-📁 Base directory: /project/.claude/skills/pdf
-📦 Version: 2.1.0
-🛠️  Allowed tools: Bash, Read
-════════════════════════════════════════════════════════════
-
-[SKILL.md content]
-
-════════════════════════════════════════════════════════════
-✅ Skill "pdf" ready
-💡 Follow the instructions above to complete your task
-════════════════════════════════════════════════════════════
-```
 
 ### JSON Output Mode
 
