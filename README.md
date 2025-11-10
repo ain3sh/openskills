@@ -4,80 +4,138 @@
 [![npm downloads](https://img.shields.io/npm/dm/openskills.svg)](https://www.npmjs.com/package/openskills)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**The closest implementation matching Claude Code's skills system** — same prompt format, same marketplace, same folders, just using CLI instead of tools.
+**Universal skills loader for AI coding agents** — brings Anthropic's Claude Skills system to any agent (Cursor, Windsurf, Aider, etc.) with complete parity to Claude Code's implementation.
 
-Install (no Node.js required):
+## 🚀 Quick Install
 
+**Option A — Binary (no Node.js required):**
 ```bash
 curl -fsSL https://ain3sh.com/openskills/install.sh | bash
 ```
 
-Alternative (npm):
-
+**Option B — npm:**
 ```bash
 npm i -g openskills
 ```
-
-> **Found this useful?** Follow [@nummanthinks](https://x.com/nummanthinks) for more AI tooling!
 
 ---
 
 ## What Is This?
 
-OpenSkills brings **Anthropic's skills system** to all AI coding agents (Claude Code, Cursor, Windsurf, Aider).
+OpenSkills implements [Anthropic's Agent Skills specification](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) as a universal CLI tool, enabling **any AI coding agent** to use the same skill system as Claude Code.
 
-**For Claude Code users:**
-- Install skills from any GitHub repo, not just the marketplace
+### Key Features
+
+✅ **100% Format Compatibility** — Same SKILL.md format, same `<available_skills>` XML, same progressive disclosure  
+✅ **Universal Agent Support** — Works with Claude Code, Cursor, Windsurf, Aider, and any agent with CLI access  
+✅ **GitHub Skill Marketplace** — Install from [anthropics/skills](https://github.com/anthropics/skills) or any GitHub repo  
+✅ **Same Folder Structure** — Uses `.claude/skills/` by default (or `.agent/skills/` for multi-agent setups)  
+✅ **Bundled Resources** — Full support for `scripts/`, `references/`, and `assets/` directories  
+✅ **Zero Dependencies** — Single binary executable or npm package  
+
+### For Claude Code Users
+
+- Install skills from **any GitHub repo**, not just the Anthropic marketplace
 - Share skills across multiple agents
-- Version control your skills in your repo
+- Version control your skills in your project repository
 
-**For other agents (Cursor, Windsurf, Aider):**
-- Get Claude Code's skills system universally
-- Access Anthropic's marketplace skills via GitHub
-- Use progressive disclosure (load skills on demand)
+### For Other Agent Users (Cursor, Windsurf, Aider)
+
+- Get Claude Code's skills system in your agent
+- Access Anthropic's skill marketplace via GitHub
+- Use progressive disclosure to keep context clean
 
 ---
 
-## How It Matches Claude Code Exactly
+## How It Works
 
-OpenSkills replicates Claude Code's skills system with **100% compatibility**:
+### The Skills Architecture
 
-✅ **Same prompt format** — `<available_skills>` XML with skill tags
-✅ **Same marketplace** — Install from [anthropics/skills](https://github.com/anthropics/skills)
-✅ **Same folders** — Uses `.claude/skills/` by default
-✅ **Same SKILL.md format** — YAML frontmatter + markdown instructions
-✅ **Same progressive disclosure** — Load skills on demand, not upfront
+Both Claude Code and OpenSkills use the same **progressive disclosure pattern**:
 
-**Only difference:** Claude Code uses `Skill` tool, OpenSkills uses `openskills read <name>` CLI command.
+1. **System Prompt** lists available skills in `<available_skills>` XML
+2. **Agent sees** skill names and descriptions (lightweight)
+3. **When needed**, agent invokes skill by name
+4. **Full instructions** load into context
+5. **Agent follows** detailed instructions to complete task
 
-**Advanced:** Use `--universal` flag to install to `.agent/skills/` for Claude Code + other agents sharing one AGENTS.md.
+**The only difference:** Claude Code uses `Skill("name")` tool, OpenSkills uses `openskills read name` CLI command.
+
+### Format Example
+
+**In AGENTS.md (or Claude's system prompt):**
+```xml
+<available_skills>
+<skill>
+<name>pdf</name>
+<description>PDF manipulation toolkit for extracting text, creating documents, merging/splitting files...</description>
+<location>project</location>
+</skill>
+</available_skills>
+```
+
+**When invoked, SKILL.md loads:**
+```markdown
+---
+name: pdf
+description: PDF manipulation toolkit...
+allowed-tools: Bash, Read, Edit
+---
+
+# PDF Skill Instructions
+
+When the user asks you to work with PDFs, follow these steps:
+
+1. Install dependencies: `pip install pypdf2`
+2. For text extraction, use the script in scripts/extract_text.py
+3. Base directory for bundled resources: {baseDir}
+...
+```
+
+### Side-by-Side Comparison
+
+| Feature | Claude Code | OpenSkills |
+|---------|-------------|------------|
+| **Format** | SKILL.md (YAML + Markdown) | SKILL.md (YAML + Markdown) ✅ |
+| **Invocation** | `Skill("name")` tool | `openskills read name` CLI |
+| **Folder** | `.claude/skills/` | `.claude/skills/` ✅ |
+| **Discovery** | `<available_skills>` XML | `<available_skills>` XML ✅ |
+| **Marketplace** | Built-in | GitHub (anthropics/skills) |
+| **Resources** | `scripts/`, `references/`, `assets/` | `scripts/`, `references/`, `assets/` ✅ |
+| **Agent Support** | Claude Code only | Claude Code + Cursor + Windsurf + Aider ✅ |
+
+**Everything is identical except the invocation method.**
 
 ---
 
 ## Quick Start
 
-### 1. Install
-
-Option A — Binaries (recommended for end users):
+### 1. Install OpenSkills
 
 ```bash
+# Binary (recommended - no Node.js required)
 curl -fsSL https://ain3sh.com/openskills/install.sh | bash
-```
 
-Option B — npm (developers):
-
-```bash
+# Or via npm
 npm i -g openskills
 ```
 
 ### 2. Install Skills
 
 ```bash
-# Install from Anthropic's marketplace (interactive selection, default: project)
+# From Anthropic's marketplace (interactive selection)
 openskills install anthropics/skills
 
-# Or install from any GitHub repo
+# Or from any GitHub repo
 openskills install your-org/custom-skills
+```
+
+Interactive TUI lets you select which skills to install:
+```
+◉ pdf - PDF manipulation toolkit
+◯ xlsx - Spreadsheet creation and editing
+◉ docx - Document creation with tracked changes
+◯ pptx - Presentation creation
 ```
 
 ### 3. Sync to AGENTS.md
@@ -86,303 +144,165 @@ openskills install your-org/custom-skills
 openskills sync
 ```
 
-Done! Your agent now has skills with the same `<available_skills>` format as Claude Code.
-
----
-
-## How It Works (Technical Deep Dive)
-
-### Claude Code's Skills System
-
-When you use Claude Code with skills installed, Claude's system prompt includes:
-
-```xml
-<skills_instructions>
-When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively.
-
-How to use skills:
-- Invoke skills using this tool with the skill name only (no arguments)
-- When you invoke a skill, you will see <command-message>The "{name}" skill is loading</command-message>
-- The skill's prompt will expand and provide detailed instructions
-
-Important:
-- Only use skills listed in <available_skills> below
-- Do not invoke a skill that is already running
-</skills_instructions>
-
-<available_skills>
-<skill>
-<name>pdf</name>
-<description>Comprehensive PDF manipulation toolkit for extracting text and tables, creating new PDFs, merging/splitting documents, and handling forms...</description>
-<location>plugin</location>
-</skill>
-
-<skill>
-<name>xlsx</name>
-<description>Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis...</description>
-<location>plugin</location>
-</skill>
-</available_skills>
-```
-
-**How Claude uses it:**
-1. User asks: "Extract data from this PDF"
-2. Claude scans `<available_skills>` → finds "pdf" skill
-3. Claude invokes: `Skill("pdf")`
-4. SKILL.md content loads with detailed instructions
-5. Claude follows instructions to complete task
-
-### OpenSkills' System (Identical Format)
-
-OpenSkills generates the **exact same** `<available_skills>` XML in your AGENTS.md:
-
-```xml
-<skills_system priority="1">
-
-## Available Skills
-
-<!-- SKILLS_TABLE_START -->
-<usage>
-When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively.
-
-How to use skills:
-- Invoke: Bash("openskills read <skill-name>")
-- The skill content will load with detailed instructions
-- Base directory provided in output for resolving bundled resources
-
-Usage notes:
-- Only use skills listed in <available_skills> below
-- Do not invoke a skill that is already loaded in your context
-</usage>
-
-<available_skills>
-
-<skill>
-<name>pdf</name>
-<description>Comprehensive PDF manipulation toolkit for extracting text and tables, creating new PDFs, merging/splitting documents, and handling forms...</description>
-<location>project</location>
-</skill>
-
-<skill>
-<name>xlsx</name>
-<description>Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis...</description>
-<location>project</location>
-</skill>
-
-</available_skills>
-<!-- SKILLS_TABLE_END -->
-
-</skills_system>
-```
-
-**How agents use it:**
-1. User asks: "Extract data from this PDF"
-2. Agent scans `<available_skills>` → finds "pdf" skill
-3. Agent invokes: `Bash("openskills read pdf")`
-4. SKILL.md content is output to agent's context
-5. Agent follows instructions to complete task
-
-### Side-by-Side Comparison
-
-| Aspect | Claude Code | OpenSkills |
-|--------|-------------|------------|
-| **System Prompt** | Built into Claude Code | In AGENTS.md |
-| **Invocation** | `Skill("pdf")` tool | `openskills read pdf` CLI |
-| **Prompt Format** | `<available_skills>` XML | `<available_skills>` XML (identical) |
-| **Folder Structure** | `.claude/skills/` | `.claude/skills/` (identical) |
-| **SKILL.md Format** | YAML + markdown | YAML + markdown (identical) |
-| **Progressive Disclosure** | Yes | Yes |
-| **Bundled Resources** | `references/`, `scripts/`, `assets/` | `references/`, `scripts/`, `assets/` (identical) |
-| **Marketplace** | Anthropic marketplace | GitHub (anthropics/skills) |
-
-**Everything is identical except the invocation method.**
-
-### The SKILL.md Format
-
-Both use the exact same format:
-
-```markdown
----
-name: pdf
-description: Comprehensive PDF manipulation toolkit for extracting text and tables, creating new PDFs, merging/splitting documents, and handling forms.
----
-
-# PDF Skill Instructions
-
-When the user asks you to work with PDFs, follow these steps:
-
-1. Install dependencies: `pip install pypdf2`
-2. Extract text using the extract_text.py script in scripts/
-3. For bundled resources, use the base directory provided in the skill output
-4. ...
-
-[Detailed instructions that Claude/agent follows]
-```
-
-**Progressive disclosure:** The full instructions load only when the skill is invoked, keeping your agent's context clean.
-
----
-
-## Why CLI Instead of MCP?
-
-**MCP (Model Context Protocol)** is Anthropic's protocol for connecting AI to external tools and data sources. It's great for:
-- Database connections
-- API integrations
-- Real-time data fetching
-- External service integration
-
-**Skills (SKILL.md format)** are different — they're for:
-- Specialized workflows (PDF manipulation, spreadsheet editing)
-- Bundled resources (scripts, templates, references)
-- Progressive disclosure (load instructions only when needed)
-- Static, reusable patterns
-
-**Why not implement skills via MCP?**
-
-1. **Skills are static instructions, not dynamic tools**
-   MCP is for server-client connections. Skills are markdown files with instructions.
-
-2. **No server needed**
-   Skills are just files. MCP requires running servers.
-
-3. **Universal compatibility**
-   CLI works with any agent (Claude Code, Cursor, Windsurf, Aider). MCP requires MCP support.
-
-4. **Follows Anthropic's design**
-   Anthropic created skills as SKILL.md files, not MCP servers. We're implementing their spec.
-
-5. **Simpler for users**
-   `openskills install anthropics/skills` vs "configure MCP server, set up authentication, manage server lifecycle"
-
-**MCP and skills solve different problems.** OpenSkills implements Anthropic's skills spec (SKILL.md format) the way it was designed — as progressively-loaded markdown instructions.
-
----
-
-## Claude Code Compatibility
-
-You can use **both** Claude Code plugins and OpenSkills project skills together:
-
-**In your `<available_skills>` list:**
-```xml
-<skill>
-<name>pdf</name>
-<description>...</description>
-<location>plugin</location>  <!-- Claude Code marketplace -->
-</skill>
-
-<skill>
-<name>custom-skill</name>
-<description>...</description>
-<location>project</location>  <!-- OpenSkills from GitHub -->
-</skill>
-```
-
-They coexist perfectly. Claude invokes marketplace plugins via `Skill` tool, OpenSkills skills via CLI. No conflicts.
-
-### Advanced: Universal Mode for Multi-Agent Setups
-
-**Problem:** If you use Claude Code + other agents (Cursor, Windsurf, Aider) with one AGENTS.md, installing to `.claude/skills/` can create duplicates with Claude Code's marketplace plugins.
-
-**Solution:** Use `--universal` to install to `.agent/skills/` instead:
-
-```bash
-openskills install anthropics/skills --universal
-```
-
-This installs skills to `.agent/skills/` which:
-- ✅ Works with all agents via AGENTS.md
-- ✅ Doesn't conflict with Claude Code's native marketplace plugins
-- ✅ Keeps Claude Code's `<available_skills>` separate from AGENTS.md skills
-
-**When to use:**
-- ✅ You use Claude Code + Cursor/Windsurf/Aider with one AGENTS.md
-- ✅ You want to avoid duplicate skill definitions
-- ✅ You prefer `.agent/` for infrastructure (keeps `.claude/` for Claude Code only)
-
-**When not to use:**
-- ❌ You only use Claude Code (default `.claude/skills/` is fine)
-- ❌ You only use non-Claude agents (default `.claude/skills/` is fine)
-
-**Priority order:**
-OpenSkills searches 4 locations in priority order:
-1. `./.agent/skills/` (project universal)
-2. `~/.agent/skills/` (global universal)
-3. `./.claude/skills/` (project)
-4. `~/.claude/skills/` (global)
-
-Skills with same name only appear once (highest priority wins).
+This updates your `AGENTS.md` with the `<available_skills>` block. Done! Your agent can now discover and use skills.
 
 ---
 
 ## Commands
 
+### Installation & Management
+
 ```bash
-openskills install <source> [options]  # Install from GitHub (interactive)
-openskills sync [-y]                   # Update AGENTS.md (interactive)
-openskills list                        # Show installed skills
-openskills read <name>                 # Load skill (for agents)
-openskills manage                      # Remove skills (interactive)
-openskills remove <name>               # Remove specific skill
-```
+# Install skills (interactive TUI)
+openskills install <github-repo>
+openskills install <github-repo> --global  # Install to ~/.claude/skills
+openskills install <github-repo> --universal  # Install to .agent/skills (advanced)
 
-### Flags
+# List installed skills
+openskills list
 
-- `--global` — Install globally to `~/.claude/skills` (default: project install)
-- `--universal` — Install to `.agent/skills/` instead of `.claude/skills/` (advanced)
-- `-y` — Skip interactive selection (for scripts/CI)
-
-### Installation Modes
-
-**Default (recommended):**
-```bash
-openskills install anthropics/skills
-# → Installs to ./.claude/skills (project, gitignored)
-```
-
-**Global install:**
-```bash
-openskills install anthropics/skills --global
-# → Installs to ~/.claude/skills (shared across projects)
-```
-
-**Universal mode (advanced):**
-```bash
-openskills install anthropics/skills --universal
-# → Installs to ./.agent/skills (for Claude Code + other agents)
-```
-
-### Interactive by Default
-
-All commands use beautiful TUI by default:
-
-**Install:**
-```bash
-openskills install anthropics/skills
-# → Checkbox to select which skills to install
-# → Shows skill name, description, size
-# → All checked by default
-```
-
-**Sync:**
-```bash
-openskills sync
-# → Checkbox to select which skills to include in AGENTS.md
-# → Pre-selects skills already in AGENTS.md
-# → Empty selection removes skills section
-```
-
-**Manage:**
-```bash
+# Remove skills (interactive TUI)
 openskills manage
-# → Checkbox to select which skills to remove
-# → Nothing checked by default (safe)
+openskills remove <skill-name>  # Non-interactive removal
+```
+
+### Agent Usage
+
+```bash
+# Load skill for agent (outputs SKILL.md content)
+openskills read <skill-name>
+
+# Suggest skills based on query (semantic search)
+openskills suggest "work with spreadsheets"
+
+# Sync AGENTS.md with installed skills
+openskills sync
+```
+
+### Utilities
+
+```bash
+# Validate skill format
+openskills validate <skill-name>
+
+# View telemetry stats
+openskills telemetry --stats
+
+# Interactive shell
+openskills tui
 ```
 
 ---
 
-## Example Skills
+## Installation Modes
 
-From Anthropic's [skills repository](https://github.com/anthropics/skills):
+### Default: Project Install
+
+```bash
+openskills install anthropics/skills
+# → Installs to ./.claude/skills/ (gitignored)
+```
+
+**Best for:** Single-agent projects, Claude Code compatibility
+
+### Global Install
+
+```bash
+openskills install anthropics/skills --global
+# → Installs to ~/.claude/skills/ (shared across projects)
+```
+
+**Best for:** Personal skill library, CLI usage
+
+### Universal Install (Advanced)
+
+```bash
+openskills install anthropics/skills --universal
+# → Installs to ./.agent/skills/
+```
+
+**Best for:** Multi-agent setups where you use Claude Code + other agents with one AGENTS.md
+
+**Why?** Prevents duplicate skill listings when Claude Code shows its native marketplace plugins alongside AGENTS.md skills.
+
+**Search Priority:**
+1. `./.agent/skills/` (project universal)
+2. `~/.agent/skills/` (global universal)
+3. `./.claude/skills/` (project Claude)
+4. `~/.claude/skills/` (global Claude)
+
+Skills with the same name only appear once (highest priority wins).
+
+---
+
+## Creating Custom Skills
+
+### Minimal Skill
+
+```
+my-skill/
+└── SKILL.md
+```
+
+**SKILL.md:**
+```markdown
+---
+name: my-skill
+description: What this skill does and when to use it
+---
+
+# Instructions
+
+When the user asks you to [task], follow these steps:
+
+1. [Step 1]
+2. [Step 2]
+...
+```
+
+### Skill with Resources
+
+```
+my-skill/
+├── SKILL.md
+├── scripts/
+│   └── process.py
+├── references/
+│   └── api-docs.md
+└── assets/
+    └── template.json
+```
+
+Reference resources in SKILL.md using `{baseDir}`:
+```markdown
+1. Read the API docs in {baseDir}/references/api-docs.md
+2. Run {baseDir}/scripts/process.py
+3. Use template from {baseDir}/assets/template.json
+```
+
+### Publishing
+
+1. Create GitHub repo: `your-username/my-skill`
+2. Add SKILL.md (and optional resources)
+3. Users install with: `openskills install your-username/my-skill`
+
+### Best Practices
+
+- **Use Anthropic's skill-creator** for comprehensive authoring guidance:
+  ```bash
+  openskills install anthropics/skills
+  openskills read skill-creator
+  ```
+- Write descriptions that help agents decide when to use the skill
+- Use imperative language in instructions ("Do X", not "You can do X")
+- Test with multiple agents to ensure clarity
+- Include example usage when helpful
+
+---
+
+## Popular Skills from Anthropic's Marketplace
+
+Browse the full collection at [github.com/anthropics/skills](https://github.com/anthropics/skills):
 
 - **xlsx** — Spreadsheet creation, editing, formulas, data analysis
 - **docx** — Document creation with tracked changes and comments
@@ -392,183 +312,137 @@ From Anthropic's [skills repository](https://github.com/anthropics/skills):
 - **mcp-builder** — Build Model Context Protocol servers
 - **skill-creator** — Detailed guide for authoring skills
 
-Browse all: [github.com/anthropics/skills](https://github.com/anthropics/skills)
-
 ---
 
-## Creating Your Own Skills
+## Advanced Features
 
-### Minimal Structure
+### Agent-Friendly Output
 
-```
-my-skill/
-└── SKILL.md
-    ---
-    name: my-skill
-    description: What this does and when to use it
-    ---
-
-    # Instructions in imperative form
-
-    When the user asks you to X, do Y...
-```
-
-### With Bundled Resources
-
-```
-my-skill/
-├── SKILL.md
-├── references/
-│   └── api-docs.md      # Supporting documentation
-├── scripts/
-│   └── process.py       # Helper scripts
-└── assets/
-    └── template.json    # Templates, configs
-```
-
-In your SKILL.md, reference resources:
-```markdown
-1. Read the API documentation in references/api-docs.md
-2. Run the process.py script from scripts/
-3. Use the template from assets/template.json
-```
-
-The agent sees the base directory when loading the skill:
-```
-Loading: my-skill
-Base directory: /path/to/.claude/skills/my-skill
-
-[SKILL.md content]
-```
-
-### Publishing
-
-1. Push to GitHub: `your-username/my-skill`
-2. Users install with: `openskills install your-username/my-skill`
-
-### Authoring Guide
-
-Use Anthropic's skill-creator for detailed guidance:
-
-```bash
-openskills install anthropics/skills
-openskills read skill-creator
-```
-
-This loads comprehensive instructions on:
-- Writing effective skill descriptions
-- Structuring instructions for agents
-- Using bundled resources
-- Testing and iteration
-
----
-
-## 📊 Usage Telemetry
-
-OpenSkills includes **privacy-first usage tracking** to help understand skill adoption:
-
-### What's Tracked (Minimal)
-- Command name (`read`, `list`, `install`)
-- Skill name (if applicable)
-- Success/failure status
-- Agent platform (Cursor, Windsurf, Factory, etc.)
-- Duration (milliseconds)
-
-### What's NOT Tracked
-- No file paths or user data
-- No repository information
-- No PII (personally identifiable information)
-- All data stays local: `~/.openskills/telemetry/`
-
-### View Your Stats
-```bash
-openskills telemetry --stats
-```
-
-Output:
-```
-📊 OpenSkills Usage Statistics
-
-Total invocations: 45
-Most used skills:
-  1. pdf (23 times)
-  2. xlsx (12 times)
-  3. hello-world (10 times)
-
-Success rate: 97.8%
-By agent: cursor (67%), factory (33%)
-Average response: 156ms
-```
-
-### Disable Telemetry
-```bash
-openskills telemetry --disable
-```
-
-Telemetry is **enabled by default** but can be disabled anytime. Clear data with `--clear`.
-
----
-
-## 🤖 Enhanced Agent Experience
-
-### Clear Output Boundaries
-Skills load with clear visual markers for easy parsing:
+Skills load with clear boundaries for easy parsing:
 
 ```
 ════════════════════════════════════════════════════════════
-📖 SKILL LOADED: pdf-analyzer
+📖 SKILL LOADED: pdf
 ════════════════════════════════════════════════════════════
-📁 Base directory: /project/.claude/skills/pdf-analyzer
+📁 Base directory: /project/.claude/skills/pdf
 📦 Version: 2.1.0
 🛠️  Allowed tools: Bash, Read
 ════════════════════════════════════════════════════════════
 
-<skill instructions>
+[SKILL.md content]
 
 ════════════════════════════════════════════════════════════
-✅ Skill "pdf-analyzer" ready
+✅ Skill "pdf" ready
 💡 Follow the instructions above to complete your task
 ════════════════════════════════════════════════════════════
 ```
 
-### Agent-Friendly List Format
-Agents can refresh skills mid-conversation:
+### JSON Output Mode
+
+All commands support JSON output for programmatic usage:
 
 ```bash
-openskills list
+openskills list --json
+openskills read pdf --json
+openskills suggest "spreadsheet" --json
 ```
 
-Produces JSON with both the `<skills_instructions>` block and the `<available_skills>` XML ready for injection:
-
+Example output:
 ```json
 {
-  "instructions": "<skills_instructions>...",
-  "available_skills_xml": "<available_skills>...</available_skills>",
-  "skills": [
-    { "name": "pdf", "description": "Comprehensive PDF manipulation...", "location": "project" }
-  ]
+  "skill": {
+    "name": "pdf",
+    "baseDir": "/project/.claude/skills/pdf",
+    "version": "2.1.0"
+  },
+  "content": "...",
+  "contextModifier": {
+    "allowedTools": ["Bash", "Read"],
+    "model": "claude-3-7-sonnet-20250219"
+  }
 }
 ```
 
+### Performance Optimizations
+
+- **Smart Caching** — Skills and configs cached for 60s (auto-invalidates on changes)
+- **Lazy Loading** — Commands loaded only when executed
+- **Fast Path** — Built-in skills optimized for instant access
+
+Cache location: `/tmp/.openskills-cache/` (OS manages cleanup)
+
+### Privacy-First Telemetry
+
+**What's tracked:** Command usage, skill names, success/failure, agent platform  
+**What's NOT tracked:** File paths, repository info, PII
+
+View your stats:
+```bash
+openskills telemetry --stats
+```
+
+Disable anytime:
+```bash
+openskills telemetry --disable
+```
+
+All data stays local in `~/.openskills/telemetry/`
+
 ---
 
-## ⚡ Performance
+## Why CLI Instead of MCP?
 
-OpenSkills is optimized for speed:
+**MCP (Model Context Protocol)** is Anthropic's protocol for connecting AI to external tools and data sources. It's designed for:
+- Database connections
+- API integrations
+- Real-time data fetching
+- External service integration
 
-- **Smart Caching:** Skills and configs cached for 60s (auto-invalidates on changes)
-- **Lazy Loading:** Commands loaded only when executed
-- **Fast Path:** Built-in skills optimized for instant access
+**Skills** are fundamentally different:
+- Static instruction sets (markdown files)
+- Bundled resources (scripts, templates, references)
+- Progressive disclosure pattern
+- No server lifecycle to manage
 
-Cache location: `/tmp/.openskills-cache/` (auto-cleans via OS)
+**Why OpenSkills uses CLI:**
+
+1. **Matches Anthropic's design** — Skills are SKILL.md files, not dynamic tools
+2. **No server overhead** — Just files on disk
+3. **Universal compatibility** — Works with any agent that can run CLI commands
+4. **Simpler for users** — Install and use, no server configuration
+5. **Follows the spec** — Implements what Anthropic documented
+
+MCP and skills solve different problems. OpenSkills implements the skills specification the way it was designed.
 
 ---
 
 ## Requirements
 
-- Binaries: no runtime required (single executable)
-- npm install: **Node.js** 20.6+ (for ora dependency)
-- **Git** (for cloning repositories)
+- **Binaries:** No runtime required (single executable)
+- **npm install:** Node.js 20.6+ (for ora dependency)
+- **Git:** For cloning repositories
+
+---
+
+## Credits & Attribution
+
+This project builds upon:
+
+1. **Original OpenSkills** by [numman-ali](https://github.com/numman-ali/openskills) — Universal skills loader foundation
+2. **Claude Skills Deep Dive** by [Lee-Hanchung](https://leehanchung.github.io/blogs/2025/10/26/claude-skills-deep-dive/) — Comprehensive reverse engineering of Anthropic's implementation
+
+This fork (v2.0.0+) adds:
+- Complete parity with Anthropic's implementation
+- SEA binaries for zero-dependency distribution
+- Enhanced security and permissions system
+- Comprehensive test coverage (110 tests)
+- Advanced features (progressive disclosure, semantic search, validation)
+
+### Related Projects
+
+- **Anthropic's Skills Marketplace:** [github.com/anthropics/skills](https://github.com/anthropics/skills)
+- **Claude Code:** [claude.ai/download](https://claude.ai/download)
+- **MCP Specification:** [modelcontextprotocol.io](https://modelcontextprotocol.io)
 
 ---
 
@@ -576,8 +450,14 @@ Cache location: `/tmp/.openskills-cache/` (auto-cleans via OS)
 
 Apache 2.0
 
-## Attribution
-
-Implements [Anthropic's Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) specification.
-
 **Not affiliated with Anthropic.** Claude, Claude Code, and Agent Skills are trademarks of Anthropic, PBC.
+
+Implements the [Agent Skills specification](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) as documented by Anthropic.
+
+---
+
+## Contributing
+
+Contributions welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+**Found this useful?** Follow [@nummanthinks](https://x.com/nummanthinks) for more AI tooling!
