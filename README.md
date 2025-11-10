@@ -454,6 +454,51 @@ When you type `/pdf`, the skill's SKILL.md instructions load directly into the c
 
 Skills are prompt templates. Slash commands are the perfect delivery mechanism.
 
+### Progressive Disclosure
+
+Don't want to load all skills upfront? Use `/discover` for progressive disclosure:
+
+**1. Export slash commands (including discover):**
+```bash
+openskills export-all-slash --dir .factory/commands
+```
+
+**2. In Droid, discover skills first:**
+```
+/discover
+```
+
+Outputs:
+```
+Skills provide specialized capabilities for specific tasks.
+
+Available skills:
+- pdf: Extract text from PDF documents
+- xlsx: Process spreadsheet data
+- skill-creator: Create new skills
+
+Mode commands (change interaction mode):
+- vision: Analyze images and visual content
+
+To use a skill, type: /skill-name
+```
+
+**3. Load specific skill when needed:**
+```
+/pdf
+```
+
+**This is Claude Code's progressive disclosure pattern** - show skill list first (token-efficient), load full skill only when invoked. But works with ANY agent via slash commands.
+
+**Token Budget:** The `/discover` command respects a 15,000 character limit (configurable with `--max-chars`). With large skill sets, lower-priority skills are truncated to fit the budget.
+
+**Format Options:**
+```bash
+openskills discover --format=text   # Human-readable (default, for slash commands)
+openskills discover --format=xml    # XML structure
+openskills discover --format=json   # Full structured JSON
+```
+
 ---
 
 ## Advanced Features

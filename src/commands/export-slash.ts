@@ -85,8 +85,24 @@ export async function exportAllSlash(dir: string = '.factory/commands'): Promise
     }
   }
 
+  // Generate discover.md for progressive disclosure
+  try {
+    const discoverMd = `---
+description: Show available skills (progressive disclosure)
+---
+
+$(openskills discover --format=text)
+`;
+    const discoverPath = join(dir, 'discover.md');
+    writeFileSync(discoverPath, discoverMd, 'utf-8');
+    console.log(`✓ discover.md`);
+    exported.push('discover');
+  } catch (err) {
+    console.error(`✗ discover.md - ${err instanceof Error ? err.message : 'Failed'}`);
+  }
+
   console.log();
-  console.log(`Skills exported: ${exported.length}/${skills.length}`);
+  console.log(`Skills exported: ${exported.length}/${skills.length + 1}`);
   console.log();
   console.log('Skills now available as slash commands:');
   console.log(`  /${exported.join(', /')}`);

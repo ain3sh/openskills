@@ -130,8 +130,6 @@ program
 
 program
   .command('tool-description')
-  .alias('discover')
-  .alias('skill-discover')
   .description('Emit a dynamic Skill tool description listing available skills')
   .option('-c, --compact', 'Emit one-line compact description', false)
   .option('--max-chars <n>', 'Maximum characters (default: 15000)', (v) => parseInt(v, 10))
@@ -182,6 +180,19 @@ program
   .action(async (opts) => {
     const { exportAllSlash } = await import('./commands/export-slash.js');
     await exportAllSlash(opts.dir);
+  });
+
+program
+  .command('discover')
+  .description('Generate progressive disclosure block for skills')
+  .option('--format <type>', 'Output format: text|xml|json (default: text)')
+  .option('--max-chars <number>', 'Character limit (default: 15000)', parseInt)
+  .option('--include-hidden', 'Include hidden skills')
+  .option('--include-disabled', 'Include disabled skills')
+  .option('--all', 'Include all skills')
+  .action(async (opts) => {
+    const { discover } = await import('./commands/discover.js');
+    discover(opts);
   });
 
 // Wrap in async IIFE for CJS compatibility (SEA binary requires CJS format)
