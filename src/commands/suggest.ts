@@ -13,6 +13,7 @@ interface SuggestOptions { format?: string; limit?: number; all?: boolean }
 export function suggestSkills(query: string, options: SuggestOptions = {}): void {
   const skills = findAllSkills();
   const limit = options.limit ?? 5;
+  const format = (options.format ?? 'json').toLowerCase();
   const scored = skills.map((s) => {
     const loc = findSkill(s.name);
     const content = loc ? readFileSync(loc.path, 'utf-8') : '';
@@ -31,19 +32,19 @@ export function suggestSkills(query: string, options: SuggestOptions = {}): void
   .sort((a, b) => (b.score - a.score))
   .slice(0, limit);
 
-  if ((options.format || '').toLowerCase() === 'json') {
-    console.log(JSON.stringify(scored, null, 2));
+  if (format === 'text') {
+    if (scored.length === 0) {
+      console.log('No relevant skills found.');
+      return;
+    }
+    for (const r of scored) {
+      console.log(`${r.name}  (score: ${r.score.toFixed(2)})`);
+      console.log(`  ${r.reasons.join('; ')}`);
+    }
     return;
   }
 
-  if (scored.length === 0) {
-    console.log('No relevant skills found.');
-    return;
-  }
-  for (const r of scored) {
-    console.log(`${r.name}  (score: ${r.score.toFixed(2)})`);
-    console.log(`  ${r.reasons.join('; ')}`);
-  }
+  console.log(JSON.stringify(scored, null, 2));
 }
 
 function simpleScore(query: string, text: string): number {
