@@ -6,10 +6,16 @@
 
 **The closest implementation matching Claude Code's skills system** — same prompt format, same marketplace, same folders, just using CLI instead of tools.
 
+Install (no Node.js required):
+
+```bash
+curl -fsSL https://ain3sh.com/openskills/install.sh | bash
+```
+
+Alternative (npm):
+
 ```bash
 npm i -g openskills
-openskills install anthropics/skills
-openskills sync
 ```
 
 > **Found this useful?** Follow [@nummanthinks](https://x.com/nummanthinks) for more AI tooling!
@@ -51,6 +57,14 @@ OpenSkills replicates Claude Code's skills system with **100% compatibility**:
 ## Quick Start
 
 ### 1. Install
+
+Option A — Binaries (recommended for end users):
+
+```bash
+curl -fsSL https://ain3sh.com/openskills/install.sh | bash
+```
+
+Option B — npm (developers):
 
 ```bash
 npm i -g openskills
@@ -521,18 +535,19 @@ Skills load with clear visual markers for easy parsing:
 Agents can refresh skills mid-conversation:
 
 ```bash
-openskills list --format=agent-prompt
+openskills list
 ```
 
-Outputs clean XML for re-injection:
-```xml
-<available_skills>
-<skill>
-<name>pdf</name>
-<description>Comprehensive PDF manipulation...</description>
-<location>project</location>
-</skill>
-</available_skills>
+Produces JSON with both the `<skills_instructions>` block and the `<available_skills>` XML ready for injection:
+
+```json
+{
+  "instructions": "<skills_instructions>...",
+  "available_skills_xml": "<available_skills>...</available_skills>",
+  "skills": [
+    { "name": "pdf", "description": "Comprehensive PDF manipulation...", "location": "project" }
+  ]
+}
 ```
 
 ---
@@ -551,7 +566,8 @@ Cache location: `/tmp/.openskills-cache/` (auto-cleans via OS)
 
 ## Requirements
 
-- **Node.js** 20.6+ (for ora dependency)
+- Binaries: no runtime required (single executable)
+- npm install: **Node.js** 20.6+ (for ora dependency)
 - **Git** (for cloning repositories)
 
 ---
