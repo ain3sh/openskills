@@ -78,9 +78,22 @@ program
   .command('sync')
   .description('Update AGENTS.md with installed skills (interactive, pre-selects current state)')
   .option('-y, --yes', 'Skip interactive selection, sync all skills')
+  .option('--transclusion', 'Use transclusion mode (creates SKILLS.md + @SKILLS.md reference)')
+  .option('--transclusion-pattern <pattern>', 'Custom transclusion pattern (default: @SKILLS.md)')
   .action(async (opts) => {
     const { syncAgentsMd } = await import('./commands/sync.js');
     await syncAgentsMd(opts);
+  });
+
+program
+  .command('generate-skills-md')
+  .description('Generate standalone SKILLS.md file with skills disclosure')
+  .option('--format <type>', 'Output format: xml|markdown|compact (default: xml)')
+  .option('--output <file>', 'Output file path (default: SKILLS.md)')
+  .option('--force', 'Overwrite existing file without confirmation')
+  .action(async (opts) => {
+    const { generateSkillsMd } = await import('./commands/generate-skills-md.js');
+    await generateSkillsMd(opts);
   });
 
 program

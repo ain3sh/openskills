@@ -43,21 +43,24 @@ A. Core SKILL.md Parsing
 •  ✅ {baseDir} resolution - Prepended to skill content
 
 B. JSON Outputs (Headless Agent Support)
-•  ✅ `read` - Returns 3-message structure:
+•  ✅ `read` - Returns two base messages plus conditional extras:
     ```json
     {
-    "skill": { "name", "baseDir", "version" },
-    "newMessages": [
-        { "role": "user", "content": "<command-message>...", "isMeta": false },
-        { "role": "user", "content": "SKILL.md content", "isMeta": true },
-        { "role": "user", "content": "<metadata>...", "isMeta": true }
-    ],
-    "contextModifier": {
-        "allowedTools": [...],
-        "model": "...",
-        "reasoningEffort": "...",
-        "normalizedPermissions": {...}
-    }
+      "skill": { "name": "pdf", "baseDir": "/skills/pdf", "version": "2.1.0" },
+      "newMessages": [
+        { "role": "user", "content": "<command-message>...\n<command-name>...</command-name>", "isMeta": false },
+        { "role": "user", "content": "<!-- baseDir: /skills/pdf -->\n...SKILL.md content...", "isMeta": true },
+        { "role": "user", "content": { "type": "command_permissions", "allowedTools": ["Read"], "model": null }, "isMeta": true },
+        { "role": "user", "content": "Bundled resources...", "isMeta": true, "attachmentType": "reference" }
+      ],
+      "contextModifier": {
+        "allowedTools": ["Read"],
+        "model": null,
+        "normalizedPermissions": { "tools": ["Read"] }
+      },
+      "attachments": [
+        { "role": "user", "content": "Bundled resources...", "isMeta": true, "attachmentType": "reference" }
+      ]
     }
     ```
 
@@ -69,17 +72,13 @@ B. JSON Outputs (Headless Agent Support)
 •  ✅ `skill-prompt` - LLM-focused meta-prompt generator
 
 C. Message Injection Architecture
-•  ✅ Two-message pattern implemented in read output:
-    1. Metadata message (isMeta: false) - visible
-    2. Skill prompt (isMeta: true) - hidden from UI
-    3. Metadata XML (isMeta: true) - structured data
+•  ✅ Two-message base implemented in both read & invoke outputs:
+    1. Metadata message (isMeta: false) – `<command-message>` + `<command-name>` visible to the user
+    2. Skill prompt (isMeta: true) – SKILL.md content (no frontmatter) with a prepended `<!-- baseDir: ... -->`
 
-•  ✅ XML tag structure:
-    ```xml
-    <command-message>The "{name}" skill is loading</command-message>
-    <command-name>{name}</command-name>
-    <metadata name="..." baseDir="..." model="..." allowedTools="..."></metadata>
-    ```
+•  ✅ Conditional messages added only when required:
+    - `command_permissions` object (isMeta: true) injected when the skill declares `allowed-tools` or a model override
+    - Attachment messages (isMeta: true, `attachmentType`: diagnostic/reference/context) appended when diagnostics/resources exist
 
 D. Execution Context Modification
 •  ✅ `contextModifier` object fully implemented:
@@ -236,17 +235,7 @@ These features from the blog post are NOT implemented in either PR:
     5. Not prompt-based
 •  Current implementation: Basic "not found" error only
 
-5. **Attachment Messages**
-•  ❌ Conditional attachment messages for diagnostics/file references
-•  Blog reference: "attachment messages can carry diagnostics information, file references, or additional context"
-
-6. **Permission Checking Flow**
-•  ❌ Deny rules support
-•  ❌ Allow rules support
-•  ❌ Default "ask user" behavior
-•  Blog shows: deny rules → allow rules → ask user prompt
-
-7. **Test Coverage**
+5. **Test Coverage**
 •  ❌ Only 2 test files currently in main branch (tests/utils/yaml.test.ts, tests/utils/dirs.test.ts)
 •  ❌ PR #2 adds tests but coverage is incomplete
 •  ❌ No integration tests for full workflow

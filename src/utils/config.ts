@@ -18,6 +18,10 @@ export interface OpenskillsConfig {
       default?: 'allow' | 'deny' | 'ask';
     };
   };
+  sync?: {
+    mode?: 'injection' | 'transclusion';
+    transclusionPattern?: string;
+  };
   tokenBudget?: number;
   telemetry?: {
     enabled?: boolean; // Default: true
@@ -140,6 +144,16 @@ function mergeConfig(target: OpenskillsConfig, source: Partial<OpenskillsConfig>
       if (source.permissions.skills.default) {
         target.permissions.skills.default = source.permissions.skills.default;
       }
+    }
+  }
+  
+  if (source.sync) {
+    if (!target.sync) target.sync = {};
+    if (source.sync.mode) {
+      target.sync.mode = source.sync.mode;
+    }
+    if (source.sync.transclusionPattern) {
+      target.sync.transclusionPattern = source.sync.transclusionPattern;
     }
   }
   

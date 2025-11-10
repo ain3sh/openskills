@@ -1,17 +1,32 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import chalk from 'chalk';
-import { checkbox } from '@inquirer/prompts';
+import { checkbox, confirm } from '@inquirer/prompts';
 import { ExitPromptError } from '@inquirer/core';
 import { findAllSkills } from '../utils/skills.js';
-import { generateSkillsXml, replaceSkillsSection, parseCurrentSkills, removeSkillsSection } from '../utils/agents-md.js';
+import { 
+  generateSkillsXml, 
+  replaceSkillsSection, 
+  parseCurrentSkills, 
+  removeSkillsSection,
+  detectTransclusionPattern,
+  appendTransclusionReference
+} from '../utils/agents-md.js';
+import { generateSkillsMd } from './generate-skills-md.js';
 import type { Skill } from '../types.js';
+import { loadConfig } from '../utils/config.js';
 
 export interface SyncOptions {
   yes?: boolean;
+  transclusion?: boolean;
+  transclusionPattern?: string;
 }
 
 /**
  * Sync installed skills to AGENTS.md
+ * 
+ * Supports two modes:
+ * 1. Direct injection (default) - embeds skills XML directly in AGENTS.md
+ * 2. Transclusion mode - creates SKILLS.md and adds @SKILLS.md reference
  */
 export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
   if (!existsSync('AGENTS.md')) {
@@ -25,6 +40,34 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
     console.log('No skills installed. Install skills first:');
     console.log(`  ${chalk.cyan('openskills install anthropics/skills --project')}`);
     return;
+  }
+
+  // Load config for default behavior
+  const config = loadConfig();
+  let useTransclusion = options.transclusion ?? config.sync?.mode === 'transclusion';
+  const transclusionPattern = options.transclusionPattern ?? config.sync?.transclusionPattern ?? '@SKILLS.md';
+  
+  // Check if AGENTS.md already uses transclusion
+  const content = readFileSync('AGENTS.md', 'utf-8');
+  const existingTransclusion = detectTransclusionPattern(content);
+  
+  // If transclusion mode not specified and no existing pattern, ask user
+  if (options.transclusion === undefined && !existingTransclusion && !options.yes) {
+    try {
+      useTransclusion = await confirm({
+        message: 'Use transclusion mode? (Creates separate SKILLS.md file)',
+        default: false
+      });
+    } catch (error) {
+      if (error instanceof ExitPromptError) {
+        console.log(chalk.yellow('\nCancelled by user'));
+        process.exit(0);
+      }
+      throw error;
+    }
+  } else if (existingTransclusion) {
+    // If transclusion already exists, maintain that mode
+    useTransclusion = true;
   }
 
   // Interactive mode by default (unless -y flag)
@@ -76,18 +119,41 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
     }
   }
 
-  const xml = generateSkillsXml(skills);
-  const content = readFileSync('AGENTS.md', 'utf-8');
-  const updated = replaceSkillsSection(content, xml);
-
-  writeFileSync('AGENTS.md', updated);
-
-  const hadMarkers =
-    content.includes('<skills_system') || content.includes('<!-- SKILLS_TABLE_START -->');
-
-  if (hadMarkers) {
-    console.log(chalk.green(`✅ Synced ${skills.length} skill(s) to AGENTS.md`));
+  // Handle transclusion mode
+  if (useTransclusion) {
+    // Generate SKILLS.md file
+    await generateSkillsMd({ 
+      format: 'xml', 
+      output: 'SKILLS.md',
+      force: true 
+    });
+    
+    // Check if AGENTS.md already has transclusion reference
+    const agentsMdContent = readFileSync('AGENTS.md', 'utf-8');
+    if (!detectTransclusionPattern(agentsMdContent)) {
+      // Add transclusion reference to AGENTS.md
+      const updatedContent = appendTransclusionReference(agentsMdContent, transclusionPattern);
+      writeFileSync('AGENTS.md', updatedContent);
+      console.log(chalk.green(`✅ Added ${transclusionPattern} reference to AGENTS.md`));
+    } else {
+      console.log(chalk.green(`✅ Updated SKILLS.md (${skills.length} skills)`));
+      console.log(chalk.dim(`AGENTS.md already contains transclusion reference`));
+    }
   } else {
-    console.log(chalk.green(`✅ Added skills section to AGENTS.md (${skills.length} skill(s))`));
+    // Direct injection mode (original behavior)
+    const xml = generateSkillsXml(skills);
+    const content = readFileSync('AGENTS.md', 'utf-8');
+    const updated = replaceSkillsSection(content, xml);
+
+    writeFileSync('AGENTS.md', updated);
+
+    const hadMarkers =
+      content.includes('<skills_system') || content.includes('<!-- SKILLS_TABLE_START -->');
+
+    if (hadMarkers) {
+      console.log(chalk.green(`✅ Synced ${skills.length} skill(s) to AGENTS.md`));
+    } else {
+      console.log(chalk.green(`✅ Added skills section to AGENTS.md (${skills.length} skill(s))`));
+    }
   }
 }

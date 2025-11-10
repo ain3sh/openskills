@@ -177,7 +177,44 @@ openskills suggest "work with spreadsheets"
 
 # Sync AGENTS.md with installed skills
 openskills sync
+
+# Generate standalone SKILLS.md (for transclusion)
+openskills generate-skills-md
+
+# Use transclusion mode (@SKILLS.md reference)
+openskills sync --transclusion
 ```
+
+### Transclusion Mode (New!)
+
+Instead of embedding skills directly in AGENTS.md, you can use transclusion:
+
+```bash
+# Generate SKILLS.md separately
+openskills generate-skills-md --format xml
+
+# Or use sync with transclusion mode
+openskills sync --transclusion
+```
+
+This adds `@SKILLS.md` to AGENTS.md instead of embedding the XML directly:
+
+```markdown
+# AGENTS.md
+[... your content ...]
+
+## Skills
+
+@SKILLS.md
+```
+
+**Benefits:**
+- Cleaner AGENTS.md file
+- SKILLS.md can be gitignored if desired  
+- Dynamic updates without modifying AGENTS.md
+- Supports multiple patterns: `@SKILLS.md`, `@include: SKILLS.md`, `<!-- @include: SKILLS.md -->`
+
+**Note:** Transclusion requires agent support for the `@filename` pattern, which is not standard markdown.
 
 ### Utilities
 
@@ -334,36 +371,58 @@ Returns: Array of skills with metadata (name, description, version, etc.)
 openskills invoke <skill-name> --yes
 ```
 
-Returns:
+Returns (example with permissions + attachments):
 ```json
 {
-  "skill": { 
-    "name": "pdf", 
+  "skill": {
+    "name": "pdf",
     "baseDir": "/path/to/skills/pdf",
     "version": "2.1.0"
   },
   "newMessages": [
     {
       "role": "user",
-      "content": "<command-message>The \"pdf\" skill is loading</command-message>",
+      "content": "<command-message>The \"pdf\" skill is loading</command-message>\n<command-name>pdf</command-name>",
       "isMeta": false
     },
     {
-      "role": "user", 
-      "content": "<!-- SKILL.md instructions here -->",
+      "role": "user",
+      "content": "<!-- baseDir: /path/to/skills/pdf -->\n...SKILL.md instructions...",
       "isMeta": true
     },
     {
       "role": "user",
-      "content": "<metadata name=\"pdf\" baseDir=\"...\" allowedTools=\"...\"></metadata>",
+      "content": {
+        "type": "command_permissions",
+        "allowedTools": ["Read", "Bash(pdftotext:*)"],
+        "model": "claude-3-7-sonnet-20250219"
+      },
       "isMeta": true
+    },
+    {
+      "role": "user",
+      "content": "Bundled resources available in /path/to/skills/pdf:\n- scripts/extract.sh\n- references/summary.md",
+      "isMeta": true,
+      "attachmentType": "reference"
     }
   ],
   "contextModifier": {
-    "allowedTools": ["Bash", "Read"],
+    "allowedTools": ["Read", "Bash(pdftotext:*)"],
     "model": "claude-3-7-sonnet-20250219",
-    "reasoningEffort": "high"
-  }
+    "tokens": 4096,
+    "normalizedPermissions": {
+      "tools": ["Read", "Execute"],
+      "shellAllowPatterns": ["pdftotext:*"]
+    }
+  },
+  "attachments": [
+    {
+      "role": "user",
+      "content": "Bundled resources available in /path/to/skills/pdf:\n- scripts/extract.sh\n- references/summary.md",
+      "isMeta": true,
+      "attachmentType": "reference"
+    }
+  ]
 }
 ```
 
@@ -376,7 +435,14 @@ Metadata about what the skill wants. Your agent decides whether to:
 
 **No rules. Your agent, your call.**
 
-The three-message pattern mirrors Claude Code's Skill tool output exactly. Message 1 is visible to users (`isMeta: false`), messages 2-3 are hidden but sent to the API (`isMeta: true`).
+OpenSkills follows the blog’s **two-message base pattern**:
+
+1. **Visible metadata** (`isMeta: false`) – `<command-message>` + `<command-name>` so humans see which skill loaded.
+2. **Hidden prompt** (`isMeta: true`) – SKILL.md content with a prepended `<!-- baseDir: ... -->` comment.
+
+Additional messages are injected **only when needed**:
+- A single `command_permissions` object when `allowed-tools` or `model` overrides are declared.
+- Attachment messages (`attachmentType`: `diagnostic`, `reference`, or `context`) when diagnostics/resources are available.
 
 ---
 

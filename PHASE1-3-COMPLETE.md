@@ -22,31 +22,26 @@
 
 ### Verification
 ✅ Minimal skill (no permissions/attachments): **2 messages**
-✅ With allowed-tools: **3 messages** 
+✅ With allowed-tools: **3 messages**
 ✅ With model override: **3 messages**
-✅ With both: **3 messages** (single permissions message with both)
+✅ With allowed-tools + model override: **3 messages** (single permissions payload)
+✅ Attachments add extra messages on top of the base/permission messages (diagnostics, references, context)
 
 ---
 
 ## Phase 2: Implement Attachment Messages (COMPLETE)
 
 ### What We Added
-- Conditional attachment message injection (blog lines 774)
+- Conditional attachment message injection (blog lines 768-785)
 - Attachments only added when present (diagnostics, resources, context)
-- Proper ordering: base messages → attachments → permissions
+- Proper ordering: base messages → optional permissions → optional attachments
 
 ### Implementation
 Both `invoke.ts` and `read.ts` now include:
 ```typescript
 // CONDITIONALLY add attachment messages
-if (attachments && attachments.length > 0) {
-  for (const attachment of attachments) {
-    newMessages.push({
-      role: 'user',
-      content: typeof attachment === 'string' ? attachment : JSON.stringify(attachment),
-      isMeta: true
-    });
-  }
+if (attachments.length > 0) {
+  newMessages.push(...attachments);
 }
 ```
 

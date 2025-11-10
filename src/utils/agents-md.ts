@@ -1,6 +1,66 @@
 import type { Skill } from '../types.js';
 
 /**
+ * Detect if AGENTS.md uses transclusion pattern
+ * Supports multiple patterns:
+ * - @SKILLS.md
+ * - @include: SKILLS.md
+ * - <!-- @include: SKILLS.md -->
+ */
+export function detectTransclusionPattern(content: string): string | null {
+  // Check for HTML comment style first (most specific)
+  const htmlCommentMatch = content.match(/<!--\s*@include:\s*SKILLS\.md\s*-->/);
+  if (htmlCommentMatch) {
+    return htmlCommentMatch[0];
+  }
+  
+  // Check for VuePress style
+  if (content.includes('@include: SKILLS.md')) {
+    return '@include: SKILLS.md';
+  }
+  
+  // Check for simple @filename pattern
+  if (content.includes('@SKILLS.md')) {
+    return '@SKILLS.md';
+  }
+  
+  // Check for any variation with different casing
+  const patterns = [
+    /@skills\.md/i,
+    /@include:\s*skills\.md/i,
+    /<!--\s*@include:\s*skills\.md\s*-->/i
+  ];
+  
+  for (const pattern of patterns) {
+    const match = content.match(pattern);
+    if (match) {
+      return match[0];
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Append transclusion reference to AGENTS.md
+ */
+export function appendTransclusionReference(content: string, pattern: string = '@SKILLS.md'): string {
+  // Remove any existing skills section first
+  let updated = content;
+  
+  // Remove direct injection if it exists
+  if (content.includes('<skills_system') || content.includes('<!-- SKILLS_TABLE_START -->')) {
+    updated = removeSkillsSection(content);
+  }
+  
+  // Append transclusion pattern at the end
+  const trimmed = updated.trimEnd();
+  const separator = '\n\n---\n\n## Skills\n\n';
+  
+  return `${trimmed}${separator}${pattern}\n`;
+}
+
+/**
  * Parse skill names currently in AGENTS.md
  */
 export function parseCurrentSkills(content: string): string[] {
@@ -104,7 +164,7 @@ export function removeSkillsSection(content: string): string {
     return content.replace(regex, '<!-- Skills section removed -->');
   }
 
-  // Fallback to HTML comments
+  // Fallback to HTML comments - remove the entire section including markers
   const htmlStartMarker = '<!-- SKILLS_TABLE_START -->';
   const htmlEndMarker = '<!-- SKILLS_TABLE_END -->';
 
@@ -113,7 +173,8 @@ export function removeSkillsSection(content: string): string {
       `${htmlStartMarker}[\\s\\S]*?${htmlEndMarker}`,
       'g'
     );
-    return content.replace(regex, `${htmlStartMarker}\n<!-- Skills section removed -->\n${htmlEndMarker}`);
+    // Remove the entire section including markers
+    return content.replace(regex, '<!-- Skills section removed -->');
   }
 
   // No markers found - nothing to remove
