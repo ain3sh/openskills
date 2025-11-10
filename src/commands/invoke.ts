@@ -9,7 +9,7 @@ import { loadConfig, configToPermissionRules } from '../utils/config.js';
 import { askUserPermission } from '../utils/interactive.js';
 import { buildAttachments, collectDiagnostics } from '../utils/attachments.js';
 
-export interface InvokeOptions { args?: string; yes?: boolean; attachments?: AttachmentVerbosity; }
+export interface InvokeOptions { args?: string; yes?: boolean; attachments?: AttachmentVerbosity; format?: 'json' | 'prompt'; }
 
 /**
  * Invoke a skill and emit strict Skill Tool contract payload (JSON)
@@ -129,6 +129,14 @@ export async function invokeSkill(skillName: string, options: InvokeOptions = {}
     attachments: attachments.length ? attachments : undefined,
   };
 
+  // Output format handling
+  if (options.format === 'prompt') {
+    // Extract just the SKILL.md content (message 2) for slash commands
+    console.log(newMessages[1].content);
+    return;
+  }
+
+  // Default: JSON output
   console.log(JSON.stringify(json, null, 2));
 }
 

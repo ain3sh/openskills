@@ -378,6 +378,82 @@ The three-message pattern mirrors Claude Code's Skill tool output exactly. Messa
 
 ---
 
+## 🚀 Using Skills with Slash Commands
+
+OpenSkills works perfectly with CLIs that support custom slash commands (markdown-based shortcuts).
+
+### Quick Setup (Factory Droid)
+
+**1. Export all skills as slash commands:**
+```bash
+openskills export-all-slash --dir .factory/commands
+```
+
+**2. Reload commands in Droid:**
+```
+/commands → press R
+```
+
+**3. Use skills:**
+```
+/pdf
+/xlsx
+/skill-creator
+```
+
+### Manual Setup
+
+Export a single skill:
+```bash
+openskills export-slash pdf > .factory/commands/pdf.md
+```
+
+The generated markdown file:
+```markdown
+---
+description: Extract text from PDF documents
+---
+$(openskills invoke pdf --yes --format=prompt)
+```
+
+When you type `/pdf`, the skill's SKILL.md instructions load directly into the conversation.
+
+### How It Works
+
+1. `/pdf` triggers the markdown slash command
+2. Command runs `openskills invoke pdf --format=prompt`
+3. Outputs SKILL.md content via system notification
+4. Agent sees the skill instructions as injected context
+5. Agent follows the instructions
+
+**This is functionally identical to Claude Code's Skill tool**, but works with ANY CLI that supports markdown slash commands.
+
+### Supported CLIs
+
+- ✅ **Factory Droid** (`.factory/commands/`)
+- ✅ **Cursor** (`.cursor/commands/` - experimental)
+- ✅ **Windsurf** (`.windsurf/commands/` - experimental)
+- ✅ Any CLI implementing markdown slash commands
+
+### Why Slash Commands > MCP
+
+**MCP Skill Server:**
+- Requires server running
+- Adds latency
+- Consumes tokens for tool description
+- Meta-tool overhead in every request
+
+**Slash Commands:**
+- Direct skill injection
+- Zero latency
+- Zero tool overhead
+- Simpler architecture
+- Universal compatibility
+
+Skills are prompt templates. Slash commands are the perfect delivery mechanism.
+
+---
+
 ## Advanced Features
 
 ### JSON Output Mode

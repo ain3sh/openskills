@@ -68,9 +68,10 @@ program
   .option('-a, --args <args>', 'Optional arguments string for metadata display')
   .option('-y, --yes', 'Skip permission prompts (approve all skills)')
   .option('--attachments <level>', 'Attachment verbosity: none|errors|warnings|full (default: warnings)')
+  .option('--format <type>', 'Output format: json|prompt (default: json)')
   .action(async (name, opts) => {
     const { invokeSkill } = await import('./commands/invoke.js');
-    await invokeSkill(name, { args: opts.args, yes: opts.yes, attachments: opts.attachments });
+    await invokeSkill(name, { args: opts.args, yes: opts.yes, attachments: opts.attachments, format: opts.format });
   });
 
 program
@@ -163,6 +164,24 @@ program
   .action(async (opts) => {
     const { telemetryCommand } = await import('./commands/telemetry.js');
     telemetryCommand(opts);
+  });
+
+program
+  .command('export-slash <skill-name>')
+  .description('Export skill as markdown slash command')
+  .option('--dir <directory>', 'Output directory (default: stdout)')
+  .action(async (name, opts) => {
+    const { exportSlash } = await import('./commands/export-slash.js');
+    await exportSlash(name, opts);
+  });
+
+program
+  .command('export-all-slash')
+  .description('Export all skills as markdown slash commands')
+  .option('--dir <directory>', 'Output directory (default: .factory/commands)')
+  .action(async (opts) => {
+    const { exportAllSlash } = await import('./commands/export-slash.js');
+    await exportAllSlash(opts.dir);
   });
 
 // Wrap in async IIFE for CJS compatibility (SEA binary requires CJS format)
