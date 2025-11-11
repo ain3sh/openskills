@@ -87,4 +87,4 @@ tests/
 
 ## Skills
 
-@SKILLS.md
+@.agent/SKILLS.md

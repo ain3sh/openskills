@@ -49,7 +49,7 @@ describe('Transclusion Support', () => {
     it('appends @SKILLS.md reference to empty file', () => {
       const content = '# AGENTS.md';
       const result = appendTransclusionReference(content);
-      expect(result).toContain('@SKILLS.md');
+      expect(result).toContain('@.agent/SKILLS.md');
       expect(result).toContain('## Skills');
     });
 
@@ -62,11 +62,11 @@ describe('Transclusion Support', () => {
 <skill><name>old</name></skill>
 </available_skills>
 </skills_system>`;
-      
+
       const result = appendTransclusionReference(content);
       expect(result).not.toContain('<skills_system');
       expect(result).not.toContain('old');
-      expect(result).toContain('@SKILLS.md');
+      expect(result).toContain('@.agent/SKILLS.md');
     });
 
     it('uses custom transclusion pattern', () => {
@@ -81,11 +81,11 @@ describe('Transclusion Support', () => {
 <!-- SKILLS_TABLE_START -->
 Old skills content
 <!-- SKILLS_TABLE_END -->`;
-      
+
       const result = appendTransclusionReference(content);
       expect(result).not.toContain('Old skills content');
       expect(result).not.toContain('SKILLS_TABLE_START');
-      expect(result).toContain('@SKILLS.md');
+      expect(result).toContain('@.agent/SKILLS.md');
     });
   });
 

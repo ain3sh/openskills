@@ -45,7 +45,7 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
   // Load config for default behavior
   const config = loadConfig();
   let useTransclusion = options.transclusion ?? config.sync?.mode === 'transclusion';
-  const transclusionPattern = options.transclusionPattern ?? config.sync?.transclusionPattern ?? '@SKILLS.md';
+  const transclusionPattern = options.transclusionPattern ?? config.sync?.transclusionPattern ?? '@.agent/SKILLS.md';
   
   // Check if AGENTS.md already uses transclusion
   const content = readFileSync('AGENTS.md', 'utf-8');
@@ -122,10 +122,10 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
   // Handle transclusion mode
   if (useTransclusion) {
     // Generate SKILLS.md file
-    await generateSkillsMd({ 
-      format: 'xml', 
-      output: 'SKILLS.md',
-      force: true 
+    await generateSkillsMd({
+      format: 'xml',
+      output: '.agent/SKILLS.md',
+      force: true
     });
     
     // Check if AGENTS.md already has transclusion reference
