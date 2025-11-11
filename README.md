@@ -33,9 +33,9 @@ OpenSkills brings Anthropic's Claude Skills system to **all AI coding agents** (
 
 ### Quick Install (Recommended)
 
-#### Linux/macOS
+#### Linux/macOS/WSL
 ```bash
-curl -fsSL https://github.com/ain3sh/openskills/releases/latest/download/install.sh | bash
+curl -fsSL https://ain3sh.com/openskills/install.sh | bash
 ```
 
 #### Windows
