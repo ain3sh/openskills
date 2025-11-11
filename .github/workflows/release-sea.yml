@@ -26,6 +26,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
           files: |
             dist/sea/openskills-linux-*
             dist/sea/checksums-linux.txt
@@ -49,6 +50,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
           files: |
             dist/sea/openskills-darwin-*
             dist/sea/checksums-darwin.txt
@@ -71,6 +73,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
           files: |
             dist/sea/openskills-win32-x64.exe
             dist/sea/checksums-win32.txt
