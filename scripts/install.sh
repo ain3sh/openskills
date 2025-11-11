@@ -5,7 +5,7 @@
 set -euo pipefail
 
 REPO="ain3sh/openskills"
-INSTALL_DIR="$HOME/.openskills/bin"
+INSTALL_DIR="$HOME/.local/bin"
 BINARY_NAME="openskills"
 
 echo "🛠️  OpenSkills installer"
@@ -31,7 +31,7 @@ esac
 echo "📍 Detected: $PLATFORM-$ARCH_NAME"
 echo ""
 
-echo "🔍 Fetching latest release…"
+echo "🔍 Fetching latest release..."
 LATEST_URL="https://api.github.com/repos/$REPO/releases/latest"
 SUFFIX="openskills-$PLATFORM-$ARCH_NAME"
 
@@ -66,17 +66,17 @@ echo "✅ Installed to: $INSTALL_DIR/$BINARY_NAME"
 echo ""
 
 # Add to PATH if needed
-if echo ":$PATH:" | grep -q ":$HOME/.openskills/bin:"; then
+if echo ":$PATH:" | grep -q ":$HOME/.local/bin:"; then
   echo "✅ OpenSkills is already in your PATH"
 else
   UPDATED=false
   for SHELL_RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$SHELL_RC" ]; then
-      if ! grep -q ".openskills/bin" "$SHELL_RC" 2>/dev/null; then
+      if ! grep -q ".local/bin" "$SHELL_RC" 2>/dev/null; then
         echo "" >> "$SHELL_RC"
-        echo "# OpenSkills CLI" >> "$SHELL_RC"
-        echo "export PATH=\"$HOME/.openskills/bin:$PATH\"" >> "$SHELL_RC"
-        echo "✅ Added OpenSkills to PATH in $SHELL_RC"
+        echo "# Add local binaries to PATH" >> "$SHELL_RC"
+        echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+        echo "✅ Added ~/.local/bin to PATH in $SHELL_RC"
         UPDATED=true
       fi
     fi
@@ -84,11 +84,11 @@ else
 
   if [ "$UPDATED" = false ]; then
     SHELL_RC="$HOME/.profile"
-    if ! grep -q ".openskills/bin" "$SHELL_RC" 2>/dev/null; then
+    if ! grep -q ".local/bin" "$SHELL_RC" 2>/dev/null; then
       echo "" >> "$SHELL_RC"
-      echo "# OpenSkills CLI" >> "$SHELL_RC"
-      echo "export PATH=\"$HOME/.openskills/bin:$PATH\"" >> "$SHELL_RC"
-      echo "✅ Added OpenSkills to PATH in $SHELL_RC"
+      echo "# Add local binaries to PATH" >> "$SHELL_RC"
+      echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+      echo "✅ Added ~/.local/bin to PATH in $SHELL_RC"
       UPDATED=true
     fi
   fi
@@ -106,7 +106,7 @@ else
   else
     echo "⚠️  Could not add to PATH automatically"
     echo "   Add this to your shell config:"
-    echo "   export PATH=\"$HOME/.openskills/bin:$PATH\""
+    echo "   export PATH=\"\$HOME/.local/bin:\$PATH\""
   fi
 fi
 

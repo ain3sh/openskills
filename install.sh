@@ -1,79 +1,122 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# OpenSkills installer - downloads and installs the appropriate binary
+# Usage: curl -fsSL https://ain3sh.com/openskills/install.sh | bash
+
 set -euo pipefail
 
-# OpenSkills installer script
-# Usage: curl -fsSL https://github.com/ain3sh/openskills/releases/latest/download/install.sh | bash
-
 REPO="ain3sh/openskills"
-INSTALL_DIR="${HOME}/.local/bin"
+INSTALL_DIR="$HOME/.local/bin"
 BINARY_NAME="openskills"
+
+echo "🛠️  OpenSkills installer"
+echo ""
 
 # Detect OS and architecture
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
-# Map to release binary names
 case "$OS" in
-    Linux*)
-        PLATFORM="linux"
-        ;;
-    Darwin*)
-        PLATFORM="darwin"
-        ;;
-    *)
-        echo "Error: Unsupported OS: $OS"
-        exit 1
-        ;;
+  Linux*) PLATFORM="linux" ;;
+  Darwin*) PLATFORM="darwin" ;;
+  MINGW*|MSYS*|CYGWIN*) PLATFORM="win32" ; BINARY_NAME="openskills.exe" ;;
+  *) echo "❌ Unsupported OS: $OS"; echo "Supported: Linux, macOS, Windows"; exit 1 ;;
 esac
 
 case "$ARCH" in
-    x86_64)
-        ARCH="x64"
-        ;;
-    aarch64|arm64)
-        ARCH="arm64"
-        ;;
-    *)
-        echo "Error: Unsupported architecture: $ARCH"
-        exit 1
-        ;;
+  x86_64|amd64) ARCH_NAME="x64" ;;
+  arm64|aarch64) ARCH_NAME="arm64" ;;
+  *) echo "❌ Unsupported architecture: $ARCH"; echo "Supported: x86_64, arm64"; exit 1 ;;
 esac
 
-BINARY_FILE="${BINARY_NAME}-${PLATFORM}-${ARCH}"
+echo "📍 Detected: $PLATFORM-$ARCH_NAME"
+echo ""
 
-echo "Installing OpenSkills for ${PLATFORM}-${ARCH}..."
+echo "🔍 Fetching latest release..."
+LATEST_URL="https://api.github.com/repos/$REPO/releases/latest"
+SUFFIX="openskills-$PLATFORM-$ARCH_NAME"
 
-# Create install directory if it doesn't exist
-mkdir -p "$INSTALL_DIR"
-
-# Get latest release URL
-DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${BINARY_FILE}"
-
-# Download binary
-echo "Downloading from ${DOWNLOAD_URL}..."
-if command -v curl > /dev/null; then
-    curl -fsSL "$DOWNLOAD_URL" -o "${INSTALL_DIR}/${BINARY_NAME}"
-elif command -v wget > /dev/null; then
-    wget -q "$DOWNLOAD_URL" -O "${INSTALL_DIR}/${BINARY_NAME}"
+# Prefer jq for robust JSON parsing; fallback to grep -F (fixed string, no regex)
+if command -v jq >/dev/null 2>&1; then
+  DOWNLOAD_URL=$(curl -fsSL "$LATEST_URL" | jq -r --arg suffix "$SUFFIX" '.assets[].browser_download_url | select(endswith($suffix))' | head -n1)
 else
-    echo "Error: Neither curl nor wget found. Please install one of them."
-    exit 1
+  # Using grep -F for literal string matching (prevents injection via SUFFIX)
+  DOWNLOAD_URL=$(curl -fsSL "$LATEST_URL" | grep -F "browser_download_url" | grep -F -- "$SUFFIX" | head -n1 | cut -d '"' -f 4)
 fi
 
-# Make executable
-chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
+if [ -z "${DOWNLOAD_URL:-}" ]; then
+  echo "❌ Could not find a binary for $PLATFORM-$ARCH_NAME"
+  echo "   See releases: https://github.com/$REPO/releases"
+  echo ""
+  echo "Alternative install (requires Node.js):"
+  echo "  npm i -g openskills"
+  echo "  # or"
+  echo "  npx -y openskills@latest --help"
+  exit 1
+fi
 
-# Add to PATH if not already there
-if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+mkdir -p "$INSTALL_DIR"
+echo "📥 Downloading: $DOWNLOAD_URL"
+curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_DIR/$BINARY_NAME"
+if ! chmod +x "$INSTALL_DIR/$BINARY_NAME"; then
+  echo "❌ Failed to mark binary executable: $INSTALL_DIR/$BINARY_NAME"
+  exit 1
+fi
+
+echo "✅ Installed to: $INSTALL_DIR/$BINARY_NAME"
+echo ""
+
+# Add to PATH if needed
+if echo ":$PATH:" | grep -q ":$HOME/.local/bin:"; then
+  echo "✅ OpenSkills is already in your PATH"
+else
+  UPDATED=false
+  for SHELL_RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    if [ -f "$SHELL_RC" ]; then
+      if ! grep -q ".local/bin" "$SHELL_RC" 2>/dev/null; then
+        echo "" >> "$SHELL_RC"
+        echo "# Add local binaries to PATH" >> "$SHELL_RC"
+        echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+        echo "✅ Added ~/.local/bin to PATH in $SHELL_RC"
+        UPDATED=true
+      fi
+    fi
+  done
+
+  if [ "$UPDATED" = false ]; then
+    SHELL_RC="$HOME/.profile"
+    if ! grep -q ".local/bin" "$SHELL_RC" 2>/dev/null; then
+      echo "" >> "$SHELL_RC"
+      echo "# Add local binaries to PATH" >> "$SHELL_RC"
+      echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+      echo "✅ Added ~/.local/bin to PATH in $SHELL_RC"
+      UPDATED=true
+    fi
+  fi
+
+  if [ "$UPDATED" = true ]; then
     echo ""
-    echo "Add the following to your shell configuration file (.bashrc, .zshrc, etc.):"
-    echo "  export PATH=\"\$PATH:${INSTALL_DIR}\""
-    echo ""
-    echo "Or run this command to add it now:"
-    echo "  echo 'export PATH=\"\$PATH:${INSTALL_DIR}\"' >> ~/.bashrc"
+    echo "⚡ Run this to update your current shell:"
+    if [ -f "$HOME/.zshrc" ]; then
+      echo "   source ~/.zshrc"
+    elif [ -f "$HOME/.bashrc" ]; then
+      echo "   source ~/.bashrc"
+    else
+      echo "   source ~/.profile"
+    fi
+  else
+    echo "⚠️  Could not add to PATH automatically"
+    echo "   Add this to your shell config:"
+    echo "   export PATH=\"\$HOME/.local/bin:\$PATH\""
+  fi
 fi
 
 echo ""
-echo "✅ OpenSkills installed successfully to ${INSTALL_DIR}/${BINARY_NAME}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✨ OpenSkills installed successfully!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Run 'openskills --help' to get started (you may need to restart your shell or source your config file)"
+echo "Get started:"
+echo "  openskills --help"
+echo "  openskills tool-description | jq ."
+echo "  openskills invoke demo --yes | jq ."
+echo ""
