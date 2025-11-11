@@ -4,9 +4,14 @@ import { existsSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import type { SkillSource } from '../types.js';
 
-// ESM equivalent of __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Universal __dirname that works in both ESM and CommonJS/SEA
+let __dirname: string;
+try {
+  __dirname = dirname(fileURLToPath(import.meta.url));
+} catch {
+  // Fallback for CommonJS/SEA: use process.argv[1] (path to current script/binary)
+  __dirname = dirname(process.argv[1] || process.cwd());
+}
 
 /**
  * Get skills directory path
