@@ -41,7 +41,8 @@ export async function installSkill(source: string, options: InstallOptions): Pro
  * Internal implementation of installSkill
  */
 async function installSkillInternal(source: string, options: InstallOptions): Promise<void> {
-  const folder = options.universal ? '.agent/skills' : '.openskills/skills';
+  // Always default to .agent/skills (agent-agnostic)
+  const folder = '.agent/skills';
   const isProject = !options.global; // Default to project unless --global specified
   const targetDir = isProject
     ? join(process.cwd(), folder)
@@ -250,12 +251,12 @@ async function installFromRepo(
   }
 
   // Install selected skills
-  const isProject = targetDir === join(process.cwd(), '.claude/skills');
+  const isProjectInstall = targetDir.startsWith(process.cwd());
   let installedCount = 0;
 
   for (const info of skillsToInstall) {
     // Warn about conflicts
-    const shouldInstall = await warnIfConflict(info.skillName, info.targetPath, isProject);
+    const shouldInstall = await warnIfConflict(info.skillName, info.targetPath, isProjectInstall);
     if (!shouldInstall) {
       console.log(chalk.yellow(`Skipped: ${info.skillName}`));
       continue; // Skip this skill, continue with next

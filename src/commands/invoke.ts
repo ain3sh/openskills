@@ -1,15 +1,16 @@
 import { readFileSync } from 'fs';
 import { findSkill } from '../utils/skills.js';
 import { parseFrontmatter } from '../utils/yaml.js';
-import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, NewMessage, AttachmentVerbosity } from '../types.js';
+import type { ReadJsonOutput, ContextModifier, SkillFrontmatter, NewMessage, AttachmentVerbosity, ExecutionPayload } from '../types.js';
 import { normalizePermissions, checkSkillPermissions } from '../utils/permissions.js';
 import { validateSkillCommand } from '../utils/validation.js';
 import { extractRelativeRefs } from '../utils/refs.js';
 import { loadConfig, configToPermissionRules } from '../utils/config.js';
 import { askUserPermission } from '../utils/interactive.js';
 import { buildAttachments, collectDiagnostics } from '../utils/attachments.js';
+import { discoverSkillScripts } from '../utils/script-discovery.js';
 
-export interface InvokeOptions { args?: string; yes?: boolean; attachments?: AttachmentVerbosity; format?: 'json' | 'prompt'; }
+export interface InvokeOptions { args?: string; yes?: boolean; attachments?: AttachmentVerbosity; format?: 'json' | 'prompt' | 'execution'; }
 
 /**
  * Invoke a skill and emit strict Skill Tool contract payload (JSON)
@@ -153,6 +154,50 @@ export async function invokeSkill(skillName: string, options: InvokeOptions = {}
   if (options.format === 'prompt') {
     // Extract just the SKILL.md content (message 2) for slash commands
     console.log(newMessages[1].content);
+    return;
+  }
+  
+  if (options.format === 'execution') {
+    // Return execution context for script-based usage
+    const scripts = await discoverSkillScripts(loc.baseDir);
+    
+    const executionPayload: ExecutionPayload = {
+      skill: {
+        name: frontmatter?.name || skillName,
+        baseDir: loc.baseDir
+      },
+      execution: {
+        workDir: process.cwd(),
+        scripts: scripts.map(s => ({
+          path: s.path,
+          usage: s.usage?.replace('{baseDir}', loc.baseDir) || `python ${loc.baseDir}/${s.path}`,
+          description: s.description
+        })),
+        environment: {
+          SKILL_BASE: loc.baseDir,
+          WORK_DIR: process.cwd()
+        }
+      },
+      prompt: body.replace(/\{baseDir\}/g, loc.baseDir).substring(0, 1000) + '...', // First 1000 chars
+      instructions: `EXECUTION MODEL:
+Skills are EXECUTABLE TOOLKITS containing scripts and resources.
+
+HOW TO USE:
+1. Scripts are STANDALONE - execute them directly via Bash
+2. Use absolute paths: python ${loc.baseDir}/scripts/script.py [args]
+3. DON'T import skill modules as Python packages
+
+✅ CORRECT: python ${loc.baseDir}/scripts/create_gif.py --output test.gif
+❌ WRONG: import sys; sys.path.append('${loc.baseDir}'); from templates import *
+
+Environment variables available:
+- SKILL_BASE: ${loc.baseDir}
+- WORK_DIR: ${process.cwd()}
+
+Execute scripts from the baseDir path provided above.`
+    };
+    
+    console.log(JSON.stringify(executionPayload, null, 2));
     return;
   }
 

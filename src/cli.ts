@@ -44,8 +44,7 @@ program
 program
   .command('install <source>')
   .description('Install skill from GitHub or Git URL')
-  .option('-g, --global', 'Install globally (default: project install)')
-  .option('-u, --universal', 'Install to .agent/skills/ (for universal AGENTS.md usage)')
+  .option('-g, --global', 'Install globally (default: project install to .agent/skills)')
   .option('-y, --yes', 'Skip interactive selection, install all skills found')
   .action(async (source, opts) => {
     const { installSkill } = await import('./commands/install.js');
@@ -68,10 +67,18 @@ program
   .option('-a, --args <args>', 'Optional arguments string for metadata display')
   .option('-y, --yes', 'Skip permission prompts (approve all skills)')
   .option('--attachments <level>', 'Attachment verbosity: none|errors|warnings|full (default: warnings)')
-  .option('--format <type>', 'Output format: json|prompt (default: json)')
+  .option('--format <type>', 'Output format: json|prompt|execution (default: json)')
   .action(async (name, opts) => {
     const { invokeSkill } = await import('./commands/invoke.js');
     await invokeSkill(name, { args: opts.args, yes: opts.yes, attachments: opts.attachments, format: opts.format });
+  });
+
+program
+  .command('exec <skill-name> <script-path> [args...]')
+  .description('Execute a skill script directly')
+  .action(async (skillName, scriptPath, args) => {
+    const { execSkillScript } = await import('./commands/exec.js');
+    await execSkillScript(skillName, scriptPath, { args });
   });
 
 program

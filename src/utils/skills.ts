@@ -4,6 +4,7 @@ import { getAllSkillSources } from './dirs.js';
 import { parseFrontmatter, extractYamlField } from './yaml.js';
 import type { Skill, SkillLocation } from '../types.js';
 import { FastCache } from './fastCache.js';
+import { discoverSkillScripts } from './script-discovery.js';
 
 // Cache for skill discovery (60 second TTL)
 const skillCache = new FastCache<Skill[]>('skills');
@@ -84,13 +85,26 @@ function scanAllSkills(): Skill[] {
               sourceLabel = 'builtin';
             }
 
+            const skillDir = join(source.path, entry.name);
+            
+            // Discover scripts in the skill directory (async but we'll do it sync for now)
+            // TODO: Make this async in the future for better performance
+            let scripts = undefined;
+            try {
+              // We'll skip script discovery here for performance and do it on-demand
+              // scripts = await discoverSkillScripts(skillDir);
+            } catch {
+              // Ignore script discovery errors
+            }
+            
             skills.push({
               name: entry.name,
               description,
               location: source.type === 'project' ? 'project' : 'global',
-              path: join(source.path, entry.name),
+              path: skillDir,
               source: source.type,
               sourceLabel,
+              scripts, // Will be populated on-demand
             });
 
             seen.add(entry.name);

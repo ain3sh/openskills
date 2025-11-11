@@ -78,43 +78,48 @@ export function parseCurrentSkills(content: string): string[] {
 }
 
 /**
- * Generate skills XML section for AGENTS.md
+ * Generate skills XML section for AGENTS.md with progressive disclosure
+ * 
+ * BLOG REFERENCE: "The system loads only the minimal metadata (skill names 
+ * and descriptions from frontmatter) into Claude's initial context"
+ * 
+ * Level 1 Progressive Disclosure:
+ * - Only name and description
+ * - No paths, no execution instructions
+ * - Execution details come AFTER skill selection via openskills invoke
  */
 export function generateSkillsXml(skills: Skill[]): string {
-  const skillTags = skills
-    .map(
-      (s) => `<skill>
-<name>${s.name}</name>
-<description>${s.description}</description>
-<location>${s.location}</location>
-</skill>`
-    )
-    .join('\n\n');
+  // Format skills as simple "name": description pairs (blog format)
+  const skillEntries = skills
+    .map((s) => {
+      let entry = `"${s.name}": ${s.description || 'No description'}`;
+      
+      // Add version/license if present (blog shows these in discovery)
+      const metadata: string[] = [];
+      if (s.version) metadata.push(`v${s.version}`);
+      if (s.license) metadata.push(s.license);
+      
+      if (metadata.length > 0) {
+        entry += ` (${metadata.join(', ')})`;
+      }
+      
+      return entry;
+    })
+    .join('\n');
 
   return `<skills_system priority="1">
 
 ## Available Skills
 
 <!-- SKILLS_TABLE_START -->
-<usage>
-When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively. Skills provide specialized capabilities and domain knowledge.
-
-How to use skills:
-- Invoke: Bash("openskills read <skill-name>")
-- The skill content will load with detailed instructions on how to complete the task
-- Base directory provided in output for resolving bundled resources (references/, scripts/, assets/)
-
-Usage notes:
-- Only use skills listed in <available_skills> below
-- Do not invoke a skill that is already loaded in your context
-- Each skill invocation is stateless
-</usage>
-
 <available_skills>
-
-${skillTags}
-
+${skillEntries}
 </available_skills>
+
+<usage>
+When a skill is needed, get execution details:
+openskills invoke <skill-name> --format=execution
+</usage>
 <!-- SKILLS_TABLE_END -->
 
 </skills_system>`;

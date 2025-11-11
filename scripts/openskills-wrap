@@ -1,0 +1,147 @@
+#!/bin/bash
+#
+# openskills-wrap: Shell wrapper for agent integration
+# 
+# This wrapper sets up the OpenSkills execution context for AI agents,
+# making skill scripts easily accessible and executable.
+#
+# Usage:
+#   openskills-wrap <command>
+#
+# Example shell aliases:
+#   alias claude="openskills-wrap claude"
+#   alias cursor="openskills-wrap cursor"
+#   alias aider="openskills-wrap aider"
+
+# Set OpenSkills execution context
+export OPENSKILLS_WORK_DIR="${OPENSKILLS_WORK_DIR:-$(pwd)}"
+export OPENSKILLS_MODE="agent-execution"
+
+# Function to get skill base directory
+openskills_base() {
+  local skill_name="$1"
+  if [ -z "$skill_name" ]; then
+    echo "Usage: openskills_base <skill-name>" >&2
+    return 1
+  fi
+  
+  # Use node directly if openskills is not in PATH
+  local cmd="openskills"
+  if ! command -v openskills >/dev/null 2>&1; then
+    # Try using the local installation
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local project_root="$(dirname "$script_dir")"
+    if [ -f "$project_root/dist/cli.js" ]; then
+      cmd="node $project_root/dist/cli.js"
+    else
+      echo "Error: openskills not found" >&2
+      return 1
+    fi
+  fi
+  
+  $cmd invoke "$skill_name" --format=execution --yes 2>/dev/null | \
+    jq -r '.skill.baseDir' 2>/dev/null || \
+    echo "Error: Could not get base directory (is jq installed?)" >&2
+}
+
+# Function to list skill scripts
+openskills_scripts() {
+  local skill_name="$1"
+  if [ -z "$skill_name" ]; then
+    echo "Usage: openskills_scripts <skill-name>" >&2
+    return 1
+  fi
+  
+  # Use node directly if openskills is not in PATH
+  local cmd="openskills"
+  if ! command -v openskills >/dev/null 2>&1; then
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local project_root="$(dirname "$script_dir")"
+    if [ -f "$project_root/dist/cli.js" ]; then
+      cmd="node $project_root/dist/cli.js"
+    fi
+  fi
+  
+  $cmd invoke "$skill_name" --format=execution --yes 2>/dev/null | \
+    jq -r '.execution.scripts[].usage' 2>/dev/null || \
+    echo "No scripts found or jq not installed"
+}
+
+# Function to execute skill script
+openskills_run() {
+  local skill_name="$1"
+  local script_path="$2"
+  shift 2
+  local args="$@"
+  
+  if [ -z "$skill_name" ] || [ -z "$script_path" ]; then
+    echo "Usage: openskills_run <skill-name> <script-path> [args...]" >&2
+    return 1
+  fi
+  
+  # Use node directly if openskills is not in PATH
+  local cmd="openskills"
+  if ! command -v openskills >/dev/null 2>&1; then
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local project_root="$(dirname "$script_dir")"
+    if [ -f "$project_root/dist/cli.js" ]; then
+      cmd="node $project_root/dist/cli.js"
+    fi
+  fi
+  
+  $cmd exec "$skill_name" "$script_path" $args
+}
+
+# Export functions for use in subshells
+export -f openskills_base
+export -f openskills_scripts
+export -f openskills_run
+
+# Check if script is being sourced or executed
+if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
+  # Being sourced - just export functions and return
+  return 0
+fi
+
+# If we have arguments, execute the wrapped command with context
+if [ $# -gt 0 ]; then
+  # Print context for debugging (can be disabled in production)
+  if [ "${OPENSKILLS_DEBUG:-0}" = "1" ]; then
+    echo "[openskills-wrap] Working directory: $OPENSKILLS_WORK_DIR" >&2
+    echo "[openskills-wrap] Executing: $@" >&2
+  fi
+  
+  # Execute the wrapped command
+  exec "$@"
+else
+  # No arguments - print usage
+  cat <<EOF
+OpenSkills Wrapper - Agent Integration
+
+This wrapper provides skill execution context for AI agents.
+
+Environment Variables Set:
+  OPENSKILLS_WORK_DIR: $OPENSKILLS_WORK_DIR
+  OPENSKILLS_MODE: $OPENSKILLS_MODE
+
+Available Functions:
+  openskills_base <skill>       - Get skill base directory
+  openskills_scripts <skill>    - List skill scripts with usage
+  openskills_run <skill> <script> [args...] - Execute skill script
+
+Usage Examples:
+  # Get skill directory
+  base=\$(openskills_base slack-gif-creator)
+  
+  # List scripts
+  openskills_scripts slack-gif-creator
+  
+  # Run script
+  openskills_run slack-gif-creator templates/pulse.py
+
+Shell Alias Setup (add to ~/.bashrc or ~/.zshrc):
+  alias claude="openskills-wrap claude"
+  alias cursor="openskills-wrap cursor"
+  alias aider="openskills-wrap aider"
+EOF
+fi

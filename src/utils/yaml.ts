@@ -51,8 +51,8 @@ export function parseFrontmatter<T = Record<string, unknown>>(
 }
 
 /**
- * Legacy helper retained for backward compatibility.
  * Extracts a single field from frontmatter (first line value only if scalar).
+ * Used as a fallback when parseFrontmatter doesn't find the field.
  */
 export function extractYamlField(content: string, field: string): string {
   const { frontmatter } = parseFrontmatter<Record<string, unknown>>(content);

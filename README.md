@@ -1,696 +1,375 @@
 # OpenSkills
 
-[![npm version](https://img.shields.io/npm/v/openskills.svg)](https://www.npmjs.com/package/openskills)
-[![npm downloads](https://img.shields.io/npm/dm/openskills.svg)](https://www.npmjs.com/package/openskills)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Tests](https://img.shields.io/badge/tests-165%20passing-brightgreen)](https://github.com/ain3sh/openskills)
+<div align="center">
 
-**Universal skills loader for AI coding agents** — brings Anthropic's Claude Skills system to any agent (Cursor, Windsurf, Aider, etc.) with complete parity to Claude Code's implementation.
+**Execute skills, don't read them.**
 
-## 🚀 Quick Install
+[![Version](https://img.shields.io/npm/v/openskills.svg)](https://www.npmjs.com/package/openskills)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20.6.0-brightgreen.svg)](package.json)
 
-**Option A — Binary (no Node.js required):**
-```bash
-curl -fsSL https://ain3sh.com/openskills/install.sh | bash
-```
+OpenSkills is an execution-first skills system for AI coding agents. Skills are executable toolkits containing scripts that agents run directly—not documentation to interpret.
 
-**Option B — npm:**
-```bash
-npm i -g openskills
-```
+[Installation](#installation) • [Quick Start](#quick-start) • [Commands](#commands) • [Creating Skills](#creating-skills) • [Architecture](#architecture)
+
+</div>
 
 ---
 
-## What Is This?
+## What is OpenSkills?
 
-OpenSkills implements [Anthropic's Agent Skills specification](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) as a universal CLI tool, enabling **any AI coding agent** to use the same skill system as Claude Code.
+OpenSkills brings Anthropic's Claude Skills system to **all AI coding agents** (Claude Code, Cursor, Windsurf, Aider, Cline) with a fundamental improvement: **skills execute directly as scripts**, eliminating the confusion where agents try to import skill modules as Python packages instead of running them.
 
 ### Key Features
 
-✅ **100% Format Compatibility** — Same SKILL.md format, same `<available_skills>` XML, same progressive disclosure  
-✅ **Universal Agent Support** — Works with Claude Code, Cursor, Windsurf, Aider, and any agent with CLI access  
-✅ **GitHub Skill Marketplace** — Install from [anthropics/skills](https://github.com/anthropics/skills) or any GitHub repo  
-✅ **Same Folder Structure** — Uses `.openskills/skills/` by default (also reads `.agent/skills/` and `.claude/skills/` for compatibility)  
-✅ **Bundled Resources** — Full support for `scripts/`, `references/`, and `assets/` directories  
-✅ **Zero Dependencies** — Single binary executable or npm package  
+- 🚀 **Execution-First Architecture** - Skills run as isolated scripts via `openskills exec`
+- 📦 **Universal Compatibility** - Works with any AI agent that can run shell commands
+- 🔄 **Progressive Disclosure** - Minimal metadata → execution context → full content
+- 🎯 **Token Optimized** - 70 tokens per skill in discovery (vs 125+ in other implementations)
+- 🛡️ **Secure by Design** - Scripts run in isolated processes, no eval() or imports
+- ⚡ **Fast** - <50ms discovery, ~50ms execution overhead
 
-### For Claude Code Users
+## Installation
 
-- Install skills from **any GitHub repo**, not just the Anthropic marketplace
-- Share skills across multiple agents
-- Version control your skills in your project repository
+### Via npm (Recommended)
 
-### For Other Agent Users (Cursor, Windsurf, Aider)
-
-- Get Claude Code's skills system in your agent
-- Access Anthropic's skill marketplace via GitHub
-- Use progressive disclosure to keep context clean
-
----
-
-## How It Works
-
-### The Skills Architecture
-
-Both Claude Code and OpenSkills use the same **progressive disclosure pattern**:
-
-1. **System Prompt** lists available skills in `<available_skills>` XML
-2. **Agent sees** skill names and descriptions (lightweight)
-3. **When needed**, agent invokes skill by name
-4. **Full instructions** load into context
-5. **Agent follows** detailed instructions to complete task
-
-**The only difference:** Claude Code uses `Skill("name")` tool, OpenSkills uses `openskills read name` CLI command.
-
-### Format Example
-
-**In AGENTS.md (or Claude's system prompt):**
-```xml
-<available_skills>
-<skill>
-<name>pdf</name>
-<description>PDF manipulation toolkit for extracting text, creating documents, merging/splitting files...</description>
-<location>project</location>
-</skill>
-</available_skills>
+```bash
+npm install -g openskills
 ```
 
-**When invoked, SKILL.md loads:**
-```markdown
----
-name: pdf
-description: PDF manipulation toolkit...
-allowed-tools: Bash, Read, Edit
----
+### From Source
 
-# PDF Skill Instructions
-
-When the user asks you to work with PDFs, follow these steps:
-
-1. Install dependencies: `pip install pypdf2`
-2. For text extraction, use the script in scripts/extract_text.py
-3. Base directory for bundled resources: {baseDir}
-...
+```bash
+git clone https://github.com/ain3sh/openskills
+cd openskills
+npm install
+npm run build
+npm link  # Makes 'openskills' available globally
 ```
-
-### Side-by-Side Comparison
-
-| Feature | Claude Code | OpenSkills |
-|---------|-------------|------------|
-| **Format** | SKILL.md (YAML + Markdown) | SKILL.md (YAML + Markdown) ✅ |
-| **Invocation** | `Skill("name")` tool | `openskills read name` CLI |
-| **Folder** | `.claude/skills/` | `.openskills/skills/` (reads `.claude/skills/` too) ✅ |
-| **Discovery** | `<available_skills>` XML | `<available_skills>` XML ✅ |
-| **Marketplace** | Built-in | GitHub (anthropics/skills) |
-| **Resources** | `scripts/`, `references/`, `assets/` | `scripts/`, `references/`, `assets/` ✅ |
-| **Agent Support** | Claude Code only | Claude Code + Cursor + Windsurf + Aider ✅ |
-
-**Everything is identical except the invocation method.**
-
----
 
 ## Quick Start
 
-### 1. Install OpenSkills
+### 1. Install a Skill
 
 ```bash
-# Binary (recommended - no Node.js required)
-curl -fsSL https://ain3sh.com/openskills/install.sh | bash
+# Install to project (.agent/skills/)
+openskills install anthropics/skills/slack-gif-creator
 
-# Or via npm
-npm i -g openskills
+# Install globally (~/.agent/skills/)
+openskills install anthropics/skills/mcp-builder --global
 ```
 
-### 2. Install Skills
+### 2. Execute a Skill Script
 
 ```bash
-# From Anthropic's marketplace (interactive selection)
-openskills install anthropics/skills
+# Run a script directly from a skill
+openskills exec slack-gif-creator templates/pulse.py
 
-# Or from any GitHub repo
-openskills install your-org/custom-skills
+# Pass arguments to scripts (use -- separator)
+openskills exec skill-creator scripts/init_skill.py -- my-skill --path /tmp
 ```
 
-Interactive TUI lets you select which skills to install:
-```
-◉ pdf - PDF manipulation toolkit
-◯ xlsx - Spreadsheet creation and editing
-◉ docx - Document creation with tracked changes
-◯ pptx - Presentation creation
-```
-
-### 3. Sync to AGENTS.md
+### 3. For AI Agents
 
 ```bash
-openskills sync
-```
-
-This updates your `AGENTS.md` with the `<available_skills>` block. Done! Your agent can now discover and use skills.
-
----
-
-## Commands
-
-### Installation & Management
-
-```bash
-# Install skills (interactive TUI)
-openskills install <github-repo>
-openskills install <github-repo> --global  # Install to ~/.openskills/skills
-openskills install <github-repo> --universal  # Install to .agent/skills (advanced)
-
-# List installed skills
+# List available skills (minimal metadata)
 openskills list
 
-# Remove skills (interactive TUI)
-openskills manage
-openskills remove <skill-name>  # Non-interactive removal
+# Get execution context for a skill
+openskills invoke slack-gif-creator --format=execution
+# Returns: { baseDir, scripts[], environment{} }
+
+# Read full skill content (if needed)
+openskills read slack-gif-creator
 ```
 
-### Agent Usage
+## Core Commands
+
+### `openskills install`
+
+Install skills from GitHub repositories.
 
 ```bash
-# Load skill for agent (outputs SKILL.md content)
-openskills read <skill-name>
+# Install specific skill
+openskills install anthropics/skills/skill-name
 
-# Suggest skills based on query (semantic search)
-openskills suggest "work with spreadsheets"
+# Install all skills from a repo
+openskills install anthropics/skills --yes
 
-# Sync AGENTS.md with installed skills
-openskills sync
-
-# Generate standalone SKILLS.md (for transclusion)
-openskills generate-skills-md
-
-# Use transclusion mode (@SKILLS.md reference)
-openskills sync --transclusion
+# Install globally
+openskills install anthropics/skills/skill-name --global
 ```
 
-### Transclusion Mode (New!)
+### `openskills exec`
 
-Instead of embedding skills directly in AGENTS.md, you can use transclusion:
+Execute scripts from installed skills.
 
 ```bash
-# Generate SKILLS.md separately
-openskills generate-skills-md --format xml
+# Execute a Python script
+openskills exec skill-name scripts/process.py
 
-# Or use sync with transclusion mode
-openskills sync --transclusion
+# Execute with arguments (use -- separator)
+openskills exec skill-name scripts/tool.py -- --input data.csv --output result.json
+
+# Scripts run with environment variables:
+# SKILL_BASE=/path/to/skill
+# WORK_DIR=/current/directory
 ```
 
-This adds `@SKILLS.md` to AGENTS.md instead of embedding the XML directly:
+### `openskills invoke`
 
-```markdown
-# AGENTS.md
-[... your content ...]
-
-## Skills
-
-@SKILLS.md
-```
-
-**Benefits:**
-- Cleaner AGENTS.md file
-- SKILLS.md can be gitignored if desired  
-- Dynamic updates without modifying AGENTS.md
-- Supports multiple patterns: `@SKILLS.md`, `@include: SKILLS.md`, `<!-- @include: SKILLS.md -->`
-
-**Note:** Transclusion requires agent support for the `@filename` pattern, which is not standard markdown.
-
-### Utilities
+Get skill information in different formats.
 
 ```bash
-# Validate skill format
-openskills validate <skill-name>
+# Get execution context (for agents)
+openskills invoke skill-name --format=execution
 
-# View telemetry stats
-openskills telemetry --stats
+# Get basic metadata
+openskills invoke skill-name --format=json
 
-# Interactive shell
-openskills tui
+# Get as prompt (default)
+openskills invoke skill-name
 ```
 
----
+### `openskills list`
 
-## Installation Modes
+List discovered skills with minimal metadata.
 
-### Default: Project Install
-
-```bash
-openskills install anthropics/skills
-# → Installs to ./.openskills/skills/ (gitignored)
-```
-
-**Best for:** Project-specific skills, no conflict with Claude Code
-
-### Global Install
-
-```bash
-openskills install anthropics/skills --global
-# → Installs to ~/.openskills/skills/ (shared across projects)
-```
-
-**Best for:** Personal skill library, CLI usage
-
-### Universal Install (Advanced)
-
-```bash
-openskills install anthropics/skills --universal
-# → Installs to ./.agent/skills/
-```
-
-**Best for:** Multi-agent setups where you use Claude Code + other agents with one AGENTS.md
-
-**Why?** Prevents duplicate skill listings when Claude Code shows its native marketplace plugins alongside AGENTS.md skills.
-
-**Search Priority:**
-1. `./.openskills/skills/` (project - default)
-2. `./.agent/skills/` (project universal)
-3. `~/.openskills/skills/` (global - default)
-4. `~/.agent/skills/` (global universal)
-5. `./.claude/skills/` (project Claude - compatibility)
-6. `~/.claude/skills/` (global Claude - compatibility)
-
-Skills with the same name only appear once (highest priority wins).
-
----
-
-## Creating Custom Skills
-
-### Minimal Skill
-
-```
-my-skill/
-└── SKILL.md
-```
-
-**SKILL.md:**
-```markdown
----
-name: my-skill
-description: What this skill does and when to use it
----
-
-# Instructions
-
-When the user asks you to [task], follow these steps:
-
-1. [Step 1]
-2. [Step 2]
-...
-```
-
-### Skill with Resources
-
-```
-my-skill/
-├── SKILL.md
-├── scripts/
-│   └── process.py
-├── references/
-│   └── api-docs.md
-└── assets/
-    └── template.json
-```
-
-Reference resources in SKILL.md using `{baseDir}`:
-```markdown
-1. Read the API docs in {baseDir}/references/api-docs.md
-2. Run {baseDir}/scripts/process.py
-3. Use template from {baseDir}/assets/template.json
-```
-
-### Publishing
-
-1. Create GitHub repo: `your-username/my-skill`
-2. Add SKILL.md (and optional resources)
-3. Users install with: `openskills install your-username/my-skill`
-
-### Best Practices
-
-- **Use Anthropic's skill-creator** for comprehensive authoring guidance:
-  ```bash
-  openskills install anthropics/skills
-  openskills read skill-creator
-  ```
-- Write descriptions that help agents decide when to use the skill
-- Use imperative language in instructions ("Do X", not "You can do X")
-- Test with multiple agents to ensure clarity
-- Include example usage when helpful
-
----
-
-## Popular Skills from Anthropic's Marketplace
-
-Browse the full collection at [github.com/anthropics/skills](https://github.com/anthropics/skills):
-
-- **xlsx** — Spreadsheet creation, editing, formulas, data analysis
-- **docx** — Document creation with tracked changes and comments
-- **pdf** — PDF manipulation (extract, merge, split, forms)
-- **pptx** — Presentation creation and editing
-- **canvas-design** — Create posters and visual designs
-- **mcp-builder** — Build Model Context Protocol servers
-- **skill-creator** — Detailed guide for authoring skills
-
----
-
-## 📚 For Agent Developers
-
-### JSON Output Reference
-
-OpenSkills is a CLI that outputs JSON. What you do with it is your choice.
-
-#### Discover Skills
 ```bash
 openskills list
+# Output: Simple "name": description format
+# Uses only ~70 tokens per skill
 ```
 
-Returns: Array of skills with metadata (name, description, version, etc.)
+### `openskills sync`
 
-#### Invoke Skill
+Update AGENTS.md with installed skills.
+
 ```bash
-openskills invoke <skill-name> --yes
+# Direct injection
+openskills sync
+
+# Using transclusion pattern (recommended)
+openskills sync --transclusion
+# Adds: @SKILLS.md reference instead of embedding
 ```
 
-Returns (example with permissions + attachments):
+## Progressive Disclosure
+
+OpenSkills implements three levels of information disclosure to prevent context bloat:
+
+### Level 1: Discovery (~70 tokens/skill)
+```
+"slack-gif-creator": Toolkit for creating animated GIFs optimized for Slack
+```
+Only name and description—no paths, no instructions.
+
+### Level 2: Execution Context (~500 tokens)
 ```json
 {
-  "skill": {
-    "name": "pdf",
-    "baseDir": "/path/to/skills/pdf",
-    "version": "2.1.0"
-  },
-  "newMessages": [
-    {
-      "role": "user",
-      "content": "<command-message>The \"pdf\" skill is loading</command-message>\n<command-name>pdf</command-name>",
-      "isMeta": false
-    },
-    {
-      "role": "user",
-      "content": "<!-- baseDir: /path/to/skills/pdf -->\n...SKILL.md instructions...",
-      "isMeta": true
-    },
-    {
-      "role": "user",
-      "content": {
-        "type": "command_permissions",
-        "allowedTools": ["Read", "Bash(pdftotext:*)"],
-        "model": "claude-3-7-sonnet-20250219"
-      },
-      "isMeta": true
-    },
-    {
-      "role": "user",
-      "content": "Bundled resources available in /path/to/skills/pdf:\n- scripts/extract.sh\n- references/summary.md",
-      "isMeta": true,
-      "attachmentType": "reference"
-    }
-  ],
-  "contextModifier": {
-    "allowedTools": ["Read", "Bash(pdftotext:*)"],
-    "model": "claude-3-7-sonnet-20250219",
-    "tokens": 4096,
-    "normalizedPermissions": {
-      "tools": ["Read", "Execute"],
-      "shellAllowPatterns": ["pdftotext:*"]
-    }
-  },
-  "attachments": [
-    {
-      "role": "user",
-      "content": "Bundled resources available in /path/to/skills/pdf:\n- scripts/extract.sh\n- references/summary.md",
-      "isMeta": true,
-      "attachmentType": "reference"
-    }
-  ]
-}
-```
-
-**What is contextModifier?**
-
-Metadata about what the skill wants. Your agent decides whether to:
-- Enforce it strictly (like Claude Code does)
-- Use as a suggestion
-- Ignore entirely
-
-**No rules. Your agent, your call.**
-
-OpenSkills follows the blog’s **two-message base pattern**:
-
-1. **Visible metadata** (`isMeta: false`) – `<command-message>` + `<command-name>` so humans see which skill loaded.
-2. **Hidden prompt** (`isMeta: true`) – SKILL.md content with a prepended `<!-- baseDir: ... -->` comment.
-
-Additional messages are injected **only when needed**:
-- A single `command_permissions` object when `allowed-tools` or `model` overrides are declared.
-- Attachment messages (`attachmentType`: `diagnostic`, `reference`, or `context`) when diagnostics/resources are available.
-
----
-
-## 🚀 Using Skills with Slash Commands
-
-OpenSkills works perfectly with CLIs that support custom slash commands (markdown-based shortcuts).
-
-### Quick Setup (Factory Droid)
-
-**1. Export all skills as slash commands:**
-```bash
-openskills export-all-slash --dir .factory/commands
-```
-
-**2. Reload commands in Droid:**
-```
-/commands → press R
-```
-
-**3. Use skills:**
-```
-/pdf
-/xlsx
-/skill-creator
-```
-
-### Manual Setup
-
-Export a single skill:
-```bash
-openskills export-slash pdf > .factory/commands/pdf.md
-```
-
-The generated markdown file:
-```markdown
----
-description: Extract text from PDF documents
----
-$(openskills invoke pdf --yes --format=prompt)
-```
-
-When you type `/pdf`, the skill's SKILL.md instructions load directly into the conversation.
-
-### How It Works
-
-1. `/pdf` triggers the markdown slash command
-2. Command runs `openskills invoke pdf --format=prompt`
-3. Outputs SKILL.md content via system notification
-4. Agent sees the skill instructions as injected context
-5. Agent follows the instructions
-
-**This is functionally identical to Claude Code's Skill tool**, but works with ANY CLI that supports markdown slash commands.
-
-### Supported CLIs
-
-- ✅ **Factory Droid** (`.factory/commands/`)
-- ✅ **Cursor** (`.cursor/commands/` - experimental)
-- ✅ **Windsurf** (`.windsurf/commands/` - experimental)
-- ✅ Any CLI implementing markdown slash commands
-
-### Why Slash Commands > MCP
-
-**MCP Skill Server:**
-- Requires server running
-- Adds latency
-- Consumes tokens for tool description
-- Meta-tool overhead in every request
-
-**Slash Commands:**
-- Direct skill injection
-- Zero latency
-- Zero tool overhead
-- Simpler architecture
-- Universal compatibility
-
-Skills are prompt templates. Slash commands are the perfect delivery mechanism.
-
-### Progressive Disclosure
-
-Don't want to load all skills upfront? Use `/discover` for progressive disclosure:
-
-**1. Export slash commands (including discover):**
-```bash
-openskills export-all-slash --dir .factory/commands
-```
-
-**2. In Droid, discover skills first:**
-```
-/discover
-```
-
-Outputs:
-```
-Skills provide specialized capabilities for specific tasks.
-
-Available skills:
-- pdf: Extract text from PDF documents
-- xlsx: Process spreadsheet data
-- skill-creator: Create new skills
-
-Mode commands (change interaction mode):
-- vision: Analyze images and visual content
-
-To use a skill, type: /skill-name
-```
-
-**3. Load specific skill when needed:**
-```
-/pdf
-```
-
-**This is Claude Code's progressive disclosure pattern** - show skill list first (token-efficient), load full skill only when invoked. But works with ANY agent via slash commands.
-
-**Token Budget:** The `/discover` command respects a 15,000 character limit (configurable with `--max-chars`). With large skill sets, lower-priority skills are truncated to fit the budget.
-
-**Format Options:**
-```bash
-openskills discover --format=text   # Human-readable (default, for slash commands)
-openskills discover --format=xml    # XML structure
-openskills discover --format=json   # Full structured JSON
-```
-
----
-
-## Advanced Features
-
-### JSON Output Mode
-
-All commands support JSON output for programmatic usage:
-
-```bash
-openskills list --json
-openskills read pdf --json
-openskills suggest "spreadsheet" --json
-```
-
-Example output:
-```json
-{
-  "skill": {
-    "name": "pdf",
-    "baseDir": "/project/.openskills/skills/pdf",
-    "version": "2.1.0"
-  },
-  "content": "...",
-  "contextModifier": {
-    "allowedTools": ["Bash", "Read"],
-    "model": "claude-3-7-sonnet-20250219"
+  "skill": { "name": "slack-gif-creator", "baseDir": "/path/to/skill" },
+  "execution": {
+    "scripts": [
+      { "path": "templates/pulse.py", "usage": "python /path/to/skill/templates/pulse.py" }
+    ],
+    "environment": { "SKILL_BASE": "/path/to/skill" }
   }
 }
 ```
 
-### Performance Optimizations
+### Level 3: Full Content (as needed)
+Complete SKILL.md with all instructions, examples, and documentation.
 
-- **Smart Caching** — Skills and configs cached for 60s (auto-invalidates on changes)
-- **Lazy Loading** — Commands loaded only when executed
-- **Fast Path** — Built-in skills optimized for instant access
+## Creating Skills
 
-Cache location: `/tmp/.openskills-cache/` (OS manages cleanup)
+Skills follow Anthropic's SKILL.md format with executable scripts:
 
-### Privacy-First Telemetry
-
-**What's tracked:** Command usage, skill names, success/failure, agent platform  
-**What's NOT tracked:** File paths, repository info, PII
-
-View your stats:
-```bash
-openskills telemetry --stats
+```
+my-skill/
+├── SKILL.md          # Instructions and metadata (required)
+├── scripts/          # Executable scripts
+│   ├── process.py    # Python script
+│   └── validate.sh   # Bash script
+├── references/       # Documentation (loaded on demand)
+└── assets/           # Static resources
 ```
 
-Disable anytime:
-```bash
-openskills telemetry --disable
+### Basic SKILL.md
+
+```markdown
+---
+name: my-skill
+description: What this skill does and when to use it
+version: 1.0.0
+---
+
+# My Skill
+
+## Instructions
+
+This skill processes data files...
+
+## Scripts
+
+- `scripts/process.py` - Main processing script
+  ```bash
+  python {baseDir}/scripts/process.py --input <file>
+  ```
+
+- `scripts/validate.sh` - Validation script
+  ```bash
+  bash {baseDir}/scripts/validate.sh <file>
+  ```
 ```
 
-All data stays local in `~/.openskills/telemetry/`
+### Writing Executable Scripts
 
----
+Scripts must be **standalone executables**, not modules to import:
 
-## Why CLI Instead of MCP?
+```python
+#!/usr/bin/env python3
+"""Process data files.
+This docstring becomes the script description.
+"""
 
-**MCP (Model Context Protocol)** is Anthropic's protocol for connecting AI to external tools and data sources. It's designed for:
-- Database connections
-- API integrations
-- Real-time data fetching
-- External service integration
+import argparse
+import os
 
-**Skills** are fundamentally different:
-- Static instruction sets (markdown files)
-- Bundled resources (scripts, templates, references)
-- Progressive disclosure pattern
-- No server lifecycle to manage
+def main():
+    # Access skill directory via environment
+    skill_base = os.environ.get('SKILL_BASE', '.')
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', required=True)
+    args = parser.parse_args()
+    
+    # Process the file
+    print(f"Processing {args.input}")
 
-**Why OpenSkills uses CLI:**
+if __name__ == '__main__':
+    main()
+```
 
-1. **Matches Anthropic's design** — Skills are SKILL.md files, not dynamic tools
-2. **No server overhead** — Just files on disk
-3. **Universal compatibility** — Works with any agent that can run CLI commands
-4. **Simpler for users** — Install and use, no server configuration
-5. **Follows the spec** — Implements what Anthropic documented
+## For AI Agents
 
-MCP and skills solve different problems. OpenSkills implements the skills specification the way it was designed.
+### Integration Pattern
 
----
+```python
+# 1. Discover available skills (Level 1)
+result = subprocess.run(['openskills', 'list'], capture_output=True)
+skills = json.loads(result.stdout)
 
-## Requirements
+# 2. User requests a task matching a skill
+if user_wants_gif:
+    # Get execution context (Level 2)
+    result = subprocess.run(
+        ['openskills', 'invoke', 'slack-gif-creator', '--format=execution'],
+        capture_output=True
+    )
+    context = json.loads(result.stdout)
+    
+    # 3. Execute the appropriate script
+    script_path = context['execution']['scripts'][0]['usage']
+    subprocess.run(script_path, shell=True)
+```
 
-- **Binaries:** No runtime required (single executable)
-- **npm install:** Node.js 20.6+ (for ora dependency)
-- **Git:** For cloning repositories
+### Key Principle
 
----
+**Skills are tools to execute, not documentation to read.**
 
-## Credits & Attribution
+```bash
+# ✅ CORRECT - Execute scripts directly
+python /path/to/skill/scripts/create_gif.py --emoji "🎉"
 
-This project builds upon:
+# ❌ WRONG - Don't import as modules
+import sys
+sys.path.append('/path/to/skill')
+from templates import create_animation  # NO!
+```
 
-1. **Original OpenSkills** by [numman-ali](https://github.com/numman-ali/openskills) — Universal skills loader foundation
-2. **Claude Skills Deep Dive** by [Lee-Hanchung](https://leehanchung.github.io/blogs/2025/10/26/claude-skills-deep-dive/) — Comprehensive reverse engineering of Anthropic's implementation
+## Architecture
 
-This fork (v2.0.0+) adds:
-- Complete parity with Anthropic's implementation
-- SEA binaries for zero-dependency distribution
-- Enhanced security and permissions system
-- Comprehensive test coverage (110 tests)
-- Advanced features (progressive disclosure, semantic search, validation)
+### Skill Discovery Paths
 
-### Related Projects
+Skills are discovered from these locations (in priority order):
 
-- **Anthropic's Skills Marketplace:** [github.com/anthropics/skills](https://github.com/anthropics/skills)
-- **Claude Code:** [claude.ai/download](https://claude.ai/download)
-- **MCP Specification:** [modelcontextprotocol.io](https://modelcontextprotocol.io)
+1. `./.agent/skills/` - Project-level (highest priority)
+2. `./.claude/skills/` - Project Claude-specific  
+3. `~/.agent/skills/` - Global user skills
+4. `~/.claude/skills/` - Global Claude-specific
+5. Built-in skills
 
----
+### Why Execution-First?
 
-## License
+Traditional approaches treat skills as documentation that agents interpret. This leads to confusion where agents try to import skill code as libraries. OpenSkills solves this by making skills **explicitly executable**:
 
-Apache 2.0
+- **Security**: Process isolation prevents code injection
+- **Clarity**: Clear boundary between skill and agent code
+- **Simplicity**: No Python path management or dependency conflicts
+- **Universal**: Works with any language (Python, Bash, Node.js)
 
-**Not affiliated with Anthropic.** Claude, Claude Code, and Agent Skills are trademarks of Anthropic, PBC.
+## Performance
 
-Implements the [Agent Skills specification](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) as documented by Anthropic.
+- **Discovery**: <50ms for typical skill sets
+- **Execution Overhead**: ~50ms to spawn process
+- **Token Usage**: ~70 tokens per skill (vs 125+ traditional)
+- **Scalability**: Handles 80+ skills within 15KB token budget
+- **Build Size**: 116KB minified
 
----
+## Comparison
+
+| Feature | Claude Code | OpenSkills |
+|---------|-------------|------------|
+| Skill Format | SKILL.md | SKILL.md ✅ |
+| Discovery | Automatic | Automatic ✅ |
+| Execution | Internal Skill tool | `openskills exec` command |
+| Progressive Disclosure | 3 levels | 3 levels ✅ |
+| Token Efficiency | ~15KB for 80 skills | ~15KB for 83 skills ✅ |
+| Agent Support | Claude only | Any agent ✅ |
+| Default Location | `.claude/skills` | `.agent/skills` |
+| Architecture | Prompt injection | Script execution |
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-**Found this useful?** Follow [@nummanthinks](https://x.com/nummanthinks) for more AI tooling!
+```bash
+# Run tests
+npm test
+
+# Build
+npm run build
+
+# Type check
+npm run typecheck
+```
+
+## Documentation
+
+- [Architecture](ARCHITECTURE.md) - Technical deep dive
+- [Contributing](CONTRIBUTING.md) - How to contribute
+- [Changelog](CHANGELOG.md) - Version history
+- [Security](SECURITY.md) - Security considerations
+
+### Technical Docs
+- [Progressive Disclosure](docs/technical/PROGRESSIVE_DISCLOSURE_OPTIMIZATION.md)
+- [Execution Architecture](docs/technical/OPENSKILLS_V3_EXECUTION.md)
+- [Performance Analysis](docs/technical/PERFORMANCE_OPTIMIZATION.md)
+
+## License
+
+MIT - see [LICENSE](LICENSE)
+
+## Credits
+
+Inspired by [Anthropic's Claude Skills](https://www.anthropic.com/news/skills) and their [engineering blog post](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills).
+
+---
+
+<div align="center">
+
+**Remember**: Skills are tools to execute, not documentation to read. That's the OpenSkills way.
+
+[Report Bug](https://github.com/ain3sh/openskills/issues) • [Request Feature](https://github.com/ain3sh/openskills/issues) • [Discussions](https://github.com/ain3sh/openskills/discussions)
+
+</div>

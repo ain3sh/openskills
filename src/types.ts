@@ -6,6 +6,14 @@ export interface SkillSource {
   priority: number; // Lower = higher priority (1 = highest)
 }
 
+export interface ScriptInfo {
+  path: string;              // Relative to skill baseDir
+  type: 'python' | 'bash' | 'node' | 'other';
+  executable: boolean;
+  usage?: string;            // Example usage command
+  description?: string;      // Extracted from docstring/comments
+}
+
 export interface Skill {
   name: string;
   description: string;
@@ -13,6 +21,7 @@ export interface Skill {
   path: string;
   source?: SkillSourceType;  // Track where skill came from
   sourceLabel?: string;       // e.g., "plugin:pdf-tools" or "builtin"
+  scripts?: ScriptInfo[];     // Discovered executable scripts
 }
 
 export interface SkillLocation {
@@ -23,7 +32,6 @@ export interface SkillLocation {
 
 export interface InstallOptions {
   global?: boolean;
-  universal?: boolean;
   yes?: boolean;
 }
 
@@ -31,6 +39,27 @@ export interface SkillMetadata {
   name: string;
   description: string;
   context?: string;
+}
+
+export interface ExecutionPayload {
+  skill: {
+    name: string;
+    baseDir: string;
+  };
+  execution: {
+    workDir: string;
+    scripts: Array<{
+      path: string;
+      usage: string;
+      description?: string;
+    }>;
+    environment: {
+      SKILL_BASE: string;
+      WORK_DIR: string;
+    };
+  };
+  prompt: string;
+  instructions: string;
 }
 
 // Parsed SKILL.md frontmatter (loosely based on blog spec)

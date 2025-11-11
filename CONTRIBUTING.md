@@ -1,108 +1,161 @@
 # Contributing to OpenSkills
 
-Thank you for your interest in contributing to OpenSkills!
+Thank you for your interest in contributing to OpenSkills! We welcome contributions from the community.
 
-## Code Standards
+## 🎯 Project Goals
 
-- **TypeScript:** All code must be TypeScript with strict type checking
-- **Testing:** Include tests for new functionality (we use vitest)
-- **Documentation:** Update README.md for user-facing changes
-- **Modular design:** Keep functions focused and under 50 lines
-- **Minimal dependencies:** Avoid adding dependencies unless necessary
+OpenSkills aims to:
+- Provide execution-first skills for AI coding agents
+- Maintain parity with Anthropic's Claude Skills specification
+- Work universally across all AI agents (Claude Code, Cursor, Windsurf, Aider, etc.)
+- Optimize for minimal token usage through progressive disclosure
 
-## Pull Request Process
+## 🚀 Getting Started
 
-1. **Fork the repository** and create a feature branch
-2. **Write clear commit messages** explaining the "why" not just "what"
-3. **Include tests** for new functionality
-4. **Update documentation** (README.md, docs/)
-5. **Ensure all checks pass** (typecheck, test, build)
-6. **Submit PR** with clear description of changes
+1. **Fork the repository**
+   ```bash
+   git clone https://github.com/ain3sh/openskills.git
+   cd openskills
+   ```
 
-## Development Setup
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-```bash
-# Clone your fork
-git clone https://github.com/your-username/openskills
-cd openskills
+3. **Build the project**
+   ```bash
+   npm run build
+   ```
 
-# Install dependencies
-npm install
+4. **Run tests**
+   ```bash
+   npm test
+   ```
 
-# Run tests
-npm test
+## 📝 Development Guidelines
 
-# Build
-npm run build
+### Code Style
 
-# Link locally for testing
-npm link
-openskills list
-```
+- **TypeScript**: Use strict mode, explicit types
+- **Functional**: Prefer functional patterns over classes
+- **Async/Await**: Use modern async patterns
+- **Error Handling**: Always handle errors with meaningful messages
 
-## Testing Changes
+### Architecture Principles
 
-```bash
-# Type check
-npm run typecheck
+1. **Execution-First**: Skills are executable scripts, not documentation
+2. **Progressive Disclosure**: Minimize initial context, load details as needed
+3. **Agent-Agnostic**: Don't assume specific agent capabilities
+4. **Security**: Scripts run in isolated processes, never use eval()
 
-# Run tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage
-npm run test:coverage
-
-# Test CLI locally
-npm link
-openskills install anthropics/skills/pdf-editor --project
-openskills sync
-openskills read pdf-editor
-```
-
-## Project Structure
+### File Structure
 
 ```
 src/
-├── cli.ts              # Main entry point
-├── commands/           # Command implementations
-├── utils/              # Shared utilities
-└── types.ts            # TypeScript interfaces
-
-tests/
-└── utils/              # Unit tests
+├── commands/        # CLI command implementations
+├── utils/          # Shared utilities
+├── types.ts        # TypeScript type definitions
+└── cli.ts          # Main CLI entry point
 ```
 
-## Reporting Issues
+## 🧪 Testing
 
-When reporting issues, please:
+- Write tests for new features
+- Ensure existing tests pass
+- Test with multiple skill types (simple, complex, with scripts)
+- Verify token usage improvements
 
-- **Check existing issues** to avoid duplicates
-- **Provide clear reproduction steps**
-- **Include version information** (`openskills --version`, `node --version`)
-- **Use issue templates** (bug report or feature request)
+```bash
+# Run all tests
+npm test
 
-## Feature Requests
+# Run specific test
+npm test -- --grep "progressive disclosure"
 
-We welcome feature requests that:
-- Improve usability for AI coding agents
-- Enhance AGENTS.md integration
-- Maintain compatibility with Anthropic's SKILL.md spec
-- Work universally across agents (Claude Code, Cursor, Windsurf, Aider)
+# Check coverage
+npm run test:coverage
+```
 
-## Questions?
+## 📦 Creating Skills
 
-For questions about:
-- **Usage:** Open a GitHub issue
-- **Contributing:** Open a discussion thread
-- **Anthropic Skills spec:** See [Anthropic's documentation](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
+When contributing new skills:
 
-## License
+1. Follow the SKILL.md format specification
+2. Include clear frontmatter with name, description
+3. Make scripts executable and standalone
+4. Test execution via `openskills exec`
+5. Document in skill's README
 
-By contributing, you agree that your contributions will be licensed under the Apache 2.0 License.
+Example structure:
+```
+my-skill/
+├── SKILL.md         # Required: Instructions and metadata
+├── scripts/         # Executable scripts
+├── references/      # Documentation (loaded on demand)
+└── README.md        # Usage examples
+```
+
+## 🐛 Reporting Issues
+
+Please use GitHub Issues to report bugs:
+
+1. Check existing issues first
+2. Include OpenSkills version (`openskills --version`)
+3. Provide minimal reproduction steps
+4. Include error messages and logs
+5. Specify your environment (OS, Node version)
+
+## 🔄 Pull Request Process
+
+1. **Create a feature branch**
+   ```bash
+   git checkout -b feature/my-feature
+   ```
+
+2. **Make your changes**
+   - Follow code style guidelines
+   - Update tests as needed
+   - Update documentation
+
+3. **Commit with clear messages**
+   ```bash
+   git commit -m "feat: add new feature
+   
+   - Detail what changed
+   - Explain why it changed
+   - Reference issue numbers"
+   ```
+
+4. **Push and create PR**
+   - Fill out the PR template
+   - Link related issues
+   - Ensure CI passes
+
+## 📚 Documentation
+
+- Update README.md for user-facing changes
+- Update ARCHITECTURE.md for technical changes
+- Add JSDoc comments for public APIs
+- Include examples for new features
+
+## 🎓 Learning Resources
+
+- [Anthropic's Skills Blog Post](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
+- [Claude Skills Documentation](https://docs.claude.com/en/docs/claude-code/overview)
+- [Progressive Disclosure Pattern](./docs/technical/PROGRESSIVE_DISCLOSURE_OPTIMIZATION.md)
+- [Execution Architecture](./docs/technical/OPENSKILLS_V3_EXECUTION.md)
+
+## 💬 Community
+
+- **Discussions**: Use GitHub Discussions for questions
+- **Discord**: [Join our Discord](https://discord.gg/openskills) (coming soon)
+- **Twitter**: [@openskills](https://twitter.com/openskills) (coming soon)
+
+## 📄 License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
 
 ---
 
-Thank you for helping make OpenSkills better!
+Thank you for helping make OpenSkills better! 🙏

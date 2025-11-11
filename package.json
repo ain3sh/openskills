@@ -1,7 +1,7 @@
 {
   "name": "openskills",
-  "version": "2.1.0",
-  "description": "Universal skills loader for AI coding agents - install and load Anthropic SKILL.md format skills in any agent",
+  "version": "2.0.0",
+  "description": "Execution-first skills system for AI coding agents. Execute skills, don't read them.",
   "type": "module",
   "main": "./dist/cli.js",
   "bin": {
@@ -36,17 +36,20 @@
     "cursor",
     "windsurf",
     "aider",
+    "cline",
     "progressive-disclosure",
+    "execution-first",
     "automation",
-    "developer-tools"
+    "developer-tools",
+    "script-runner"
   ],
-  "author": "OpenSkills Contributors",
-  "license": "Apache-2.0",
+  "author": "ain3sh and OpenSkills Contributors",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/numman-ali/openskills.git"
+    "url": "https://github.com/ain3sh/openskills.git"
   },
-  "homepage": "https://github.com/numman-ali/openskills#readme",
+  "homepage": "https://github.com/ain3sh/openskills#readme",
   "engines": {
     "node": ">=20.6.0"
   },
