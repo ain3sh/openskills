@@ -4,7 +4,7 @@
 
 **Execute skills, don't read them.**
 
-[![Version](https://img.shields.io/npm/v/openskills.svg)](https://www.npmjs.com/package/openskills)
+[![Version](https://img.shields.io/github/release/ain3sh/openskills.svg)](https://github.com/ain3sh/openskills/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20.6.0-brightgreen.svg)](package.json)
 
@@ -31,10 +31,28 @@ OpenSkills brings Anthropic's Claude Skills system to **all AI coding agents** (
 
 ## Installation
 
-### Via npm (Recommended)
+### Quick Install (Recommended)
 
+#### Linux/macOS
 ```bash
-npm install -g openskills
+curl -fsSL https://github.com/ain3sh/openskills/releases/latest/download/install.sh | bash
+```
+
+#### Windows
+Download the latest binary from [releases](https://github.com/ain3sh/openskills/releases/latest) and add to your PATH.
+
+### Manual Installation
+
+Download the appropriate binary for your platform from the [latest release](https://github.com/ain3sh/openskills/releases/latest):
+- Linux: `openskills-linux-x64`
+- macOS (Apple Silicon): `openskills-darwin-arm64`
+- macOS (Intel): `openskills-darwin-x64`
+- Windows: `openskills-win32-x64.exe`
+
+Make it executable (Linux/macOS):
+```bash
+chmod +x openskills-*
+sudo mv openskills-* /usr/local/bin/openskills
 ```
 
 ### From Source
