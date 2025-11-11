@@ -19,24 +19,19 @@ describe('Transclusion Support', () => {
   ];
 
   describe('detectTransclusionPattern', () => {
-    it('detects simple @SKILLS.md pattern', () => {
-      const content = '# AGENTS.md\n\n@SKILLS.md\n';
-      expect(detectTransclusionPattern(content)).toBe('@SKILLS.md');
+    it('detects simple @.agent/SKILLS.md pattern', () => {
+      const content = '# AGENTS.md\n\n@.agent/SKILLS.md\n';
+      expect(detectTransclusionPattern(content)).toBe('@.agent/SKILLS.md');
     });
 
     it('detects VuePress style @include pattern', () => {
-      const content = '# AGENTS.md\n\n@include: SKILLS.md\n';
-      expect(detectTransclusionPattern(content)).toBe('@include: SKILLS.md');
+      const content = '# AGENTS.md\n\n@include: .agent/SKILLS.md\n';
+      expect(detectTransclusionPattern(content)).toBe('@include: .agent/SKILLS.md');
     });
 
     it('detects HTML comment style pattern', () => {
-      const content = '# AGENTS.md\n\n<!-- @include: SKILLS.md -->\n';
-      expect(detectTransclusionPattern(content)).toBe('<!-- @include: SKILLS.md -->');
-    });
-
-    it('detects case-insensitive patterns', () => {
-      const content = '# AGENTS.md\n\n@Skills.md\n';
-      expect(detectTransclusionPattern(content)).toBe('@Skills.md');
+      const content = '# AGENTS.md\n\n<!-- @include: .agent/SKILLS.md -->\n';
+      expect(detectTransclusionPattern(content)).toBe('<!-- @include: .agent/SKILLS.md -->');
     });
 
     it('returns null when no transclusion pattern found', () => {
@@ -93,14 +88,14 @@ Old skills content
     it('replaceSkillsSection handles transclusion detection', () => {
       const content = `# AGENTS.md
 
-@SKILLS.md
+@.agent/SKILLS.md
 
 Other content`;
-      
+
       // Should not modify content if transclusion is detected
       const xml = generateSkillsXml(mockSkills);
       const result = replaceSkillsSection(content, xml);
-      
+
       // If transclusion exists, it should either preserve it or replace with direct injection
       // Based on current implementation, it adds the section if no markers found
       expect(result).toBeDefined();

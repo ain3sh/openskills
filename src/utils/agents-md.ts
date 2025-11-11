@@ -2,20 +2,19 @@ import type { Skill } from '../types.js';
 
 /**
  * Detect if AGENTS.md uses transclusion pattern
- * Supports multiple patterns:
- * - @.agent/SKILLS.md (preferred)
- * - @SKILLS.md (legacy)
+ * Supports:
+ * - @.agent/SKILLS.md
  * - @include: .agent/SKILLS.md
  * - <!-- @include: .agent/SKILLS.md -->
  */
 export function detectTransclusionPattern(content: string): string | null {
-  // Check for new .agent/SKILLS.md patterns first (preferred)
-  const newHtmlCommentMatch = content.match(/<!--\s*@include:\s*\.agent\/SKILLS\.md\s*-->/);
-  if (newHtmlCommentMatch) {
-    return newHtmlCommentMatch[0];
+  // Check for HTML comment style
+  const htmlCommentMatch = content.match(/<!--\s*@include:\s*\.agent\/SKILLS\.md\s*-->/);
+  if (htmlCommentMatch) {
+    return htmlCommentMatch[0];
   }
 
-  // Check for VuePress style with .agent/
+  // Check for VuePress style
   if (content.includes('@include: .agent/SKILLS.md')) {
     return '@include: .agent/SKILLS.md';
   }
@@ -23,37 +22,6 @@ export function detectTransclusionPattern(content: string): string | null {
   // Check for simple @.agent/SKILLS.md pattern
   if (content.includes('@.agent/SKILLS.md')) {
     return '@.agent/SKILLS.md';
-  }
-
-  // Legacy support: Check for old root-level SKILLS.md patterns
-  const htmlCommentMatch = content.match(/<!--\s*@include:\s*SKILLS\.md\s*-->/);
-  if (htmlCommentMatch) {
-    return htmlCommentMatch[0];
-  }
-
-  if (content.includes('@include: SKILLS.md')) {
-    return '@include: SKILLS.md';
-  }
-
-  if (content.includes('@SKILLS.md')) {
-    return '@SKILLS.md';
-  }
-
-  // Check for any variation with different casing
-  const patterns = [
-    /@\.agent\/skills\.md/i,
-    /@include:\s*\.agent\/skills\.md/i,
-    /<!--\s*@include:\s*\.agent\/skills\.md\s*-->/i,
-    /@skills\.md/i,
-    /@include:\s*skills\.md/i,
-    /<!--\s*@include:\s*skills\.md\s*-->/i
-  ];
-
-  for (const pattern of patterns) {
-    const match = content.match(pattern);
-    if (match) {
-      return match[0];
-    }
   }
 
   return null;
