@@ -26,7 +26,7 @@ describe('Blog Spec Compliance: Error Codes (lines 820-845)', () => {
   beforeAll(() => {
     originalCwd = process.cwd();
     tempDir = join(tmpdir(), `openskills-errors-${Date.now()}`);
-    skillsDir = join(tempDir, '.openskills', 'skills');
+    skillsDir = join(tempDir, '.agent', 'skills');
     mkdirSync(skillsDir, { recursive: true });
 
     // valid skill for baseline

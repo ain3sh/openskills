@@ -20,7 +20,7 @@ describe('Blog Spec Compliance: Overall Parity (lines 692-785)', () => {
 
   beforeEach(() => {
     tempDir = join(tmpdir(), `openskills-parity-${Date.now()}`);
-    skillsDir = join(tempDir, '.openskills', 'skills');
+    skillsDir = join(tempDir, '.agent', 'skills');
     mkdirSync(skillsDir, { recursive: true });
   });
 

@@ -26,7 +26,7 @@ describe('Blog Spec Compliance: Permission Injection (lines 773-783)', () => {
 
   beforeEach(() => {
     tempDir = join(tmpdir(), `openskills-perm-${Date.now()}`);
-    skillsDir = join(tempDir, '.openskills', 'skills');
+    skillsDir = join(tempDir, '.agent', 'skills');
     mkdirSync(skillsDir, { recursive: true });
   });
 

@@ -26,7 +26,7 @@ describe('Blog Spec Compliance: Attachment Injection (lines 768-785)', () => {
 
   beforeEach(() => {
     tempDir = join(tmpdir(), `openskills-attach-${Date.now()}`);
-    skillsDir = join(tempDir, '.openskills', 'skills');
+    skillsDir = join(tempDir, '.agent', 'skills');
     mkdirSync(skillsDir, { recursive: true });
   });
 

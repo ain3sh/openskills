@@ -4,23 +4,23 @@ import { homedir } from 'os';
 import { getSkillsDir, getSearchDirs, getAllSkillSources } from '../../src/utils/dirs.js';
 
 describe('getSkillsDir', () => {
-  it('should return global .openskills dir by default', () => {
+  it('should return global .agent dir by default', () => {
     const dir = getSkillsDir();
-    expect(dir).toBe(join(homedir(), '.openskills/skills'));
-  });
-
-  it('should return project .openskills dir when projectLocal is true', () => {
-    const dir = getSkillsDir(true);
-    expect(dir).toBe(join(process.cwd(), '.openskills/skills'));
-  });
-
-  it('should return global .agent dir when universal is true', () => {
-    const dir = getSkillsDir(false, true);
     expect(dir).toBe(join(homedir(), '.agent/skills'));
   });
 
-  it('should return project .agent dir when both projectLocal and universal are true', () => {
-    const dir = getSkillsDir(true, true);
+  it('should return project .agent dir when projectLocal is true', () => {
+    const dir = getSkillsDir(true);
+    expect(dir).toBe(join(process.cwd(), '.agent/skills'));
+  });
+
+  it('should return global .agent dir when universal is false', () => {
+    const dir = getSkillsDir(false, false);
+    expect(dir).toBe(join(homedir(), '.agent/skills'));
+  });
+
+  it('should return project .agent dir when projectLocal is true and universal is false', () => {
+    const dir = getSkillsDir(true, false);
     expect(dir).toBe(join(process.cwd(), '.agent/skills'));
   });
 });
@@ -28,13 +28,11 @@ describe('getSkillsDir', () => {
 describe('getSearchDirs', () => {
   it('should return all dirs in priority order', () => {
     const dirs = getSearchDirs();
-    expect(dirs).toHaveLength(6);
-    expect(dirs[0]).toBe(join(process.cwd(), '.openskills/skills'));
-    expect(dirs[1]).toBe(join(process.cwd(), '.agent/skills'));
-    expect(dirs[2]).toBe(join(homedir(), '.openskills/skills'));
-    expect(dirs[3]).toBe(join(homedir(), '.agent/skills'));
-    expect(dirs[4]).toBe(join(process.cwd(), '.claude/skills'));
-    expect(dirs[5]).toBe(join(homedir(), '.claude/skills'));
+    expect(dirs).toHaveLength(4);
+    expect(dirs[0]).toBe(join(process.cwd(), '.agent/skills'));
+    expect(dirs[1]).toBe(join(homedir(), '.agent/skills'));
+    expect(dirs[2]).toBe(join(process.cwd(), '.claude/skills'));
+    expect(dirs[3]).toBe(join(homedir(), '.claude/skills'));
   });
 });
 
@@ -56,13 +54,13 @@ describe('getAllSkillSources', () => {
   it('should have correct priority ordering', () => {
     const sources = getAllSkillSources();
     
-    // Project sources should have priority 1-3
+    // Project sources should have priority 1-2
     const projectSources = sources.filter(s => s.type === 'project');
-    expect(projectSources.every(s => s.priority >= 1 && s.priority <= 3)).toBe(true);
+    expect(projectSources.every(s => s.priority >= 1 && s.priority <= 2)).toBe(true);
     
-    // User sources should have priority 4-6
+    // User sources should have priority 3-4
     const userSources = sources.filter(s => s.type === 'user');
-    expect(userSources.every(s => s.priority >= 4 && s.priority <= 6)).toBe(true);
+    expect(userSources.every(s => s.priority >= 3 && s.priority <= 4)).toBe(true);
     
     // Plugin sources should have priority 7+
     const pluginSources = sources.filter(s => s.type === 'plugin');
