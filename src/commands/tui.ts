@@ -110,17 +110,15 @@ async function showSkillDetails(skillName: string): Promise<void> {
 
 async function installSkillsFlow(): Promise<void> {
   const source = await input({ message: 'GitHub repo owner/name or git URL', validate: (value) => value?.trim() ? true : 'Source is required.' });
-  const target = await select<'project' | 'global' | 'universal'>({
+  const target = await select<'project' | 'global'>({
     message: 'Install location',
     choices: [
-      { name: 'Project (.claude/skills)', value: 'project' },
-      { name: 'Global (~/.claude/skills)', value: 'global' },
-      { name: 'Universal (.agent/skills)', value: 'universal' },
+      { name: 'Project (.agent/skills)', value: 'project' },
+      { name: 'Global (~/.agent/skills)', value: 'global' },
     ],
   });
   await installSkill(source.trim(), {
     global: target === 'global',
-    universal: target === 'universal',
   });
   await pause('Installation complete. Press enter to continue.');
 }

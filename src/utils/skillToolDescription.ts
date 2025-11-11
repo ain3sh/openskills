@@ -182,18 +182,7 @@ Invoke skills by name when they match the user's task.
 function formatSkillEntry(entry: SkillEntry): string {
   // Append when_to_use guidance when present per blog behavior
   const desc = entry.whenToUse ? `${entry.description} - ${entry.whenToUse}` : entry.description;
-  let line = `"${entry.displayName}": ${desc}`;
-  
-  // Add metadata if present
-  const metadata: string[] = [];
-  if (entry.version) metadata.push(`v${entry.version}`);
-  if (entry.license) metadata.push(entry.license);
-  
-  if (metadata.length > 0) {
-    line += ` (${metadata.join(', ')})`;
-  }
-  
-  return line + '\n';
+  return `"${entry.displayName}": ${desc}\n`;
 }
 
 /**

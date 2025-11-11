@@ -22,6 +22,8 @@ export interface Skill {
   source?: SkillSourceType;  // Track where skill came from
   sourceLabel?: string;       // e.g., "plugin:pdf-tools" or "builtin"
   scripts?: ScriptInfo[];     // Discovered executable scripts
+  version?: string;           // Optional metadata for display surfaces
+  license?: string;           // Optional metadata for display surfaces
 }
 
 export interface SkillLocation {

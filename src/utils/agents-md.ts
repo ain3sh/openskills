@@ -92,18 +92,7 @@ export function generateSkillsXml(skills: Skill[]): string {
   // Format skills as simple "name": description pairs (blog format)
   const skillEntries = skills
     .map((s) => {
-      let entry = `"${s.name}": ${s.description || 'No description'}`;
-      
-      // Add version/license if present (blog shows these in discovery)
-      const metadata: string[] = [];
-      if (s.version) metadata.push(`v${s.version}`);
-      if (s.license) metadata.push(s.license);
-      
-      if (metadata.length > 0) {
-        entry += ` (${metadata.join(', ')})`;
-      }
-      
-      return entry;
+      return `"${s.name}": ${s.description || 'No description'}`;
     })
     .join('\n');
 

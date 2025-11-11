@@ -189,5 +189,8 @@ export async function discoverSkillScripts(skillDir: string): Promise<ScriptInfo
 export function formatScriptExamples(scripts: ScriptInfo[], baseDir: string): string[] {
   return scripts
     .slice(0, 3) // Show max 3 examples
-    .map(s => s.usage.replace('{baseDir}', baseDir));
+    .map((s) => {
+      const template = s.usage ?? `{baseDir}/${s.path}`;
+      return template.replace('{baseDir}', baseDir);
+    });
 }
