@@ -2,49 +2,35 @@ import type { Skill } from '../types.js';
 
 /**
  * Detect if AGENTS.md uses transclusion pattern
- * Supports multiple patterns:
- * - @SKILLS.md
- * - @include: SKILLS.md
- * - <!-- @include: SKILLS.md -->
+ * Supports:
+ * - @.agent/SKILLS.md
+ * - @include: .agent/SKILLS.md
+ * - <!-- @include: .agent/SKILLS.md -->
  */
 export function detectTransclusionPattern(content: string): string | null {
-  // Check for HTML comment style first (most specific)
-  const htmlCommentMatch = content.match(/<!--\s*@include:\s*SKILLS\.md\s*-->/);
+  // Check for HTML comment style
+  const htmlCommentMatch = content.match(/<!--\s*@include:\s*\.agent\/SKILLS\.md\s*-->/);
   if (htmlCommentMatch) {
     return htmlCommentMatch[0];
   }
-  
+
   // Check for VuePress style
-  if (content.includes('@include: SKILLS.md')) {
-    return '@include: SKILLS.md';
+  if (content.includes('@include: .agent/SKILLS.md')) {
+    return '@include: .agent/SKILLS.md';
   }
-  
-  // Check for simple @filename pattern
-  if (content.includes('@SKILLS.md')) {
-    return '@SKILLS.md';
+
+  // Check for simple @.agent/SKILLS.md pattern
+  if (content.includes('@.agent/SKILLS.md')) {
+    return '@.agent/SKILLS.md';
   }
-  
-  // Check for any variation with different casing
-  const patterns = [
-    /@skills\.md/i,
-    /@include:\s*skills\.md/i,
-    /<!--\s*@include:\s*skills\.md\s*-->/i
-  ];
-  
-  for (const pattern of patterns) {
-    const match = content.match(pattern);
-    if (match) {
-      return match[0];
-    }
-  }
-  
+
   return null;
 }
 
 /**
  * Append transclusion reference to AGENTS.md
  */
-export function appendTransclusionReference(content: string, pattern: string = '@SKILLS.md'): string {
+export function appendTransclusionReference(content: string, pattern: string = '@.agent/SKILLS.md'): string {
   // Remove any existing skills section first
   let updated = content;
   

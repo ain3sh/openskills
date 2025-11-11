@@ -1,5 +1,5 @@
-import { writeFileSync, existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
 import chalk from 'chalk';
 import { findAllSkills } from '../utils/skills.js';
 import { generateSkillsXml } from '../utils/agents-md.js';
@@ -19,8 +19,14 @@ export interface GenerateSkillsMdOptions {
  */
 export async function generateSkillsMd(options: GenerateSkillsMdOptions = {}): Promise<void> {
   const format = options.format || 'xml';
-  const outputPath = options.output || 'SKILLS.md';
-  
+  const outputPath = options.output || '.agent/SKILLS.md';
+
+  // Ensure parent directory exists
+  const parentDir = dirname(outputPath);
+  if (parentDir && parentDir !== '.') {
+    mkdirSync(parentDir, { recursive: true });
+  }
+
   // Check if file exists and not forcing
   if (existsSync(outputPath) && !options.force) {
     console.log(chalk.yellow(`⚠️  ${outputPath} already exists`));
@@ -64,7 +70,7 @@ export async function generateSkillsMd(options: GenerateSkillsMdOptions = {}): P
   console.log(chalk.dim(`Skills: ${skills.length}`));
   console.log();
   console.log(chalk.cyan('Next steps:'));
-  console.log(`1. Add to AGENTS.md: ${chalk.bold('@SKILLS.md')}`);
+  console.log(`1. Add to AGENTS.md: ${chalk.bold('@.agent/SKILLS.md')}`);
   console.log(`2. Or sync with transclusion: ${chalk.cyan('openskills sync --transclusion')}`);
 }
 
