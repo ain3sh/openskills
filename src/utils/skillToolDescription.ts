@@ -169,7 +169,7 @@ export function buildSkillToolDescription(
  */
 function buildInstructions(): string {
   return `<skills_instructions>
-Invoke skills using this tool when they match the user's task.
+Invoke skills by name when they match the user's task.
 </skills_instructions>
 
 `;

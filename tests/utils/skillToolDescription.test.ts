@@ -51,7 +51,7 @@ describe('buildSkillToolDescription', () => {
 
   it('should format skills with name and description', () => {
     const payload = buildSkillToolDescription();
-    expect(payload.instructions).toContain('Invoke skills using this tool');
+    expect(payload.instructions).toContain('Invoke skills by name');
   });
 
   it('should include version and license metadata when present', () => {
