@@ -1,79 +1,146 @@
-name: release-sea
+name: Build and Release SEA Binaries
 
 on:
   push:
     tags:
       - 'v*'
-
-permissions:
-  contents: write
+  release:
+    types: [created, published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name to build and upload for (e.g., v0.1.1)'
+        required: true
+        type: string
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: x64
+            runner: ubuntu-latest
+          - os: darwin
+            arch: x64
+            runner: macos-15-intel
+          - os: darwin
+            arch: arm64
+            runner: macos-latest
+          - os: win32
+            arch: x64
+            runner: windows-latest
+    env:
+      TAG_NAME: ${{ github.event_name == 'release' && github.event.release.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || github.event.inputs.tag }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code at tag (or current SHA)
+        uses: actions/checkout@v4
         with:
-          node-version: '20'
-      - run: npm ci
-      - run: npm run build:sea:current
-      - name: Rename artifact
-        run: |
-          mv dist/sea/openskills dist/sea/openskills-linux-$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/')
-          sha256sum dist/sea/openskills-* > dist/sea/checksums-linux.txt
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
-          files: |
-            dist/sea/openskills-linux-*
-            dist/sea/checksums-linux.txt
+          ref: ${{ env.TAG_NAME || github.sha }}
 
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm ci
-      - run: npm run build:sea:current
-      - name: Rename artifact
-        run: |
-          ARCH=$(uname -m)
-          [[ "$ARCH" == "x86_64" ]] && ARCH_OUT="x64" || ARCH_OUT="arm64"
-          mv dist/sea/openskills dist/sea/openskills-darwin-$ARCH_OUT
-          shasum -a 256 dist/sea/openskills-* > dist/sea/checksums-darwin.txt
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
-          files: |
-            dist/sea/openskills-darwin-*
-            dist/sea/checksums-darwin.txt
+          cache: 'npm'
 
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm ci
-      - run: npm run build:sea:current
-      - name: Rename artifact
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build SEA binary
+        run: npm run build:sea:current
+
+      - name: Rename and checksum (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          mv dist/sea/openskills dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}
+          sha256sum dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }} > dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.sha256
+          ls -lh dist/sea/openskills-*
+          file dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}
+          echo "✅ Binary created successfully"
+
+      - name: Rename and checksum (macOS)
+        if: matrix.os == 'darwin'
+        run: |
+          mv dist/sea/openskills dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}
+          shasum -a 256 dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }} > dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.sha256
+          ls -lh dist/sea/openskills-*
+          file dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}
+          echo "✅ Binary created successfully"
+
+      - name: Rename and checksum (Windows)
+        if: matrix.os == 'win32'
         shell: bash
         run: |
-          mv dist/sea/openskills.exe dist/sea/openskills-win32-x64.exe
-          certutil -hashfile dist/sea/openskills-win32-x64.exe SHA256 > dist/sea/checksums-win32.txt
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+          mv dist/sea/openskills.exe dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.exe
+          certutil -hashfile dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.exe SHA256 > dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.sha256
+          ls -lh dist/sea/openskills-*
+          echo "✅ Binary created successfully"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          name: openskills-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/sea/*
+          retention-days: 5
+
+  release:
+    name: Create/Update GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'release') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+    env:
+      TAG_NAME: ${{ github.event_name == 'release' && github.event.release.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || github.event.inputs.tag }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: binaries
+
+      - name: Display structure
+        run: ls -R binaries
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find binaries -type f -exec mv {} release/ \;
+          ls -lh release/
+
+      - name: Create or update GitHub Release and upload assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          files: release/*
+          generate_release_notes: true
           draft: false
-          files: |
-            dist/sea/openskills-win32-x64.exe
-            dist/sea/checksums-win32.txt
+          prerelease: false
+          body: |
+            ## 📊 openskills ${{ env.TAG_NAME }}
+
+            Single executable binaries for all platforms (no Node.js required!)
+
+            ### Installation
+
+            **Manual download:**
+            - **Linux x64**: `openskills-linux-x64`
+            - **macOS Intel**: `openskills-darwin-x64`
+            - **macOS Apple Silicon**: `openskills-darwin-arm64`
+            - **Windows**: `openskills-win32-x64.exe`
+
+            SHA256 checksums are provided for each binary.
+
+            ### For Contributors
+            ```bash
+            npm install -g openskills
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
