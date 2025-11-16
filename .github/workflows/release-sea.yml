@@ -12,6 +12,11 @@ on:
         description: 'Tag name to build and upload for (e.g., v0.1.1)'
         required: true
         type: string
+      use_current_code:
+        description: 'Build from current HEAD instead of tag (for re-releasing after fixes)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -39,7 +44,7 @@ jobs:
       - name: Checkout code at tag (or current SHA)
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG_NAME || github.sha }}
+          ref: ${{ github.event.inputs.use_current_code == 'true' && github.sha || env.TAG_NAME || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
