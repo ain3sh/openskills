@@ -92,4 +92,63 @@ describe('getAllSkillSources', () => {
     // All paths should be unique
     expect(uniquePaths.size).toBe(paths.length);
   });
+
+  it('should discover nested plugin skills (marketplace pattern)', () => {
+    const sources = getAllSkillSources();
+    const pluginSources = sources.filter(s => s.type === 'plugin');
+    
+    // If there are plugin sources, they should have pluginId
+    if (pluginSources.length > 0) {
+      pluginSources.forEach(source => {
+        expect(source.pluginId).toBeDefined();
+        expect(typeof source.pluginId).toBe('string');
+      });
+    }
+    
+    // Check for nested marketplace pattern if it exists
+    const marketplaceSources = pluginSources.filter(s => 
+      s.pluginId?.includes('marketplaces/') || s.pluginId?.includes('repos/')
+    );
+    
+    // If marketplace sources exist, they should have proper structure
+    if (marketplaceSources.length > 0) {
+      marketplaceSources.forEach(source => {
+        expect(source.pluginId).toMatch(/\w+\/[\w-]+/); // Should match pattern like "marketplaces/name"
+        expect(source.path).toContain('skills');
+      });
+    }
+  });
+
+  it('should include pluginId for all plugin sources', () => {
+    const sources = getAllSkillSources();
+    const pluginSources = sources.filter(s => s.type === 'plugin');
+    
+    // All plugin sources should have pluginId defined
+    pluginSources.forEach(source => {
+      expect(source.pluginId).toBeDefined();
+      expect(source.pluginId).not.toBe('');
+    });
+  });
+
+  it('should handle both flat and nested plugin structures', () => {
+    const sources = getAllSkillSources();
+    const pluginSources = sources.filter(s => s.type === 'plugin');
+    
+    if (pluginSources.length > 0) {
+      // Flat plugins should have simple names (no slashes)
+      const flatPlugins = pluginSources.filter(s => !s.pluginId?.includes('/'));
+      
+      // Nested plugins should have path separators
+      const nestedPlugins = pluginSources.filter(s => s.pluginId?.includes('/'));
+      
+      // Both should be valid patterns
+      flatPlugins.forEach(source => {
+        expect(source.pluginId).toMatch(/^[\w-]+$/);
+      });
+      
+      nestedPlugins.forEach(source => {
+        expect(source.pluginId).toMatch(/[\w-]+\/[\w-]+/);
+      });
+    }
+  });
 });

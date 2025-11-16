@@ -73,10 +73,11 @@ jobs:
 
       - name: Rename and checksum (Windows)
         if: matrix.os == 'win32'
-        shell: bash
+        shell: pwsh
         run: |
           mv dist/sea/openskills.exe dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.exe
-          certutil -hashfile dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.exe SHA256 > dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.sha256
+          $hash = (Get-FileHash -Algorithm SHA256 "dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.exe").Hash.ToLower()
+          "$hash  openskills-${{ matrix.os }}-${{ matrix.arch }}.exe" | Out-File -Encoding ASCII -NoNewline "dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.sha256"
           ls -lh dist/sea/openskills-*
           echo "✅ Binary created successfully"
 
@@ -116,7 +117,7 @@ jobs:
           ls -lh release/
 
       - name: Create or update GitHub Release and upload assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
           files: release/*

@@ -78,8 +78,9 @@ function scanAllSkills(): Skill[] {
             // Determine source label
             let sourceLabel = '';
             if (source.type === 'plugin') {
-              // Extract plugin name from path: ~/.claude/plugins/pdf-tools/skills -> pdf-tools
-              const pluginName = basename(dirname(source.path));
+              // Use pluginId if available (supports nested structures)
+              // e.g., "plugin:marketplaces/anthropic-agent-skills" or "plugin:my-plugin"
+              const pluginName = source.pluginId || basename(dirname(source.path));
               sourceLabel = `plugin:${pluginName}`;
             } else if (source.type === 'builtin') {
               sourceLabel = 'builtin';

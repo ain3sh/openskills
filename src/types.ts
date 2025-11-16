@@ -4,6 +4,7 @@ export interface SkillSource {
   type: SkillSourceType;
   path: string;
   priority: number; // Lower = higher priority (1 = highest)
+  pluginId?: string; // Identifies nested plugin location (e.g., "marketplaces/anthropic-agent-skills")
 }
 
 export interface ScriptInfo {
