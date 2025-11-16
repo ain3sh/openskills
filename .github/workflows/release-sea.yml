@@ -78,8 +78,8 @@ jobs:
           mv dist/sea/openskills.exe dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.exe
           $hash = (Get-FileHash -Algorithm SHA256 "dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.exe").Hash.ToLower()
           "$hash  openskills-${{ matrix.os }}-${{ matrix.arch }}.exe" | Out-File -Encoding ASCII -NoNewline "dist/sea/openskills-${{ matrix.os }}-${{ matrix.arch }}.sha256"
-          ls -lh dist/sea/openskills-*
-          echo "✅ Binary created successfully"
+          Get-ChildItem -Path dist/sea/openskills-* | Format-Table Name, Length, LastWriteTime -AutoSize
+          Write-Host "✅ Binary created successfully"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
