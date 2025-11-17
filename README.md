@@ -18,7 +18,7 @@ A universal CLI for managing and executing AI agent skills. Skills are executabl
 
 ## What is OpenSkills?
 
-OpenSkills is a CLI tool for managing skills for AI coding agents (Claude Code, Cursor, Windsurf, Aider, Cline). It uses an **execution-first architecture** where skills contain scripts that run in isolated processes, eliminating the confusion where agents try to import skill code as Python packages.
+OpenSkills is a CLI tool for managing skills for AI coding agents (Claude Code, Factory Droid, Cursor, Windsurf, Aider, Cline). It uses an **execution-first architecture** where skills contain scripts that run in isolated processes, eliminating the confusion where agents try to import skill code as Python packages.
 
 ### Key Features
 
