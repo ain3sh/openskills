@@ -39,17 +39,12 @@ Browse the [Anthropic Skills Repository](https://github.com/anthropics/skills) f
 - `slack-gif-creator` - Complex skill with multiple scripts
 - `mcp-builder` - Documentation-heavy skill
 
-## Archives
-
-Historical documentation for reference:
-- [v2.1.0 Release Notes](archive/RELEASE_NOTES_v2.1.0.md) - Transclusion pattern introduction
-
 ## Resources
 
 ### External Links
 
 - [Anthropic Skills Blog Post](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
-- [Claude Code Documentation](https://docs.claude.com/en/docs/claude-code/overview)
+- [Claude Agent Skills: A First Principles Deep Dive](https://leehanchung.github.io/blogs/2025/10/26/claude-skills-deep-dive/)
 - [Anthropic Skills Repository](https://github.com/anthropics/skills)
 
 ### Community
