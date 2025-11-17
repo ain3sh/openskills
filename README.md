@@ -339,6 +339,8 @@ MIT - see [LICENSE](LICENSE)
 
 Inspired by [Anthropic's Claude Skills](https://www.anthropic.com/news/skills) and their [engineering blog post](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills).
 
+Invaluable insights from [Claude Agent Skills: A First Principles Deep Dive](https://leehanchung.github.io/blogs/2025/10/26/claude-skills-deep-dive/) by Han Lee.
+
 ---
 
 <div align="center">
