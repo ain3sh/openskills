@@ -656,5 +656,5 @@ This design ensures that any AI agent—present or future—can leverage skills 
 ---
 
 *Implementation: [github.com/openskills](https://github.com/openskills)*  
-*Specification: OpenSkills v3.0*  
+*Specification: OpenSkills v2.0.0*  
 *Last Updated: November 2024*
