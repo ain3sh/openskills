@@ -57,10 +57,10 @@ program
   .command('load <skill-name>')
   .alias('load-skill')
   .description('Load skill to stdout (for AI agents)')
-  .option('-y, --yes', 'Skip permission prompts (approve all skills)')
+  .option('--tui', 'Use interactive permission prompts (default: false, auto-approves)', false)
   .action(async (name, opts) => {
     const { loadSkill } = await import('./commands/load.js');
-    await loadSkill(name, opts);
+    await loadSkill(name, { yes: !opts.tui });
   });
 
 program
@@ -68,10 +68,10 @@ program
   .alias('use-skill')
   .description('Use a skill and emit strict execution payload (JSON)')
   .option('-a, --args <args>', 'Optional arguments string for metadata display')
-  .option('-y, --yes', 'Skip permission prompts (approve all skills)')
+  .option('--tui', 'Use interactive permission prompts (default: false, auto-approves)', false)
   .action(async (name, opts) => {
     const { useSkill } = await import('./commands/use.js');
-    await useSkill(name, { args: opts.args, yes: opts.yes });
+    await useSkill(name, { args: opts.args, yes: !opts.tui });
   });
 
 program

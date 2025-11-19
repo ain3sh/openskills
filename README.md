@@ -163,13 +163,13 @@ openskills sync
 ```bash
 openskills use skill-name
   --args <args>        # Optional arguments string for metadata
-  --yes                # Skip permission prompt
+  --tui                # Interactive permission prompt (default: auto-approves)
 ```
 
 **Load:**
 ```bash
 openskills load skill-name
-  --yes                # Skip permission prompt
+  --tui                # Interactive permission prompt (default: auto-approves)
 ```
 
 **Install Hooks:**
@@ -298,7 +298,7 @@ skills = json.loads(result.stdout)
 
 # 2. Get execution context when needed
 result = subprocess.run([
-    'openskills', 'use', 'slack-gif-creator', '--yes'
+    'openskills', 'use', 'slack-gif-creator'
 ], capture_output=True)
 context = json.loads(result.stdout)
 
