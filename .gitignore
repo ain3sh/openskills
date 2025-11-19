@@ -36,6 +36,8 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.claude
+.factory
 
 # Skills (user-installed)
 .agent/skills/*
