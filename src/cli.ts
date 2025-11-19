@@ -220,6 +220,27 @@ program
     discover(opts);
   });
 
+program
+  .command('install-hooks')
+  .description('Install Claude Code hooks and aliases (user or project level)')
+  .option('-g, --global', 'Install globally (default)', true)
+  .option('-p, --project', 'Install to project settings', false)
+  .option('--force', 'Overwrite existing files', false)
+  .option('--agent <agent>', 'Target agent (claude|droid)', 'claude')
+  .option('--manual', 'Print hook configuration for manual installation', false)
+  .action(async (opts) => {
+    const { installHooks } = await import('./commands/install-hooks.js');
+    await installHooks(opts);
+  });
+
+program
+  .command('session-hook', { hidden: true })
+  .description('Internal hook for Claude Code session start')
+  .action(async () => {
+    const { sessionHook } = await import('./commands/session-hook.js');
+    await sessionHook();
+  });
+
 // Wrap in async IIFE for CJS compatibility (SEA binary requires CJS format)
 (async () => {
   if (process.argv.length <= 2) {

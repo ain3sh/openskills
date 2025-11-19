@@ -1,6 +1,6 @@
 {
   "name": "openskills",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Execution-first skills system for AI coding agents. Execute skills, don't read them.",
   "type": "module",
   "main": "./dist/cli.js",

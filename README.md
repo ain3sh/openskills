@@ -129,6 +129,7 @@ openskills load slack-gif-creator
 | `openskills exec <skill> <script>` | `execute-skill-script` | Execute a skill script |
 | `openskills use <skill>` | `use-skill` | Get skill execution context (JSON) |
 | `openskills load <skill>` | `load-skill` | Read full skill prompt |
+| `openskills install-hooks` | - | Install agent hooks & aliases |
 
 ### Additional Commands
 
@@ -169,6 +170,16 @@ openskills use skill-name
 ```bash
 openskills load skill-name
   --yes                # Skip permission prompt
+```
+
+**Install Hooks:**
+```bash
+# Install hooks and aliases for easy access
+openskills install-hooks
+  --agent <claude|droid>  # Target agent (default: claude)
+  --manual                # Print config for manual install
+  --global                # Install globally (default)
+  --project               # Install to project settings
 ```
 
 ## Progressive Disclosure
