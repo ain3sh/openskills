@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # OpenSkills installer - downloads and installs the appropriate binary
 # Usage: curl -fsSL https://ain3sh.com/openskills/install.sh | bash
 
