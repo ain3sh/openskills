@@ -34,7 +34,7 @@ OpenSkills implements an **execution-first** architecture for AI agent skills. U
 │                          AGENTS.md                               │
 │                     (Contains @SKILLS.md)                        │
 └──────────────────────┬──────────────────────────────────────────┘
-                       │ Transclusion
+                       │ Transclusion (Default)
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                          SKILLS.md                               │
@@ -42,7 +42,7 @@ OpenSkills implements an **execution-first** architecture for AI agent skills. U
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │ <usage>                                                  │   │
 │  │   Skills are EXECUTABLE TOOLKITS...                     │   │
-│  │   1. Get context: openskills invoke <skill> --format... │   │
+│  │   1. Get context: openskills use <skill>                │   │
 │  │   2. Execute: python <baseDir>/scripts/script.py        │   │
 │  │ </usage>                                                │   │
 │  └─────────────────────────────────────────────────────────┘   │
@@ -59,9 +59,9 @@ OpenSkills implements an **execution-first** architecture for AI agent skills. U
 ┌─────────────────────────────────────────────────────────────────┐
 │                     OpenSkills CLI                               │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │ invoke --format=execution : Returns execution payload    │   │
+│  │ use <skill>               : Returns execution payload    │   │
 │  │ exec <skill> <script>     : Executes script directly     │   │
-│  │ read <skill>              : Returns full SKILL.md        │   │
+│  │ load <skill>              : Returns full SKILL.md        │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └──────────────────────┬──────────────────────────────────────────┘
                        │ Executes
@@ -98,10 +98,10 @@ When an agent starts, it reads SKILLS.md which contains minimal metadata for all
 When the agent decides to use a skill, it calls:
 
 ```bash
-openskills invoke slack-gif-creator --format=execution
+openskills use slack-gif-creator
 ```
 
-This returns the `ExecutionPayload`:
+This returns the `ExecutionPayload` (JSON):
 
 ```typescript
 interface ExecutionPayload {
@@ -148,30 +148,9 @@ openskills exec slack-gif-creator templates/pulse.py --emoji "❤️"
 
 OpenSkills implements a strict message protocol for skill invocation, inspired by Anthropic's two-message pattern:
 
-### Read Command Output Structure
+### Load Command Output Structure
 
-```typescript
-interface ReadJsonOutput {
-  skill: {
-    name: string;
-    baseDir: string;
-    version?: string;
-  };
-  newMessages: NewMessage[];
-  contextModifier?: ContextModifier;
-  attachments?: Attachment[];
-}
-
-interface NewMessage {
-  role: 'user' | 'assistant';
-  content: string | object;
-  isMeta?: boolean;  // Hidden from UI when true
-}
-```
-
-### Message Injection Pattern
-
-When a skill is invoked via `read` (full content mode):
+When a skill is read via `load` (full content mode):
 
 1. **Message 1: Visible Metadata**
 ```xml
@@ -183,15 +162,6 @@ When a skill is invoked via `read` (full content mode):
 ```markdown
 <!-- baseDir: /path/to/skill -->
 [Full SKILL.md content without frontmatter]
-```
-
-3. **Message 3 (Optional): Permissions**
-```json
-{
-  "type": "command_permissions",
-  "allowedTools": ["Read", "Write", "Bash"],
-  "model": "claude-3-opus-20240229"
-}
 ```
 
 ## Script Discovery & Execution
@@ -296,10 +266,10 @@ ${skillTags}
 
 ### Level 2: Execution Context
 
-The `--format=execution` mode provides structured metadata without loading full content:
+The `use` command provides structured metadata without loading full content:
 
 ```typescript
-if (options.format === 'execution') {
+if (command === 'use') {
   const scripts = await discoverSkillScripts(loc.baseDir);
   
   const executionPayload: ExecutionPayload = {
@@ -326,12 +296,12 @@ if (options.format === 'execution') {
 
 ### Level 3: Full Content
 
-Only when absolutely necessary, the full SKILL.md is loaded:
+Only when absolutely necessary, the full SKILL.md is loaded via `load`:
 
 ```typescript
-if (options.format === 'prompt') {
-  // Return just the body for slash commands
-  console.log(newMessages[1].content);
+if (command === 'load') {
+  // Return just the body with baseDir comment
+  console.log(`<!-- baseDir: ${skill.baseDir} -->\n${skillBody}`);
 }
 ```
 
@@ -369,33 +339,6 @@ const SKILL_SEARCH_PATHS = [
 - `.claude/skills` maintained for Claude Code compatibility
 - Project paths have priority over global (allows project-specific overrides)
 - Simplified from 6+ paths to just 4 essential ones
-
-### Cache Strategy
-
-```typescript
-class FastCache<T> {
-  private cache = new Map<string, CacheEntry<T>>();
-  private ttl = 60000; // 60 seconds
-  
-  get(key: string, validator?: () => string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-    
-    const now = Date.now();
-    if (now - entry.timestamp > this.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    if (validator && entry.validationHash !== validator()) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return entry.value;
-  }
-}
-```
 
 ## Technical Implementation Details
 
@@ -439,87 +382,6 @@ function parseFrontmatter<T>(content: string): {
 }
 ```
 
-### Permission System
-
-```typescript
-interface PermissionRules {
-  skills: {
-    allow?: string[];
-    deny?: string[];
-    default?: 'allow' | 'deny' | 'ask';
-  };
-}
-
-function checkSkillPermissions(
-  skillName: string, 
-  rules: PermissionRules
-): PermissionCheckResult {
-  // Check deny list first
-  if (rules.skills?.deny?.includes(skillName)) {
-    return { behavior: 'deny', reason: 'Skill is denied' };
-  }
-  
-  // Check allow list
-  if (rules.skills?.allow?.includes(skillName)) {
-    return { behavior: 'allow' };
-  }
-  
-  // Use default
-  return { behavior: rules.skills?.default || 'ask' };
-}
-```
-
-### Environment Variable Injection
-
-```typescript
-const env = {
-  ...process.env,
-  // Core variables
-  SKILL_BASE: skill.baseDir,
-  SKILL_NAME: skillName,
-  WORK_DIR: process.cwd(),
-  
-  // OpenSkills metadata
-  OPENSKILLS_MODE: 'execution',
-  OPENSKILLS_VERSION: VERSION,
-  
-  // Execution context
-  OPENSKILLS_INVOKE_TIME: new Date().toISOString(),
-  OPENSKILLS_AGENT: process.env.OPENSKILLS_AGENT || 'unknown'
-};
-```
-
-## Performance Characteristics
-
-### Caching Strategy
-
-| Component | TTL | Invalidation |
-|-----------|-----|--------------|
-| Skill Discovery | 60s | Directory mtime change |
-| Script Metadata | 60s | File mtime change |
-| Frontmatter Parse | ∞ | Never (per execution) |
-| Execution Context | 0 | Always fresh |
-
-### Token Economics
-
-| Operation | Token Cost | Frequency |
-|-----------|------------|-----------|
-| SKILLS.md Load | ~500-2000 | Once per session |
-| Skill Invocation | ~500 | Per skill use |
-| Full Read | ~5000-15000 | Rarely needed |
-| Execution | 0 | No tokens consumed |
-
-### Execution Overhead
-
-```
-Command: openskills exec skill-name script.py
-├── Skill resolution: ~5ms (cached)
-├── Script path validation: ~2ms
-├── Environment setup: ~3ms
-├── Process spawn: ~40ms
-└── Total: ~50ms overhead
-```
-
 ## Security Model
 
 ### Principle of Least Privilege
@@ -561,97 +423,18 @@ OS Permissions (file system, network)
 └─────────────────────────────┘
 ```
 
-### Validation Points
-
-1. **Skill name validation** - Alphanumeric + hyphens only
-2. **Path traversal prevention** - No `..` in script paths
-3. **Command injection prevention** - Arguments properly escaped
-4. **Resource limits** - Via OS process limits
-
 ## Comparison with Claude Code Skills
 
 | Aspect | Claude Code | OpenSkills |
 |--------|------------|------------|
-| **Invocation** | Built-in Skill tool | CLI commands |
+| **Invocation** | Built-in Skill tool | CLI commands (`use`, `load`) |
 | **Discovery** | Internal scanning | Multi-path filesystem scan |
 | **Execution** | Managed by runtime | Direct process spawn |
-| **Context** | Automatic injection | Explicit via --format |
+| **Context** | Automatic injection | Explicit via commands |
 | **Permissions** | Runtime enforcement | Configuration + runtime |
 | **Agent Lock-in** | Claude only | Agent-agnostic |
 | **Token Efficiency** | Progressive disclosure | Progressive disclosure |
 | **Script Isolation** | Process isolation | Process isolation |
-
-## Design Decisions & Rationale
-
-### Why Execution Over Import?
-
-1. **Security**: Process isolation prevents code injection
-2. **Simplicity**: No Python path management or dependency conflicts
-3. **Language Agnostic**: Scripts can be Python, Bash, Node.js, etc.
-4. **Clear Boundaries**: Scripts are tools, not libraries
-
-### Why Transclusion Over Injection?
-
-1. **Token Efficiency**: AGENTS.md remains small
-2. **Dynamic Updates**: SKILLS.md can be regenerated without touching AGENTS.md
-3. **Separation of Concerns**: Agent config vs. skill manifest
-4. **Version Control**: Less churn in AGENTS.md
-
-### Why Three Levels of Disclosure?
-
-1. **Level 1 (Metadata)**: Sufficient for skill selection
-2. **Level 2 (Execution)**: Sufficient for script usage
-3. **Level 3 (Full)**: Only when deep understanding needed
-
-### Why Environment Variables?
-
-1. **Universal**: Every language can read env vars
-2. **Safe**: No code injection risk
-3. **Simple**: No parsing or escaping needed
-4. **Traceable**: Easy to log and debug
-
-## Future Architecture Considerations
-
-### Planned Enhancements
-
-1. **Dependency Management**
-   - Auto-install from requirements.txt
-   - Virtual environment per skill
-   - Version pinning
-
-2. **Distributed Execution**
-   - Remote script execution
-   - Cloud function deployment
-   - Result streaming
-
-3. **Skill Composition**
-   - Skills calling other skills
-   - Workflow orchestration
-   - DAG execution
-
-4. **Advanced Discovery**
-   - Semantic search over skills
-   - Tag-based filtering
-   - Capability matching
-
-### Non-Goals
-
-1. **Not a package manager** - Use pip/npm/cargo
-2. **Not a scheduler** - Use cron/systemd
-3. **Not an API server** - Skills are CLI tools
-4. **Not a database** - Skills are files
-
-## Conclusion
-
-OpenSkills implements a **precise, execution-focused architecture** that treats skills as executable toolkits rather than passive documentation. Through progressive disclosure, process isolation, and environment injection, it achieves feature parity with proprietary systems while remaining completely agent-agnostic.
-
-The architecture prioritizes:
-- **Execution over interpretation**
-- **Isolation over integration**  
-- **Explicitness over magic**
-- **Simplicity over features**
-
-This design ensures that any AI agent—present or future—can leverage skills effectively without understanding complex APIs or implementation details. Skills are just scripts that run. That's it. That's the architecture.
 
 ---
 

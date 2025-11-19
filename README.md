@@ -76,17 +76,14 @@ openskills install anthropics/skills/slack-gif-creator
 # Install globally (~/.agent/skills/)
 openskills install anthropics/skills/mcp-builder --global
 
-# Install all skills from a repo
-openskills install anthropics/skills --yes
+# Install all skills from a repo (defaults to non-interactive)
+openskills install anthropics/skills
 ```
 
 ### 2. Use in AGENTS.md
 
 ```bash
-# Generate .agent/SKILLS.md and add reference to AGENTS.md
-openskills sync --transclusion
-
-# Or embed skills directly in AGENTS.md
+# Sync skills to AGENTS.md (defaults to transclusion and non-interactive)
 openskills sync
 ```
 
@@ -114,36 +111,36 @@ openskills exec skill-creator scripts/init_skill.py -- my-skill --path /tmp
 openskills list
 
 # Get execution context
-openskills invoke slack-gif-creator --format=execution
+openskills use slack-gif-creator
 
-# Read full skill content
-openskills read slack-gif-creator --yes
+# Read full skill content (prompt)
+openskills load slack-gif-creator
 ```
 
 ## Commands
 
 ### Core Commands
 
-| Command | Description |
-|---------|-------------|
-| `openskills install <source>` | Install skills from GitHub |
-| `openskills list` | List installed skills (~70 tokens/skill) |
-| `openskills sync` | Update AGENTS.md with skills |
-| `openskills exec <skill> <script>` | Execute a skill script |
-| `openskills invoke <skill>` | Get skill info (json/execution/prompt) |
-| `openskills read <skill>` | Read full skill content |
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `openskills install <source>` | `install-skill` | Install skills from GitHub |
+| `openskills list` | `list-skills` | List installed skills (~70 tokens/skill) |
+| `openskills sync` | `sync-skills` | Update AGENTS.md with skills |
+| `openskills exec <skill> <script>` | `execute-skill-script` | Execute a skill script |
+| `openskills use <skill>` | `use-skill` | Get skill execution context (JSON) |
+| `openskills load <skill>` | `load-skill` | Read full skill prompt |
 
 ### Additional Commands
 
-| Command | Description |
-|---------|-------------|
-| `openskills describe [skill]` | Get detailed skill metadata |
-| `openskills validate [skill]` | Validate skill references |
-| `openskills suggest <query>` | Find relevant skills for a query |
-| `openskills manage` | Interactively remove skills |
-| `openskills generate-skills-md` | Generate .agent/SKILLS.md |
-| `openskills export-slash <skill>` | Export skill as slash command |
-| `openskills telemetry` | View usage statistics |
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `openskills describe [skill]` | `describe-skill` | Get detailed skill metadata |
+| `openskills suggest <query>` | `suggest-skill` | Find relevant skills for a query |
+| `openskills manage` | - | Interactively remove skills |
+| `openskills validate [skill]` | - | Validate skill references |
+| `openskills generate-skills-md` | - | Generate .agent/SKILLS.md |
+| `openskills export-slash <skill>` | - | Export skill as slash command |
+| `openskills telemetry` | - | View usage statistics |
 
 ### Command Options
 
@@ -151,22 +148,26 @@ openskills read slack-gif-creator --yes
 ```bash
 openskills install anthropics/skills/skill-name
   --global             # Install to ~/.agent/skills/
-  --yes                # Skip interactive selection
+  --tui                # Interactive selection (default: installs all)
 ```
 
 **Sync:**
 ```bash
 openskills sync
-  --transclusion       # Create .agent/SKILLS.md + @.agent/SKILLS.md reference
-  --yes                # Skip interactive selection
+  --no-transclusion    # Embed skills directly instead of referencing file
+  --tui                # Interactive selection (default: syncs all)
 ```
 
-**Invoke/Read:**
+**Use:**
 ```bash
-openskills invoke skill-name
-  --format=execution   # Get execution context
-  --format=json        # Get metadata
-  --format=prompt      # Get full prompt (default)
+openskills use skill-name
+  --args <args>        # Optional arguments string for metadata
+  --yes                # Skip permission prompt
+```
+
+**Load:**
+```bash
+openskills load skill-name
   --yes                # Skip permission prompt
 ```
 
@@ -286,8 +287,7 @@ skills = json.loads(result.stdout)
 
 # 2. Get execution context when needed
 result = subprocess.run([
-    'openskills', 'invoke', 'slack-gif-creator',
-    '--format=execution', '--yes'
+    'openskills', 'use', 'slack-gif-creator', '--yes'
 ], capture_output=True)
 context = json.loads(result.stdout)
 

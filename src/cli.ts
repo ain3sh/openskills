@@ -32,6 +32,7 @@ program
 
 program
   .command('list')
+  .alias('list-skills')
   .description('List all installed skills')
   .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
   .option('--include-hidden', 'Include hidden skills', false)
@@ -43,38 +44,39 @@ program
 
 program
   .command('install <source>')
+  .alias('install-skill')
   .description('Install skill from GitHub or Git URL')
   .option('-g, --global', 'Install globally (default: project install to .agent/skills)')
-  .option('-y, --yes', 'Skip interactive selection, install all skills found')
+  .option('--tui', 'Use interactive selection (default: false, installs all by default)', false)
   .action(async (source, opts) => {
     const { installSkill } = await import('./commands/install.js');
-    await installSkill(source, opts);
+    await installSkill(source, { ...opts, yes: !opts.tui });
   });
 
 program
-  .command('read <skill-name>')
-  .description('Read skill to stdout (for AI agents)')
+  .command('load <skill-name>')
+  .alias('load-skill')
+  .description('Load skill to stdout (for AI agents)')
   .option('-y, --yes', 'Skip permission prompts (approve all skills)')
-  .option('--attachments <level>', 'Attachment verbosity: none|errors|warnings|full (default: warnings)')
   .action(async (name, opts) => {
-    const { readSkill } = await import('./commands/read.js');
-    await readSkill(name, opts);
+    const { loadSkill } = await import('./commands/load.js');
+    await loadSkill(name, opts);
   });
 
 program
-  .command('invoke <skill-name>')
-  .description('Invoke a skill and emit strict Skill Tool payload (JSON)')
+  .command('use <skill-name>')
+  .alias('use-skill')
+  .description('Use a skill and emit strict execution payload (JSON)')
   .option('-a, --args <args>', 'Optional arguments string for metadata display')
   .option('-y, --yes', 'Skip permission prompts (approve all skills)')
-  .option('--attachments <level>', 'Attachment verbosity: none|errors|warnings|full (default: warnings)')
-  .option('--format <type>', 'Output format: json|prompt|execution (default: json)')
   .action(async (name, opts) => {
-    const { invokeSkill } = await import('./commands/invoke.js');
-    await invokeSkill(name, { args: opts.args, yes: opts.yes, attachments: opts.attachments, format: opts.format });
+    const { useSkill } = await import('./commands/use.js');
+    await useSkill(name, { args: opts.args, yes: opts.yes });
   });
 
 program
   .command('exec <skill-name> <script-path> [args...]')
+  .alias('execute-skill-script')
   .description('Execute a skill script directly')
   .action(async (skillName, scriptPath, args) => {
     const { execSkillScript } = await import('./commands/exec.js');
@@ -83,13 +85,14 @@ program
 
 program
   .command('sync')
+  .alias('sync-skills')
   .description('Update AGENTS.md with installed skills (interactive, pre-selects current state)')
-  .option('-y, --yes', 'Skip interactive selection, sync all skills')
-  .option('--transclusion', 'Use transclusion mode (creates .agent/SKILLS.md + @.agent/SKILLS.md reference)')
+  .option('--tui', 'Use interactive selection (default: false, syncs all by default)', false)
+  .option('--no-transclusion', 'Disable transclusion mode (default: uses transclusion)')
   .option('--transclusion-pattern <pattern>', 'Custom transclusion pattern (default: @.agent/SKILLS.md)')
   .action(async (opts) => {
     const { syncAgentsMd } = await import('./commands/sync.js');
-    await syncAgentsMd(opts);
+    await syncAgentsMd({ ...opts, yes: !opts.tui, transclusion: opts.transclusion !== false });
   });
 
 program
@@ -122,6 +125,7 @@ program
 
 program
   .command('describe [skill-name]')
+  .alias('describe-skill')
   .description('Describe installed skills in JSON (optionally a single skill)')
   .action(async (name) => {
     const { describeSkills } = await import('./commands/describe.js');
@@ -140,6 +144,7 @@ program
 
 program
   .command('suggest <query>')
+  .alias('suggest-skill')
   .description('Suggest relevant skills for a user query')
   .option('-l, --limit <n>', 'Max results', (v) => parseInt(v, 10), 5)
   .option('--all', 'Do not filter by presentability (include hidden/disabled/undocumented)')

@@ -93,7 +93,15 @@ ${skillEntries}
 
 <usage>
 When a skill is needed, get execution details:
-openskills invoke <skill-name> --format=execution
+openskills use <skill-name>
+
+Command reference:
+- openskills list (list available skills)
+- openskills use <skill> (get execution instructions)
+- openskills load <skill> (read full skill prompt)
+- openskills exec <skill> <script> (execute script directly)
+- openskills suggest <query> (find relevant skills)
+- openskills describe [skill] (get skill metadata)
 </usage>
 <!-- SKILLS_TABLE_END -->
 

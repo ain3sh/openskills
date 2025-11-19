@@ -103,7 +103,7 @@ async function installSkillInternal(source: string, options: InstallOptions): Pr
     rmSync(tempDir, { recursive: true, force: true });
   }
 
-  console.log(`\n${chalk.dim('Read skill:')} ${chalk.cyan('openskills read <skill-name>')}`);
+  console.log(`\n${chalk.dim('Load skill:')} ${chalk.cyan('openskills load <skill-name>')}`);
   if (isProject) {
     console.log(`${chalk.dim('Sync to AGENTS.md:')} ${chalk.cyan('openskills sync')}`);
   }

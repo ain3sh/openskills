@@ -38,7 +38,7 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
 
   if (skills.length === 0) {
     console.log('No skills installed. Install skills first:');
-    console.log(`  ${chalk.cyan('openskills install anthropics/skills --project')}`);
+    console.log(`  ${chalk.cyan('openskills install anthropics/skills')}`);
     return;
   }
 

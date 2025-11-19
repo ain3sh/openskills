@@ -64,3 +64,4 @@ __pycache__/
 env/
 venv/
 .venv
+AGENT_REMINDERS.md
