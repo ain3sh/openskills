@@ -12,7 +12,7 @@ const LOG_FILE = join(TELEMETRY_DIR, 'usage.jsonl');
  */
 export interface UsageEvent {
   timestamp: string;
-  command: 'read' | 'list' | 'install';
+  command: 'read' | 'list' | 'install' | 'load' | 'use';
   skillName?: string;
   success: boolean;
   agent?: string;
