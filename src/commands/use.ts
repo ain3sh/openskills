@@ -78,6 +78,10 @@ export async function useSkill(skillName: string, options: UseOptions = {}): Pro
   // Return execution context for script-based usage
   const scripts = await discoverSkillScripts(loc.baseDir);
   
+  const allowedField = frontmatter?.['allowed-tools'] ?? (frontmatter as any)?.allowed_tools;
+  const allowedTools = normalizeAllowedTools(allowedField);
+  const model = typeof frontmatter?.model === 'string' ? frontmatter.model : undefined;
+
   const executionPayload: ExecutionPayload = {
     skill: {
       name: frontmatter?.name || skillName,
@@ -111,9 +115,25 @@ Environment variables available:
 - SKILL_BASE: ${loc.baseDir}
 - WORK_DIR: ${process.cwd()}
 
-Execute scripts from the baseDir path provided above.`
+Execute scripts from the baseDir path provided above.`,
+    permissions: (allowedTools || model) ? {
+      allowedTools,
+      model
+    } : undefined
   };
   
   console.log(JSON.stringify(executionPayload, null, 2));
+}
+
+function normalizeAllowedTools(value: unknown): string[] | undefined {
+  if (value == null) return undefined;
+  if (Array.isArray(value)) {
+    const result = value.map((v) => String(v).trim()).filter(Boolean);
+    return result.length > 0 ? result : undefined;
+  }
+  const s = String(value).trim();
+  if (!s) return undefined;  // Handle empty string
+  const result = s.split(',').map((p) => p.trim()).filter(Boolean);
+  return result.length > 0 ? result : undefined;  // Handle comma-only strings
 }
 

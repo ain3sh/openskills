@@ -63,6 +63,10 @@ export interface ExecutionPayload {
   };
   prompt: string;
   instructions: string;
+  permissions?: {
+    allowedTools?: string[];
+    model?: string | null;
+  };
 }
 
 // Parsed SKILL.md frontmatter (loosely based on blog spec)

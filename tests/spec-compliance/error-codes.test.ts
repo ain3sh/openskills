@@ -90,9 +90,9 @@ Body
     expect(result.valid).toBe(false);
     expect(result.errorCode).toBe(SkillErrorCode.UNKNOWN_SKILL);
 
-    const output = runCliExpectError(['read', 'ghost-skill', '--yes'], tempDir);
-    const parsed = JSON.parse(output);
-    expect(parsed.errorCode).toBe(2);
+    const output = runCliExpectError(['load', 'ghost-skill', '--yes'], tempDir);
+    // load prints error to stderr, validate via output text if capture stderr, but runCliExpectError captures stdout/err
+    expect(output).toContain('Unknown skill: ghost-skill');
   });
 
   it('returns LOAD_FAILED when SKILL.md unreadable (blog line 833)', () => {
@@ -107,9 +107,23 @@ Body
     expect(result.valid).toBe(false);
     expect(result.errorCode).toBe(SkillErrorCode.INVOCATION_DISABLED);
 
-    const output = runCliExpectError(['read', 'disabled-skill', '--yes'], tempDir);
-    const parsed = JSON.parse(output);
-    expect(parsed.errorCode).toBe(4);
+    const output = runCliExpectError(['load', 'disabled-skill', '--yes'], tempDir);
+    // load prints error to stderr
+    // "Error: Skill "disabled-skill" cannot be automatically invoked" (or similar from checkSkillPermissions)
+    // Actually load.ts: "Permission denied by permission rules"?
+    // No, wait. disable-model-invocation sets contextModifier.disableModelInvocation.
+    // Does it block `load`?
+    // The `validateSkillCommand` check returns INVOCATION_DISABLED if frontmatter has it.
+    // `load` calls `validateSkillCommand`? Yes.
+    // So it should exit with error code.
+    // Error message might be "Error: Skill invocation is disabled..." 
+    // Let's check checkSkillPermissions/validateSkillCommand usage in load.ts.
+    
+    // load.ts:
+    // const validation = validateSkillCommand(skillName);
+    // if (!validation.valid) { console.error(validation.message); process.exit(errorCode); }
+    
+    expect(output).toContain('cannot be automatically invoked');
   });
 
   it('returns NOT_PROMPT_BASED when description missing (blog line 841)', () => {

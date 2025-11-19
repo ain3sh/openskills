@@ -31,21 +31,22 @@ Test content for minimal skill`;
     
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
-    // Invoke the skill and check message count (--yes to skip permissions, format defaults to json)
+    // Invoke the skill and check message count (--yes to skip permissions)
     const result = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} read test-minimal --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-minimal --yes`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
-    const json = JSON.parse(result);
+    // Verify text output format
+    // Should contain the hidden baseDir comment and the body
+    expect(result).toContain('<!-- baseDir: ');
+    expect(result).toContain('Test content for minimal skill');
     
-    // Blog line 692: "two separate user messages"
-    expect(json.newMessages.length).toBe(2);
-    expect(json.newMessages[0].isMeta).toBe(false); // Message 1: visible
-    expect(json.newMessages[1].isMeta).toBe(true);  // Message 2: hidden
+    // Should NOT contain XML wrappers from the old format
+    expect(result).not.toContain('<command-message>');
   });
   
-  it('outputs 3 messages ONLY when permissions present (blog lines 773-783)', () => {
+  it('outputs prompt text without extra metadata wrappers', () => {
     // Test skill WITH allowed-tools
     const skillDir = join(tempDir, '.agent', 'skills', 'test-permissions');
     mkdirSync(skillDir, { recursive: true });
@@ -61,19 +62,20 @@ Test content with permissions`;
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
     const result = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} read test-permissions --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-permissions --yes`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
-    const json = JSON.parse(result);
+    // Check for content
+    expect(result).toContain('Test content with permissions');
+    // Check for baseDir
+    expect(result).toContain('<!-- baseDir: ');
     
-    // Should have 3 messages: 2 base + 1 permission
-    expect(json.newMessages.length).toBe(3);
-    expect(json.newMessages[2].content).toHaveProperty('type', 'command_permissions');
-    expect(json.newMessages[2].content).toHaveProperty('allowedTools');
+    // Should NOT contain JSON structure
+    expect(() => JSON.parse(result)).toThrow();
   });
   
-  it('outputs 3 messages when model override present', () => {
+  it('does not output model overrides in text mode', () => {
     const skillDir = join(tempDir, '.agent', 'skills', 'test-model');
     mkdirSync(skillDir, { recursive: true });
     
@@ -88,25 +90,26 @@ Test content with model override`;
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
     const result = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} read test-model --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-model --yes`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
-    const json = JSON.parse(result);
+    // Text output is just the body + baseDir
+    // Model info is consumed by the agent platform reading the frontmatter/metadata separately if needed?
+    // Or maybe `use` returns it?
     
-    // Should have 3 messages: 2 base + 1 permission (with model)
-    expect(json.newMessages.length).toBe(3);
-    expect(json.newMessages[2].content).toHaveProperty('type', 'command_permissions');
-    expect(json.newMessages[2].content).toHaveProperty('model', 'claude-3-sonnet');
+    expect(result).toContain('Test content with model override');
+    // Ensure no JSON leaking
+    expect(result).not.toContain('"model": "claude-3-sonnet"');
   });
   
-  it('read and invoke produce identical message structures', { timeout: 10000 }, () => {
+  it('load (text) and use (json) provide consistent baseDir', { timeout: 10000 }, () => {
     const skillDir = join(tempDir, '.agent', 'skills', 'test-consistency');
     mkdirSync(skillDir, { recursive: true });
     
     const testSkill = `---
 name: test-consistency
-description: Test consistency between read and invoke
+description: Test consistency between load and use
 version: 1.0.0
 allowed-tools: "Read,Write"
 model: claude-3-haiku
@@ -115,39 +118,30 @@ Test content for consistency check`;
     
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
-    // Get output from read
-    const readResult = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} read test-consistency --yes`,
+    // Get output from load (text)
+    const loadResult = execSync(
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-consistency --yes`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
-    // Get output from invoke
-    const invokeResult = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} invoke test-consistency --yes`,
+    // Get output from use (JSON)
+    const useResult = execSync(
+      `node ${join(process.cwd(), 'dist', 'cli.js')} use test-consistency --yes`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
-    const readJson = JSON.parse(readResult);
-    const invokeJson = JSON.parse(invokeResult);
+    const useJson = JSON.parse(useResult);
     
-    // Both should have same number of messages
-    expect(readJson.newMessages.length).toBe(invokeJson.newMessages.length);
+    // Verify baseDir matches
+    // loadResult: <!-- baseDir: /path/to/skill -->
+    const baseDirMatch = loadResult.match(/<!-- baseDir: (.*?) -->/);
+    expect(baseDirMatch).not.toBeNull();
+    const loadBaseDir = baseDirMatch![1];
     
-    // Both should have permissions message with same structure
-    expect(readJson.newMessages[2].content).toMatchObject({
-      type: 'command_permissions',
-      allowedTools: ['Read', 'Write'],
-      model: 'claude-3-haiku'
-    });
-    
-    expect(invokeJson.newMessages[2].content).toMatchObject({
-      type: 'command_permissions',
-      allowedTools: ['Read', 'Write'],
-      model: 'claude-3-haiku'
-    });
+    expect(useJson.skill.baseDir).toBe(loadBaseDir);
   });
   
-  it('NEVER outputs duplicative XML metadata (no third message)', () => {
+  it('NEVER outputs duplicative XML metadata', () => {
     const skillDir = join(tempDir, '.agent', 'skills', 'test-no-xml');
     mkdirSync(skillDir, { recursive: true });
     
@@ -161,16 +155,11 @@ Test content`;
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
     const result = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} read test-no-xml --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-no-xml --yes`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
-    const json = JSON.parse(result);
-    
     // Check that NO message contains XML metadata string
-    for (const message of json.newMessages) {
-      const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
-      expect(content).not.toMatch(/<metadata.*baseDir=.*model=.*allowedTools=/);
-    }
+    expect(result).not.toMatch(/<metadata.*baseDir=.*model=.*allowedTools=/);
   });
 });
