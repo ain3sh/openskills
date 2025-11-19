@@ -66,7 +66,7 @@ export async function useSkill(skillName: string, options: UseOptions = {}): Pro
       console.log(JSON.stringify({
         error: `User denied permission for skill "${skillName}"`,
         errorCode: 'PERMISSION_DENIED',
-        suggestion: 'Add to allow rules in .openskills.json or use --yes flag'
+        suggestion: 'Add to allow rules in .openskills.json to auto-approve'
       }, null, 2));
       process.exit(1);
     }

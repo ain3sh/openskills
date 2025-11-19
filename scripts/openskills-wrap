@@ -39,7 +39,7 @@ openskills_base() {
     fi
   fi
   
-  $cmd invoke "$skill_name" --format=execution --yes 2>/dev/null | \
+  $cmd use "$skill_name" 2>/dev/null | \
     jq -r '.skill.baseDir' 2>/dev/null || \
     echo "Error: Could not get base directory (is jq installed?)" >&2
 }
@@ -62,7 +62,7 @@ openskills_scripts() {
     fi
   fi
   
-  $cmd invoke "$skill_name" --format=execution --yes 2>/dev/null | \
+  $cmd use "$skill_name" 2>/dev/null | \
     jq -r '.execution.scripts[].usage' 2>/dev/null || \
     echo "No scripts found or jq not installed"
 }

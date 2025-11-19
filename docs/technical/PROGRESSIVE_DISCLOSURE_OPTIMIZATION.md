@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-OpenSkills v3.0 has been optimized to **precisely match** the progressive disclosure pattern described in Anthropic's Claude Skills blog post. We've achieved a **44% reduction** in discovery metadata size while maintaining full functionality.
+OpenSkills v2.0 has been optimized to **precisely match** the progressive disclosure pattern described in Anthropic's Claude Skills blog post. We've achieved a **44% reduction** in discovery metadata size while maintaining full functionality.
 
 ## 📌 North Star (Blog Reference)
 
@@ -128,7 +128,7 @@ The optimizations directly address context rot:
 
 ## 📈 Comparison with Claude Code
 
-| Aspect | Claude Code | OpenSkills v3.0 |
+| Aspect | Claude Code | OpenSkills v2.0 |
 |--------|-------------|-----------------|
 | Discovery Format | "name": description | "name": description ✅ |
 | Token Budget | 15,000 chars | Respects same limit ✅ |
@@ -138,7 +138,7 @@ The optimizations directly address context rot:
 
 ## ✨ Summary
 
-OpenSkills v3.0 now **precisely matches** the blog's progressive disclosure specification:
+OpenSkills v2.0 now **precisely matches** the blog's progressive disclosure specification:
 
 - **Minimal metadata** in discovery (name + description only)
 - **Progressive revelation** of details across 3 levels

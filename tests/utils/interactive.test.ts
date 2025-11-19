@@ -91,7 +91,7 @@ describe('askUserPermission', () => {
       expect.stringContaining('Non-interactive mode')
     );
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('--yes flag')
+      expect.stringContaining('auto-approve')
     );
     
     warnSpy.mockRestore();

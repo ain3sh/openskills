@@ -144,7 +144,7 @@ Please use GitHub Issues to report bugs:
 - [Anthropic's Skills Blog Post](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
 - [Claude Skills Documentation](https://docs.claude.com/en/docs/claude-code/overview)
 - [Progressive Disclosure Pattern](./docs/technical/PROGRESSIVE_DISCLOSURE_OPTIMIZATION.md)
-- [Execution Architecture](./docs/technical/OPENSKILLS_V3_EXECUTION.md)
+- [Execution Architecture](./docs/technical/OPENSKILLS_EXECUTION.md)
 
 ## 💬 Community
 

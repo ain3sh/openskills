@@ -2,7 +2,7 @@ import { confirm } from '@inquirer/prompts';
 import { stdin, stdout } from 'process';
 
 export interface InteractiveOptions {
-  force?: boolean;  // --yes flag
+  force?: boolean;  // auto-approve (default in non-interactive mode)
   nonInteractive?: boolean;  // CI/CD mode
 }
 
@@ -11,7 +11,7 @@ export interface InteractiveOptions {
  * 
  * Handles:
  * - TTY detection (non-interactive environments)
- * - --yes flag bypass
+ * - force/auto-approve bypass
  * - Graceful fallback for CI/CD
  * - Timeout protection (30s)
  * 
@@ -23,7 +23,7 @@ export async function askUserPermission(
   skillName: string,
   options: InteractiveOptions = {}
 ): Promise<boolean> {
-  // Bypass for --yes flag
+  // Bypass for force/auto-approve (default in non-interactive mode)
   if (options.force) {
     return true;
   }
@@ -32,7 +32,7 @@ export async function askUserPermission(
   if (options.nonInteractive || !stdin.isTTY || !stdout.isTTY) {
     // Fallback: Default to deny in automated environments for security
     console.warn(`⚠️  Non-interactive mode: Denying skill "${skillName}"`);
-    console.warn('💡 Use --yes flag to approve all skills in automated scripts');
+    console.warn('💡 Commands auto-approve by default; use --tui only in interactive terminals');
     return false;
   }
   

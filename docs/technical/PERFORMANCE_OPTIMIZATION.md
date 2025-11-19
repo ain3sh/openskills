@@ -237,7 +237,7 @@ Agent: "Yes! I see the new 'pdf-analyzer' skill..."
 
 ### Current Timings (WSL2 Environment)
 - `openskills list`: ~3.4s
-- `openskills read hello-world --yes`: ~3.4s
+- `openskills load hello-world`: ~3.4s
 - Bundle size: 78.6 KB
 - Test suite: 9s (124 tests)
 

@@ -1,13 +1,13 @@
-# OpenSkills v3.0: Execution Parity with Claude Code
+# OpenSkills v2.0: Execution Parity with Claude Code
 
 ## Executive Summary
 
-OpenSkills v3.0 bridges the critical gap between **documentation** and **execution**. Previous versions presented skills as static text to be read. v3.0 transforms skills into **executable toolkits** - exactly how Claude Code uses them.
+OpenSkills v2.0 bridges the critical gap between **documentation** and **execution**. Previous versions presented skills as static text to be read. v2.0 transforms skills into **executable toolkits** - exactly how Claude Code uses them.
 
 ### The Fundamental Shift
 
-**Before (v2.x):** Skills were documentation that agents would read and try to understand
-**Now (v3.0):** Skills are executable scripts that agents run directly via Bash
+**Before (v1.x):** Skills were documentation that agents would read and try to understand
+**Now (v2.0):** Skills are executable scripts that agents run directly via Bash
 
 This matches Claude Code's execution model where skills contain scripts that are **executed, not imported**.
 
@@ -215,7 +215,7 @@ Skills contain EXECUTABLE SCRIPTS. When using a skill:
 
 ## Comparison with Claude Code
 
-| Feature | Claude Code | OpenSkills v3.0 |
+| Feature | Claude Code | OpenSkills v2.0 |
 |---------|-------------|-----------------|
 | Skill Discovery | ✅ Automatic | ✅ Automatic |
 | Script Execution | ✅ Via Skill tool | ✅ Via exec command |
@@ -235,7 +235,7 @@ Skills contain EXECUTABLE SCRIPTS. When using a skill:
 
 1. **Scripts are executed, not sandboxed** - Review before running
 2. **Environment variables** expose paths - Be cautious with sensitive data
-3. **Permission system** still applies - Use `--yes` carefully
+3. **Permission system** still applies - Commands auto-approve by default; use `--tui` for interactive prompts
 4. **No automatic installation** of dependencies
 
 ## Future Enhancements
@@ -248,10 +248,10 @@ Skills contain EXECUTABLE SCRIPTS. When using a skill:
 
 ## Conclusion
 
-OpenSkills v3.0 achieves **full execution parity** with Claude Code while remaining **agent-agnostic**. Skills are no longer just documentation - they're **executable toolkits** that any AI agent can leverage effectively.
+OpenSkills v2.0 achieves **full execution parity** with Claude Code while remaining **agent-agnostic**. Skills are no longer just documentation - they're **executable toolkits** that any AI agent can leverage effectively.
 
 The critical insight: **Skills are meant to be executed, not imported**. This fundamental shift transforms how agents interact with skills, moving from "understanding instructions" to "running tools".
 
 ---
 
-*For technical implementation details, see the [source code](https://github.com/yourusername/openskills) and [spec document](OPENSKILLS_V3_SPEC.md).*
+*For technical implementation details, see the [source code](https://github.com/ain3sh/openskills).*

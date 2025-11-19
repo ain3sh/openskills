@@ -12,7 +12,7 @@
 
 ### Core Concepts
 
-- [Execution Architecture](technical/OPENSKILLS_V3_EXECUTION.md) - How the execution-first model works
+- [Execution Architecture](technical/OPENSKILLS_EXECUTION.md) - How the execution-first model works
 - [Progressive Disclosure](technical/PROGRESSIVE_DISCLOSURE_OPTIMIZATION.md) - Token optimization strategy
 - [Performance Analysis](technical/PERFORMANCE_OPTIMIZATION.md) - Performance characteristics
 

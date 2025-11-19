@@ -129,7 +129,7 @@ function generateSlashCommandMarkdown(skillName: string, frontmatter?: SkillFron
   lines.push(
     '---',
     '',
-    `$(openskills invoke ${skillName} --yes --format=prompt --attachments=none)`
+    `$(openskills load ${skillName})`
   );
   
   return lines.join('\n');
