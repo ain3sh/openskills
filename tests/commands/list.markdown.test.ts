@@ -52,21 +52,23 @@ vi.mock('fs', async () => {
     };
 });
 
-describe('list command agent payload', () => {
-  it('emits structured JSON snapshot by default', () => {
+describe('list command output', () => {
+  it('emits Markdown list by default', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       listSkills({ all: true });
-      expect(logSpy).toHaveBeenCalledTimes(1);
-      const arg = String(logSpy.mock.calls[0][0] ?? '');
-      const payload = JSON.parse(arg);
-      expect(payload).toHaveProperty('instructions');
-      expect(payload).toHaveProperty('available_skills_xml');
-      expect(Array.isArray(payload.skills)).toBe(true);
-      expect(payload.skills[0].name).toBe('mock-skill');
+      
+      const output = logSpy.mock.calls.map(args => args.join(' ')).join('\n');
+      
+      expect(output).toContain('# Available Skills (1)');
+      expect(output).toContain('## Project Skills (1)');
+      expect(output).toContain('**mock-skill**: A mock skill');
+      
+      // Ensure no JSON
+      expect(() => JSON.parse(output)).toThrow();
     } finally {
       logSpy.mockRestore();
-      vi.restoreAllMocks(); // Important!
+      vi.restoreAllMocks();
     }
   });
 });

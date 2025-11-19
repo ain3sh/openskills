@@ -1,5 +1,26 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { buildSkillToolDescription, buildCompactDescription } from '../../src/utils/skillToolDescription.js';
+
+// Mock dependencies to avoid disk scans
+import * as skillsUtils from '../../src/utils/skills.js';
+import { readFileSync } from 'fs';
+
+vi.mock('../../src/utils/skills.js', async () => {
+  // Do NOT importActual unless we need parts of it.
+  // If we assume the mock is everything, simpler is better.
+  return {
+    findAllSkills: vi.fn(),
+    findSkill: vi.fn()
+  };
+});
+
+vi.mock('fs', async () => {
+  const actual = await vi.importActual('fs');
+  return {
+    ...actual,
+    readFileSync: vi.fn()
+  };
+});
 
 /**
  * Token Budget & Progressive Disclosure Tests
@@ -9,6 +30,33 @@ import { buildSkillToolDescription, buildCompactDescription } from '../../src/ut
  */
 
 describe('buildSkillToolDescription', () => {
+  beforeEach(() => {
+    // Setup standard mock returns
+    const mockSkills = [
+      { name: 'mock-skill', description: 'Mock description', location: 'project' },
+      { name: 'mode-skill', description: 'Mode skill', location: 'global' }
+    ];
+    
+    // We need to mock the return value for every test run
+    (skillsUtils.findAllSkills as any).mockReturnValue(mockSkills);
+    
+    (skillsUtils.findSkill as any).mockImplementation((name: string) => ({
+      path: `/mock/${name}/SKILL.md`,
+      baseDir: `/mock/${name}`
+    }));
+    
+    (readFileSync as any).mockImplementation((path: string) => {
+      if (path.includes('mode-skill')) {
+        return '---\nname: mode-skill\ndescription: Mode skill\nmode: true\n---\n';
+      }
+      return '---\nname: mock-skill\ndescription: Mock description\n---\n';
+    });
+  });
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
   it('should build description with skills_instructions', () => {
     const payload = buildSkillToolDescription();
     
@@ -68,6 +116,13 @@ describe('buildSkillToolDescription', () => {
 });
 
 describe('buildCompactDescription', () => {
+  beforeEach(() => {
+    const mockSkills = [
+        { name: 'mock-skill', description: 'Mock description', location: 'project' }
+    ];
+    (skillsUtils.findAllSkills as any).mockReturnValue(mockSkills);
+  });
+
   it('should build compact one-line description', () => {
     const desc = buildCompactDescription();
     
@@ -93,6 +148,13 @@ describe('buildCompactDescription', () => {
 });
 
 describe('Token Budget Edge Cases', () => {
+  beforeEach(() => {
+    const mockSkills = [
+        { name: 'mock-skill', description: 'Mock description', location: 'project' }
+    ];
+    (skillsUtils.findAllSkills as any).mockReturnValue(mockSkills);
+  });
+
   it('should handle exactly at limit', () => {
     const payload = buildSkillToolDescription({ maxChars: 15000 });
     expect(payload.detailed.length).toBeLessThanOrEqual(15000);
@@ -111,6 +173,13 @@ describe('Token Budget Edge Cases', () => {
 });
 
 describe('Progressive Disclosure Pattern', () => {
+  beforeEach(() => {
+    const mockSkills = [
+        { name: 'mock-skill', description: 'Mock description', location: 'project' }
+    ];
+    (skillsUtils.findAllSkills as any).mockReturnValue(mockSkills);
+  });
+
   it('should show minimal info in instructions (progressive disclosure)', () => {
     const payload = buildSkillToolDescription();
     const instructionsMatch = payload.instructions.match(/<skills_instructions>([\s\S]*?)<\/skills_instructions>/);

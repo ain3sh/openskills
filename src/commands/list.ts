@@ -83,31 +83,32 @@ function listSkillsInternal(options?: ListOptions): void {
     });
   }
 
-  // Build tool description snapshot (instructions + XML)
-  const description = buildSkillToolDescription({
-    maxChars: undefined,
-    includeHidden: options?.includeHidden,
-    includeDisabled: options?.includeDisabled,
-    all: options?.all,
-  });
+  // Group by location for clean display
+  const projectSkills = summaries.filter(s => s.location === 'project');
+  const globalSkills = summaries.filter(s => s.location === 'global');
 
-  const projectCount = summaries.filter((s) => s.location === 'project').length;
-  const globalCount = summaries.filter((s) => s.location === 'global').length;
+  console.log(`# Available Skills (${summaries.length})\n`);
 
-  const payload = {
-    instructions: description.instructions,
-    available_skills_xml: description.availableSkillsXml,
-    truncated: description.truncated,
-    skills: summaries,
-    summary: {
-      totalDiscovered: all.length,
-      totalReturned: summaries.length,
-      project: projectCount,
-      global: globalCount,
-    },
-  };
+  if (projectSkills.length > 0) {
+    console.log(`## Project Skills (${projectSkills.length})`);
+    for (const skill of projectSkills) {
+      console.log(`- **${skill.name}**: ${skill.description}`);
+    }
+    console.log(''); // Empty line separator
+  }
 
-  console.log(JSON.stringify(payload, null, 2));
+  if (globalSkills.length > 0) {
+    console.log(`## Global Skills (${globalSkills.length})`);
+    for (const skill of globalSkills) {
+      console.log(`- **${skill.name}**: ${skill.description}`);
+    }
+    console.log('');
+  }
+
+  if (summaries.length === 0) {
+    console.log('No skills found.');
+    console.log('Try installing one: openskills install anthropics/skills');
+  }
 }
 
 function normalizeToolsField(value: unknown): string[] | undefined {
