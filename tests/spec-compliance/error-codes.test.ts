@@ -90,7 +90,7 @@ Body
     expect(result.valid).toBe(false);
     expect(result.errorCode).toBe(SkillErrorCode.UNKNOWN_SKILL);
 
-    const output = runCliExpectError(['load', 'ghost-skill', '--yes'], tempDir);
+    const output = runCliExpectError(['load', 'ghost-skill'], tempDir);
     // load prints error to stderr, validate via output text if capture stderr, but runCliExpectError captures stdout/err
     expect(output).toContain('Unknown skill: ghost-skill');
   });
@@ -107,7 +107,7 @@ Body
     expect(result.valid).toBe(false);
     expect(result.errorCode).toBe(SkillErrorCode.INVOCATION_DISABLED);
 
-    const output = runCliExpectError(['load', 'disabled-skill', '--yes'], tempDir);
+    const output = runCliExpectError(['load', 'disabled-skill'], tempDir);
     // load prints error to stderr
     // "Error: Skill "disabled-skill" cannot be automatically invoked" (or similar from checkSkillPermissions)
     // Actually load.ts: "Permission denied by permission rules"?

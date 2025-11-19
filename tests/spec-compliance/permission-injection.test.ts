@@ -7,7 +7,7 @@ import { tmpdir } from 'os';
 const CLI = join(process.cwd(), 'dist', 'cli.js');
 
 function runCli(command: 'load' | 'use', skill: string, cwd: string) {
-  const output = execSync(`node ${CLI} ${command} ${skill} --yes`, {
+  const output = execSync(`node ${CLI} ${command} ${skill}`, {
     cwd,
     encoding: 'utf8'
   });

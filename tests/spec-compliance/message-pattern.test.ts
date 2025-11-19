@@ -31,9 +31,9 @@ Test content for minimal skill`;
     
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
-    // Invoke the skill and check message count (--yes to skip permissions)
+    // Invoke the skill and check message count (auto-approves by default)
     const result = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-minimal --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-minimal`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
@@ -62,7 +62,7 @@ Test content with permissions`;
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
     const result = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-permissions --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-permissions`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
@@ -90,7 +90,7 @@ Test content with model override`;
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
     const result = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-model --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-model`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
@@ -120,13 +120,13 @@ Test content for consistency check`;
     
     // Get output from load (text)
     const loadResult = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-consistency --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-consistency`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
     // Get output from use (JSON)
     const useResult = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} use test-consistency --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} use test-consistency`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
@@ -155,7 +155,7 @@ Test content`;
     writeFileSync(join(skillDir, 'SKILL.md'), testSkill);
     
     const result = execSync(
-      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-no-xml --yes`,
+      `node ${join(process.cwd(), 'dist', 'cli.js')} load test-no-xml`,
       { cwd: tempDir, encoding: 'utf8' }
     );
     
