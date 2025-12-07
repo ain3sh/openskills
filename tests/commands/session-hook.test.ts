@@ -14,7 +14,6 @@ describe('sessionHook', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.spyOn(os, 'homedir').mockReturnValue(homeDir);
-    process.env.CLAUDE_ENV_FILE = envFile;
     vi.spyOn(console, 'error').mockImplementation(() => {});
     // mock process.exit to avoid killing test runner
     vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
@@ -22,9 +21,12 @@ describe('sessionHook', () => {
 
   afterEach(() => {
     delete process.env.CLAUDE_ENV_FILE;
+    delete process.env.DROID_ENV_FILE;
+    delete process.env.FACTORY_ENV_FILE;
   });
 
   it('should append PATH to CLAUDE_ENV_FILE', async () => {
+    process.env.CLAUDE_ENV_FILE = envFile;
     await sessionHook();
 
     const expectedBin = path.join(homeDir, '.openskills', 'bin');
@@ -33,8 +35,17 @@ describe('sessionHook', () => {
     expect(fs.appendFileSync).toHaveBeenCalledWith(envFile, expectedContent);
   });
 
-  it('should do nothing if CLAUDE_ENV_FILE is not set', async () => {
-    delete process.env.CLAUDE_ENV_FILE;
+  it('should append PATH to DROID_ENV_FILE', async () => {
+    process.env.DROID_ENV_FILE = envFile;
+    await sessionHook();
+
+    const expectedBin = path.join(homeDir, '.openskills', 'bin');
+    const expectedContent = `\nexport PATH="${expectedBin}:$PATH"\n`;
+    
+    expect(fs.appendFileSync).toHaveBeenCalledWith(envFile, expectedContent);
+  });
+
+  it('should do nothing if no ENV_FILE is set', async () => {
     await sessionHook();
     expect(fs.appendFileSync).not.toHaveBeenCalled();
   });

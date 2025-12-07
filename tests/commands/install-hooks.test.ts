@@ -57,6 +57,38 @@ describe('installHooks', () => {
     const settingsCall = writeCalls.find(call => (call[0] as string) === settingsPath);
     
     expect(settingsCall).toBeDefined();
+    
+    // Verify Droid-specific hook format per Factory cookbook
+    const writtenSettings = JSON.parse(settingsCall![1] as string);
+    const hookEntry = writtenSettings.hooks.SessionStart[0];
+    
+    // Droid format: no matcher field
+    expect(hookEntry.matcher).toBeUndefined();
+    
+    // Droid format: includes timeout
+    expect(hookEntry.hooks[0].timeout).toBe(10);
+    expect(hookEntry.hooks[0].command).toBe('openskills session-hook');
+  });
+
+  it('should use matcher for claude agent', async () => {
+    await installHooks({ agent: 'claude' });
+
+    const settingsPath = path.join(homeDir, '.claude', 'settings.json');
+    const writeCalls = vi.mocked(fs.writeFileSync).mock.calls;
+    const settingsCall = writeCalls.find(call => (call[0] as string) === settingsPath);
+    
+    expect(settingsCall).toBeDefined();
+    
+    // Verify Claude-specific hook format
+    const writtenSettings = JSON.parse(settingsCall![1] as string);
+    const hookEntry = writtenSettings.hooks.SessionStart[0];
+    
+    // Claude format: uses matcher
+    expect(hookEntry.matcher).toBe('startup|resume|compact');
+    
+    // Claude format: no timeout
+    expect(hookEntry.hooks[0].timeout).toBeUndefined();
+    expect(hookEntry.hooks[0].command).toBe('openskills session-hook');
   });
 
   it('should update project settings when requested', async () => {

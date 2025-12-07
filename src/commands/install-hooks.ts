@@ -46,25 +46,50 @@ export async function installHooks(opts: InstallHooksOptions): Promise<void> {
   }
   console.log(`✅ Created ${Object.keys(ALIASES).length} alias scripts in ${binDir}`);
 
+  const agent = (opts.agent || 'claude').toLowerCase() as AgentType;
+
+  if (!['claude', 'droid'].includes(agent)) {
+    console.error(`Unsupported agent: ${agent}. Supported agents: claude, droid`);
+    process.exit(1);
+  }
+
+  // Build agent-specific hook entry
+  const hookCommand = 'openskills session-hook';
+  const buildHookEntry = () => {
+    if (agent === 'droid') {
+      // Droid format: no matcher, includes timeout per Factory cookbook
+      return {
+        hooks: [
+          {
+            type: 'command',
+            command: hookCommand,
+            timeout: 10
+          }
+        ]
+      };
+    } else {
+      // Claude format: uses matcher for session types
+      return {
+        matcher: 'startup|resume|compact',
+        hooks: [
+          {
+            type: 'command',
+            command: hookCommand
+          }
+        ]
+      };
+    }
+  };
+
   if (opts.manual) {
     const hookJson = {
       hooks: {
-        SessionStart: [
-          {
-            matcher: "startup|resume|compact",
-            hooks: [
-              {
-                type: "command",
-                command: "openskills session-hook"
-              }
-            ]
-          }
-        ]
+        SessionStart: [buildHookEntry()]
       }
     };
     
     console.log('\n📋 Manual Configuration');
-    console.log('Add the following to your agent\'s settings.json file:');
+    console.log(`Add the following to your ${agent === 'droid' ? '.factory' : '.claude'}/settings.json file:`);
     console.log('---------------------------------------------------');
     console.log(JSON.stringify(hookJson, null, 2));
     console.log('---------------------------------------------------');
@@ -72,12 +97,6 @@ export async function installHooks(opts: InstallHooksOptions): Promise<void> {
   }
 
   const isGlobal = opts.global !== false && !opts.project; // Default to global if project not specified
-  const agent = (opts.agent || 'claude').toLowerCase() as AgentType;
-
-  if (!['claude', 'droid'].includes(agent)) {
-    console.error(`Unsupported agent: ${agent}. Supported agents: claude, droid`);
-    process.exit(1);
-  }
 
   // 2. Configure Agent settings
   let settingsPath: string;
@@ -121,21 +140,12 @@ export async function installHooks(opts: InstallHooksOptions): Promise<void> {
   const sessionHooks = settings.hooks.SessionStart as any[];
   
   // Check if our hook already exists
-  const hookCommand = 'openskills session-hook';
   const exists = sessionHooks.some((h: any) => 
     h.hooks && h.hooks.some((cmd: any) => cmd.command === hookCommand)
   );
 
   if (!exists) {
-    sessionHooks.push({
-      matcher: 'startup|resume|compact',
-      hooks: [
-        {
-          type: 'command',
-          command: hookCommand
-        }
-      ]
-    });
+    sessionHooks.push(buildHookEntry());
     
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
     console.log(`✅ Added SessionStart hook to ${settingsPath} for agent ${agent}`);
