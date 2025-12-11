@@ -10,6 +10,7 @@ interface ListOptions {
   all?: boolean;
   includeHidden?: boolean;
   includeDisabled?: boolean;
+  enabledOnly?: boolean;
 }
 
 interface SkillSummary {
@@ -58,6 +59,10 @@ function listSkillsInternal(options?: ListOptions): void {
   const summaries: SkillSummary[] = [];
 
   for (const skill of all) {
+    if (options?.enabledOnly && skill.source === 'plugin' && skill.pluginEnabled === false) {
+      continue;
+    }
+
     const loc = findSkill(skill.name);
     if (!loc) continue;
     const content = readFileSync(loc.path, 'utf-8');
@@ -67,8 +72,14 @@ function listSkillsInternal(options?: ListOptions): void {
     }
     const allowedField = frontmatter?.['allowed-tools'] ?? (frontmatter as any)?.allowed_tools;
     const allowedTools = allowedField ? normalizeToolsField(allowedField) : undefined;
+
+    const pluginStatusMark =
+      !options?.enabledOnly && skill.source === 'plugin' && typeof skill.pluginEnabled === 'boolean'
+        ? (skill.pluginEnabled ? ' [enabled]' : ' [disabled]')
+        : '';
+
     summaries.push({
-      name: skill.name,
+      name: `${skill.name}${pluginStatusMark}`,
       description: frontmatter?.description || skill.description,
       location: skill.location,
       baseDir: loc.baseDir,

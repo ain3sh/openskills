@@ -39,6 +39,7 @@ export function toolDescription(options?: {
 
   const raw = findAllSkills().sort((a, b) => a.name.localeCompare(b.name));
   const skills = raw
+    .filter((s) => !(s.source === 'plugin' && s.pluginEnabled === false))
     .map((s) => {
       const loc = findSkill(s.name);
       const content = loc ? readFileSync(loc.path, 'utf-8') : '';

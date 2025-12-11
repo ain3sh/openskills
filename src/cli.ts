@@ -32,7 +32,6 @@ program
 
 program
   .command('list')
-  .alias('list-skills')
   .description('List all installed skills')
   .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
   .option('--include-hidden', 'Include hidden skills', false)
@@ -40,6 +39,17 @@ program
   .action(async (opts) => {
     const { listSkills } = await import('./commands/list.js');
     listSkills(opts);
+  });
+
+program
+  .command('list-skills')
+  .description('List installed skills for agents (enabled plugins only when configured)')
+  .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
+  .option('--include-hidden', 'Include hidden skills', false)
+  .option('--include-disabled', 'Include disabled skills', false)
+  .action(async (opts) => {
+    const { listSkills } = await import('./commands/list.js');
+    listSkills({ ...opts, enabledOnly: true });
   });
 
 program

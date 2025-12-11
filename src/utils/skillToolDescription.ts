@@ -1,4 +1,4 @@
-import type { Skill, SkillFrontmatter } from '../types.js';
+import type { SkillFrontmatter } from '../types.js';
 import { findAllSkills, findSkill } from './skills.js';
 import { readFileSync } from 'fs';
 import { parseFrontmatter } from './yaml.js';
@@ -57,9 +57,15 @@ export function buildSkillToolDescription(
   const entries: SkillEntry[] = [];
   
   for (const skill of raw) {
+    // Agent exposure: respect Claude enabled plugin preferences when detectable.
+    // (We still discover all installed plugins internally.)
+    if (skill.source === 'plugin' && skill.pluginEnabled === false) {
+      continue;
+    }
+
     const loc = findSkill(skill.name);
     if (!loc) continue;
-    
+
     const content = readFileSync(loc.path, 'utf-8');
     const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
     
@@ -194,9 +200,13 @@ export function buildCompactDescription(options?: { includeHidden?: boolean; inc
   const names: string[] = [];
   
   for (const skill of raw) {
+    if (skill.source === 'plugin' && skill.pluginEnabled === false) {
+      continue;
+    }
+
     const loc = findSkill(skill.name);
     if (!loc) continue;
-    
+
     const content = readFileSync(loc.path, 'utf-8');
     const { frontmatter } = parseFrontmatter<SkillFrontmatter>(content);
     

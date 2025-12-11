@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { DEFAULT_FORMATTING, hasJsoncPath, parseJsonc, setJsoncPath } from '../utils/settings-edit.js';
 
 const ALIASES: Record<string, string> = {
   'install-skill': 'install',
-  'list-skills': 'list',
+  'list-skills': 'list-skills',
   'sync-skills': 'sync',
   'load-skill': 'load',
   'use-skill': 'use',
@@ -23,137 +24,245 @@ interface InstallHooksOptions {
   manual?: boolean;
 }
 
-export async function installHooks(opts: InstallHooksOptions): Promise<void> {
-  // 1. Setup ~/.openskills/bin and aliases
-  const homeDir = os.homedir();
-  const binDir = path.join(homeDir, '.openskills', 'bin');
+type CommandHook = {
+  type: 'command';
+  command: string;
+  timeout?: number;
+};
 
-  if (!fs.existsSync(binDir)) {
-    fs.mkdirSync(binDir, { recursive: true });
-    console.log(`Created directory: ${binDir}`);
+type SessionStartEntry = {
+  matcher?: string;
+  hooks: CommandHook[];
+};
+
+const CLAUDE_SESSION_MATCHER = 'startup|resume|clear|compact';
+const DEFAULT_TIMEOUT_SECONDS = 10;
+const LEGACY_HOOK_COMMAND = 'openskills session-hook';
+
+function ensureDir(dir: string): void {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
+}
 
+function createAliasScripts(binDir: string, force: boolean): void {
   console.log('Creating alias scripts...');
   for (const [alias, cmd] of Object.entries(ALIASES)) {
     const scriptPath = path.join(binDir, alias);
     const content = `#!/bin/sh\nopenskills ${cmd} "$@"\n`;
-    
-    if (fs.existsSync(scriptPath) && !opts.force) {
-      // Skip if exists and no force
-    } else {
-      fs.writeFileSync(scriptPath, content, { mode: 0o755 });
-    }
+
+    if (fs.existsSync(scriptPath) && !force) continue;
+    fs.writeFileSync(scriptPath, content, { mode: 0o755 });
   }
   console.log(`✅ Created ${Object.keys(ALIASES).length} alias scripts in ${binDir}`);
+}
 
-  const agent = (opts.agent || 'claude').toLowerCase() as AgentType;
+function createSessionHookScript(scriptPath: string, force: boolean): void {
+  if (fs.existsSync(scriptPath) && !force) return;
 
-  if (!['claude', 'droid'].includes(agent)) {
-    console.error(`Unsupported agent: ${agent}. Supported agents: claude, droid`);
+  const content = `#!/bin/sh
+
+# Ensure ~/.openskills/bin is on PATH for the current session
+# Works for both Claude Code (CLAUDE_ENV_FILE) and Droid/Factory (DROID_ENV_FILE)
+
+set -e
+
+ENV_FILE="\${CLAUDE_ENV_FILE:-\${DROID_ENV_FILE:-\${FACTORY_ENV_FILE:-}}}"
+
+if [ -z "$ENV_FILE" ]; then
+  exit 0
+fi
+
+BIN_DIR="$HOME/.openskills/bin"
+
+# Best-effort idempotency: if grep exists and the line is already present, skip.
+if command -v grep >/dev/null 2>&1; then
+  if [ -f "$ENV_FILE" ] && grep -q "\.openskills/bin" "$ENV_FILE" 2>/dev/null; then
+    exit 0
+  fi
+fi
+
+printf '\nexport PATH="%s:$PATH"\n' "$BIN_DIR" >> "$ENV_FILE"
+
+exit 0
+`;
+
+  fs.writeFileSync(scriptPath, content, { mode: 0o755 });
+}
+
+function parseAgent(agentRaw: string | undefined): AgentType {
+  const agent = (agentRaw || 'claude').toLowerCase();
+  if (agent === 'claude' || agent === 'droid') return agent;
+  console.error(`Unsupported agent: ${agent}. Supported agents: claude, droid`);
+  process.exit(1);
+}
+
+function resolveSettingsPath(agent: AgentType, isGlobal: boolean): { settingsPath: string; configDirName: '.claude' | '.factory' } {
+  const homeDir = os.homedir();
+  const configDirName = agent === 'claude' ? '.claude' : '.factory';
+  const baseDir = isGlobal ? homeDir : process.cwd();
+  return {
+    settingsPath: path.join(baseDir, configDirName, 'settings.json'),
+    configDirName,
+  };
+}
+
+function buildSessionStartEntry(agent: AgentType, hookScriptPath: string): SessionStartEntry {
+  const hook: CommandHook = {
+    type: 'command',
+    command: hookScriptPath,
+    timeout: DEFAULT_TIMEOUT_SECONDS,
+  };
+
+  if (agent === 'claude') {
+    return { matcher: CLAUDE_SESSION_MATCHER, hooks: [hook] };
+  }
+
+  return { hooks: [hook] };
+}
+
+function entryHasCommand(entry: unknown, command: string): boolean {
+  const e = entry as any;
+  if (!e || !Array.isArray(e.hooks)) return false;
+  return e.hooks.some((h: any) => h && h.type === 'command' && h.command === command);
+}
+
+function normalizeExistingEntryForAgent(entry: any, agent: AgentType, hookScriptPath: string): any {
+  if (!entry || typeof entry !== 'object') return entry;
+
+  if (agent === 'claude') {
+    entry.matcher = CLAUDE_SESSION_MATCHER;
+  } else {
+    delete entry.matcher;
+  }
+
+  if (Array.isArray(entry.hooks)) {
+    for (const h of entry.hooks) {
+      if (!h || h.type !== 'command') continue;
+      if (h.command === hookScriptPath || h.command === LEGACY_HOOK_COMMAND) {
+        h.command = hookScriptPath;
+        if (typeof h.timeout !== 'number') h.timeout = DEFAULT_TIMEOUT_SECONDS;
+        break;
+      }
+    }
+  }
+
+  return entry;
+}
+
+function upsertSessionStart(settings: any, agent: AgentType, hookScriptPath: string, force: boolean): { updated: any; changed: boolean } {
+  const next = settings && typeof settings === 'object' ? { ...settings } : {};
+  if (!next.hooks || typeof next.hooks !== 'object') next.hooks = {};
+
+  const existing = Array.isArray(next.hooks.SessionStart) ? next.hooks.SessionStart : [];
+  const sessionStart: any[] = [...existing];
+
+  const idxNew = sessionStart.findIndex((e) => entryHasCommand(e, hookScriptPath));
+  const idxOld = sessionStart.findIndex((e) => entryHasCommand(e, LEGACY_HOOK_COMMAND));
+
+  if (idxNew >= 0) {
+    if (force) {
+      sessionStart[idxNew] = normalizeExistingEntryForAgent(sessionStart[idxNew], agent, hookScriptPath);
+      next.hooks.SessionStart = sessionStart;
+      return { updated: next, changed: true };
+    }
+    return { updated: next, changed: false };
+  }
+
+  if (idxOld >= 0) {
+    if (force) {
+      sessionStart[idxOld] = normalizeExistingEntryForAgent(sessionStart[idxOld], agent, hookScriptPath);
+      next.hooks.SessionStart = sessionStart;
+      return { updated: next, changed: true };
+    }
+    return { updated: next, changed: false };
+  }
+
+  sessionStart.push(buildSessionStartEntry(agent, hookScriptPath));
+  next.hooks.SessionStart = sessionStart;
+  return { updated: next, changed: true };
+}
+
+function hasExplicitFlag(flagLong: string, flagShort: string): boolean {
+  const argv = process.argv.slice(2);
+  return argv.includes(flagLong) || argv.includes(flagShort);
+}
+
+export async function installHooks(opts: InstallHooksOptions): Promise<void> {
+  const force = Boolean(opts.force);
+
+  const hasGlobalFlag = hasExplicitFlag('--global', '-g');
+  const hasProjectFlag = hasExplicitFlag('--project', '-p');
+  if (hasGlobalFlag && hasProjectFlag) {
+    console.error('Error: Please choose either --global or --project (not both).');
     process.exit(1);
   }
 
-  // Build agent-specific hook entry
-  const hookCommand = 'openskills session-hook';
-  const buildHookEntry = () => {
-    if (agent === 'droid') {
-      // Droid format: no matcher, includes timeout per Factory cookbook
-      return {
-        hooks: [
-          {
-            type: 'command',
-            command: hookCommand,
-            timeout: 10
-          }
-        ]
-      };
-    } else {
-      // Claude format: uses matcher for session types
-      return {
-        matcher: 'startup|resume|compact',
-        hooks: [
-          {
-            type: 'command',
-            command: hookCommand
-          }
-        ]
-      };
-    }
-  };
+  const isGlobal = opts.global !== false && !opts.project;
+  const agent = parseAgent(opts.agent);
+
+  const homeDir = os.homedir();
+  const binDir = path.join(homeDir, '.openskills', 'bin');
+  ensureDir(binDir);
+
+  createAliasScripts(binDir, force);
+
+  const sessionHookScriptPath = path.join(binDir, 'openskills-session-hook');
+  createSessionHookScript(sessionHookScriptPath, force);
+
+  const { settingsPath, configDirName } = resolveSettingsPath(agent, isGlobal);
+  ensureDir(path.dirname(settingsPath));
+
+  const hookJson = { hooks: { SessionStart: [buildSessionStartEntry(agent, sessionHookScriptPath)] } };
 
   if (opts.manual) {
-    const hookJson = {
-      hooks: {
-        SessionStart: [buildHookEntry()]
-      }
-    };
-    
     console.log('\n📋 Manual Configuration');
-    console.log(`Add the following to your ${agent === 'droid' ? '.factory' : '.claude'}/settings.json file:`);
+    console.log(`Add the following to your ${configDirName}/settings.json file:`);
     console.log('---------------------------------------------------');
     console.log(JSON.stringify(hookJson, null, 2));
     console.log('---------------------------------------------------');
     return;
   }
 
-  const isGlobal = opts.global !== false && !opts.project; // Default to global if project not specified
+  const exists = fs.existsSync(settingsPath);
+  const originalText = exists ? fs.readFileSync(settingsPath, 'utf-8') : '{}';
 
-  // 2. Configure Agent settings
-  let settingsPath: string;
-  let agentConfigDir: string;
+  const { data: parsedSettings, errors } = parseJsonc<any>(originalText);
+  const hasParseErrors = errors.length > 0;
 
-  if (agent === 'claude') {
-    agentConfigDir = '.claude';
-  } else { // droid
-    agentConfigDir = '.factory'; // Factory Droid uses .factory directory
+  if (hasParseErrors && !force) {
+    console.error(`Error: Could not parse settings file at ${settingsPath}.`);
+    console.error('Use --force to back up and overwrite it with a clean settings object.');
+    process.exit(1);
   }
 
-  if (isGlobal) {
-    settingsPath = path.join(homeDir, agentConfigDir, 'settings.json');
-  } else {
-    settingsPath = path.join(process.cwd(), agentConfigDir, 'settings.json');
-  }
-
-  const settingsDir = path.dirname(settingsPath);
-  if (!fs.existsSync(settingsDir)) {
-    fs.mkdirSync(settingsDir, { recursive: true });
-  }
-
-  let settings: any = {};
-  if (fs.existsSync(settingsPath)) {
+  if (hasParseErrors && force && exists) {
     try {
-      const content = fs.readFileSync(settingsPath, 'utf-8');
-      settings = JSON.parse(content);
-    } catch (e) {
-      console.error(`Error parsing settings file at ${settingsPath}:`, e);
-      if (!opts.force) {
-        console.error('Use --force to overwrite with a clean settings object.');
-        process.exit(1);
-      }
+      fs.writeFileSync(`${settingsPath}.bak`, originalText, { flag: 'w' });
+    } catch {
+      // ignore backup failures
     }
   }
 
-  // Initialize structure
-  if (!settings.hooks) settings.hooks = {};
-  if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+  const baseSettings = hasParseErrors && force ? {} : parsedSettings;
+  const { updated, changed } = upsertSessionStart(baseSettings, agent, sessionHookScriptPath, force);
 
-  const sessionHooks = settings.hooks.SessionStart as any[];
-  
-  // Check if our hook already exists
-  const exists = sessionHooks.some((h: any) => 
-    h.hooks && h.hooks.some((cmd: any) => cmd.command === hookCommand)
-  );
-
-  if (!exists) {
-    sessionHooks.push(buildHookEntry());
-    
-    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-    console.log(`✅ Added SessionStart hook to ${settingsPath} for agent ${agent}`);
-  } else {
+  if (!changed) {
     console.log(`ℹ️  SessionStart hook already exists in ${settingsPath}`);
+  } else {
+    let nextText = hasParseErrors && force ? '{}' : originalText;
+
+    if (!hasJsoncPath(nextText, ['hooks'])) {
+      nextText = setJsoncPath(nextText, ['hooks'], {}, DEFAULT_FORMATTING);
+    }
+
+    nextText = setJsoncPath(nextText, ['hooks', 'SessionStart'], updated.hooks.SessionStart, DEFAULT_FORMATTING);
+
+    if (!nextText.endsWith('\n')) nextText = `${nextText}\n`;
+    fs.writeFileSync(settingsPath, nextText);
+    console.log(`✅ Added SessionStart hook to ${settingsPath} for agent ${agent}`);
   }
 
-  // 3. Verify
   console.log('\nSetup complete! Restart your agent session to use the aliases:');
-  Object.keys(ALIASES).forEach(alias => console.log(`  - ${alias}`));
+  Object.keys(ALIASES).forEach((alias) => console.log(`  - ${alias}`));
 }

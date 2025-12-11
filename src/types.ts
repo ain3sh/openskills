@@ -4,7 +4,9 @@ export interface SkillSource {
   type: SkillSourceType;
   path: string;
   priority: number; // Lower = higher priority (1 = highest)
-  pluginId?: string; // Identifies nested plugin location (e.g., "marketplaces/anthropic-agent-skills")
+  pluginId?: string; // Identifies the plugin (preferred: "plugin@marketplace")
+  layout?: 'collection' | 'single';
+  pluginEnabled?: boolean;
 }
 
 export interface ScriptInfo {
@@ -22,6 +24,8 @@ export interface Skill {
   path: string;
   source?: SkillSourceType;  // Track where skill came from
   sourceLabel?: string;       // e.g., "plugin:pdf-tools" or "builtin"
+  pluginKey?: string;         // For plugin skills: "plugin@marketplace"
+  pluginEnabled?: boolean;    // For plugin skills: whether enabled in Claude settings (when detectable)
   scripts?: ScriptInfo[];     // Discovered executable scripts
   version?: string;           // Optional metadata for display surfaces
   license?: string;           // Optional metadata for display surfaces
