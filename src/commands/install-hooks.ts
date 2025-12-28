@@ -44,10 +44,40 @@ function ensureDir(dir: string): void {
   }
 }
 
+function getOpenskillsPath(): string {
+  // For SEA binary, process.execPath is the binary itself
+  // For node execution, we need to find openskills in PATH or use a known location
+  const execPath = process.execPath;
+  
+  // If running as SEA binary (not node), use execPath directly
+  if (!execPath.includes('node')) {
+    return execPath;
+  }
+  
+  // Otherwise, try to find openskills in common locations
+  const homeDir = os.homedir();
+  const candidates = [
+    path.join(homeDir, '.local', 'bin', 'openskills'),
+    '/usr/local/bin/openskills',
+    '/usr/bin/openskills',
+  ];
+  
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  
+  // Fallback to hoping it's in PATH
+  return 'openskills';
+}
+
 function createAliasScripts(binDir: string): void {
+  const openskillsPath = getOpenskillsPath();
+  
   for (const [alias, cmd] of Object.entries(ALIASES)) {
     const scriptPath = path.join(binDir, alias);
-    const content = `#!/usr/bin/env bash\nopenskills ${cmd} "$@"\n`;
+    const content = `#!/usr/bin/env bash\n"${openskillsPath}" ${cmd} "$@"\n`;
     fs.writeFileSync(scriptPath, content, { mode: 0o755 });
   }
 }
