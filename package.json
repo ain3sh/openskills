@@ -15,9 +15,9 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "build:sea:bundle": "node scripts/build-sea.mjs",
+    "build:sea:bundle": "node scripts/sea/build.mjs",
     "build:sea:blob": "node --experimental-sea-config sea-config.json",
-    "build:sea:inject": "node scripts/sea-inject.mjs",
+    "build:sea:inject": "node scripts/sea/inject.mjs",
     "build:sea:current": "npm run build:sea:bundle && npm run build:sea:inject",
     "pretest": "npm run build",
     "test": "vitest run",

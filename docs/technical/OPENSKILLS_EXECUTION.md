@@ -103,24 +103,6 @@ Scripts are discovered from:
 - `bin/` - Executable binaries
 - `.` - Root-level scripts
 
-### 5. Shell Integration
-
-The `openskills-wrap` wrapper provides functions for shell integration:
-
-```bash
-# Source the wrapper
-source /path/to/openskills/scripts/openskills-wrap
-
-# Get skill base directory
-base=$(openskills_base slack-gif-creator)
-
-# List available scripts
-openskills_scripts slack-gif-creator
-
-# Run a script
-openskills_run slack-gif-creator templates/pulse.py
-```
-
 ## Usage Examples
 
 ### For AI Agents
@@ -146,20 +128,6 @@ from templates.pulse import create_pulse_animation
 
 # ✅ CORRECT - Execute the script!
 os.system('python /path/to/skill/templates/pulse.py')
-```
-
-### For Developers
-
-Set up your shell for easy skill execution:
-
-```bash
-# Add to ~/.bashrc or ~/.zshrc
-alias claude="openskills-wrap claude"
-alias cursor="openskills-wrap cursor"
-alias aider="openskills-wrap aider"
-
-# Or source functions directly
-source /path/to/openskills/scripts/openskills-wrap
 ```
 
 ## Architecture Changes

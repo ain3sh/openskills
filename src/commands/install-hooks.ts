@@ -67,7 +67,7 @@ function createSessionHookScript(scriptPath: string, force: boolean): void {
 
 set -e
 
-ENV_FILE="\${CLAUDE_ENV_FILE:-\${DROID_ENV_FILE:-\${FACTORY_ENV_FILE:-}}}"
+ENV_FILE="\${CLAUDE_ENV_FILE:-\${DROID_ENV_FILE:-}}"
 
 if [ -z "$ENV_FILE" ]; then
   exit 0
@@ -82,7 +82,7 @@ if command -v grep >/dev/null 2>&1; then
   fi
 fi
 
-printf '\nexport PATH="%s:$PATH"\n' "$BIN_DIR" >> "$ENV_FILE"
+printf '\\nexport PATH="%s:\${PATH:-/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}"\\n' "$BIN_DIR" >> "$ENV_FILE"
 
 exit 0
 `;
