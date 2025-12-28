@@ -45,8 +45,9 @@ Thumbs.db
 .claude/skills/*
 !.claude/skills/.gitkeep
 
-# Legacy directories (no longer used)
+# OpenSkills
 .openskills/
+.agent/SKILLS.md
 
 # OS
 .DS_Store
