@@ -53,10 +53,14 @@ OpenSkills aims to:
 
 ```
 src/
+├── cli.ts           # Main CLI entry point
+├── types.ts         # TypeScript type definitions
 ├── commands/        # CLI command implementations
-├── utils/          # Shared utilities
-├── types.ts        # TypeScript type definitions
-└── cli.ts          # Main CLI entry point
+├── skill/           # Core skill logic (discovery, validation, etc.)
+├── agent/           # Agent platform integration
+├── config/          # Configuration and paths
+├── marketplace/     # External skill sources (GitHub)
+└── telemetry/       # Usage tracking
 ```
 
 ## 🧪 Testing
@@ -141,10 +145,10 @@ Please use GitHub Issues to report bugs:
 
 ## 🎓 Learning Resources
 
+- [Claude Code Skills Spec](https://code.claude.com/docs/en/skills.md) - Official specification
 - [Anthropic's Skills Blog Post](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
-- [Claude Skills Documentation](https://docs.claude.com/en/docs/claude-code/overview)
-- [Progressive Disclosure Pattern](./docs/technical/PROGRESSIVE_DISCLOSURE_OPTIMIZATION.md)
-- [Execution Architecture](./docs/technical/OPENSKILLS_EXECUTION.md)
+- [Architecture Documentation](./docs/architecture.md) - Technical deep dive
+- [Creating Skills Guide](./docs/creating-skills.md) - Skill authoring guide
 
 ## 💬 Community
 

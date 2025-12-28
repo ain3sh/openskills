@@ -1,8 +1,8 @@
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import chalk from 'chalk';
-import { findAllSkills } from '../utils/skills.js';
-import { generateSkillsXml } from '../utils/agents-md.js';
+import { findAllSkills } from '../skill/discovery.js';
+import { generateSkillsXml } from '../agent/agents-md.js';
 import type { Skill } from '../types.js';
 
 export interface GenerateSkillsMdOptions {

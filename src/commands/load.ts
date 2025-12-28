@@ -1,12 +1,12 @@
 import { readFileSync } from 'fs';
-import { findSkill } from '../utils/skills.js';
-import { parseFrontmatter } from '../utils/yaml.js';
+import { findSkill } from '../skill/discovery.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
 import type { SkillFrontmatter } from '../types.js';
-import { checkSkillPermissions } from '../utils/permissions.js';
-import { validateSkillCommand } from '../utils/validation.js';
-import { loadConfig, configToPermissionRules } from '../utils/config.js';
-import { askUserPermission } from '../utils/interactive.js';
-import { telemetry } from '../utils/telemetry.js';
+import { checkSkillPermissions } from '../skill/permissions.js';
+import { validateSkillCommand } from '../skill/validation.js';
+import { loadConfig, configToPermissionRules } from '../config/loader.js';
+import { askUserPermission } from '../agent/interactive.js';
+import { telemetry } from '../telemetry/tracker.js';
 
 /**
  * Load skill to stdout (for AI agents)
@@ -14,7 +14,7 @@ import { telemetry } from '../utils/telemetry.js';
  */
 export async function loadSkill(
   skillName: string, 
-  options?: { yes?: boolean }
+  options?: { tui?: boolean }
 ): Promise<void> {
   const startTime = Date.now();
   
@@ -45,7 +45,7 @@ export async function loadSkill(
  */
 async function loadSkillInternal(
   skillName: string,
-  options?: { yes?: boolean }
+  options?: { tui?: boolean }
 ): Promise<void> {
   // Validate skill command before reading
   const validation = validateSkillCommand(skillName);
@@ -80,7 +80,7 @@ async function loadSkillInternal(
   // Handle 'ask' behavior with interactive prompt
   if (permissionCheck.behavior === 'ask') {
     const approved = await askUserPermission(skillName, {
-      force: options?.yes,
+      force: !options?.tui,
       nonInteractive: !process.stdin.isTTY
     });
     

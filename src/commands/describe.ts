@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { findAllSkills, findSkill } from '../utils/skills.js';
-import { parseFrontmatter } from '../utils/yaml.js';
+import { findAllSkills, findSkill } from '../skill/discovery.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
 
 /**
  * Describe installed skills in machine-readable format
@@ -54,17 +54,13 @@ export function describeSkills(skillName?: string): void {
 
 function normalizeFrontmatter(fm: Record<string, any>): Record<string, any> {
   if (!fm) return {};
-  const allowed = fm['allowed-tools'] ?? fm.allowed_tools;
-  const disableInv = fm['disable-model-invocation'] ?? fm.disable_model_invocation;
-  const aliases = fm['aliases'] ?? fm.aliases;
-  const keywords = fm['keywords'] ?? fm.keywords;
-  const reasoning = fm['reasoning-effort'] ?? fm.reasoning_effort ?? (fm as any).reasoningEffort;
+  const allowed = fm['allowed-tools'];
+  const aliases = fm['aliases'];
+  const keywords = fm['keywords'];
 
   const normalized: Record<string, any> = { ...fm };
-  if (allowed != null) normalized.allowed_tools = Array.isArray(allowed) ? allowed : [String(allowed)];
-  if (disableInv != null) normalized.disable_model_invocation = Boolean(disableInv);
+  if (allowed != null) normalized['allowed-tools'] = Array.isArray(allowed) ? allowed : [String(allowed)];
   if (aliases != null) normalized.aliases = Array.isArray(aliases) ? aliases : [String(aliases)];
   if (keywords != null) normalized.keywords = Array.isArray(keywords) ? keywords : [String(keywords)];
-  if (reasoning != null) normalized.reasoning_effort = String(reasoning).toLowerCase();
   return normalized;
 }

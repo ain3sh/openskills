@@ -1,8 +1,8 @@
 import { readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
-import { findAllSkills, findSkill } from '../utils/skills.js';
-import { parseFrontmatter } from '../utils/yaml.js';
-import { extractRelativeRefs } from '../utils/refs.js';
+import { findAllSkills, findSkill } from '../skill/discovery.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
+import { extractRelativeRefs } from '../skill/refs.js';
 
 interface ValidateOptions { all?: boolean; lintFrontmatter?: boolean }
 

@@ -6,10 +6,10 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { checkbox, confirm } from '@inquirer/prompts';
 import { ExitPromptError } from '@inquirer/core';
-import { hasValidFrontmatter, extractYamlField } from '../utils/yaml.js';
-import { ANTHROPIC_MARKETPLACE_SKILLS } from '../utils/marketplace-skills.js';
+import { hasValidFrontmatter, extractYamlField } from '../skill/frontmatter.js';
+import { ANTHROPIC_MARKETPLACE_SKILLS } from '../marketplace/github.js';
 import type { InstallOptions } from '../types.js';
-import { telemetry } from '../utils/telemetry.js';
+import { telemetry } from '../telemetry/tracker.js';
 
 /**
  * Install skill from GitHub or Git URL
@@ -217,10 +217,10 @@ async function installFromRepo(
     process.exit(1);
   }
 
-  // Interactive selection (unless -y flag or single skill)
+  // Interactive selection only in TUI mode with multiple skills
   let skillsToInstall = skillInfos;
 
-  if (!options.yes && skillInfos.length > 1) {
+  if (options.tui && skillInfos.length > 1) {
     try {
       const choices = skillInfos.map((info) => ({
         name: `${chalk.bold(info.skillName.padEnd(25))} ${chalk.dim(formatSize(info.size))}`,

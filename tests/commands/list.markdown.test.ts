@@ -11,12 +11,10 @@ import { mockSkills } from '../utils/mockSkills.js'; // Hypothetical mock?
 // Or maybe 'huge' is a test skill created by another test that wasn't cleaned up properly?
 
 // Let's mock findAllSkills to return predictable data.
-import * as skillsUtils from '../../src/utils/skills.js';
+import * as skillsUtils from '../../src/skill/discovery.js';
 
-vi.mock('../../src/utils/skills.js', async () => {
-  const actual = await vi.importActual('../../src/utils/skills.js');
+vi.mock('../../src/skill/discovery.js', async () => {
   return {
-    ...actual,
     findAllSkills: vi.fn(() => [
       {
         name: 'mock-skill',

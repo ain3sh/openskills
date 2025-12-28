@@ -1,90 +1,116 @@
-# 🎯 OpenSkills - Universal Skills Loader for AI Agents
+# AGENTS.md
 
-## Project Overview
+Instructions for AI agents working on the OpenSkills codebase.
 
-OpenSkills is a CLI tool that brings Anthropic's Claude Skills system to all AI coding agents (Cursor, Windsurf, Aider, Claude Code). It achieves ~85% parity with Claude Code's closed-source implementation while being fully open source and agent-agnostic.
+## Overview
 
-## Core Architecture
+OpenSkills is a CLI tool for managing AI agent skills. It follows an **execution-first** and **agent-first** architecture:
 
-- **Skills Discovery**: Multi-source loading from `.agent/`, `.claude/` directories
-- **Progressive Disclosure**: Minimal metadata → Full SKILL.md → Bundled resources
-- **Two Modes**: Direct injection (embed in AGENTS.md) or Transclusion (`@SKILLS.md` reference)
-- **Format Parity**: Same SKILL.md format, frontmatter fields, and resource bundling as Claude Code
-
-## Key Commands
-
-```bash
-# Install skills from GitHub
-openskills install anthropics/skills
-
-# List installed skills
-openskills list
-
-# Read skill (for AI agents)
-openskills read <skill-name>
-
-# Sync to AGENTS.md
-openskills sync                    # Direct injection
-openskills sync --transclusion     # @SKILLS.md reference
-
-# Generate standalone SKILLS.md
-openskills generate-skills-md
-```
-
-## Development Guidelines
-
-### Code Style
-- TypeScript strict mode
-- Functional programming patterns preferred
-- Comprehensive error handling with specific error codes
-- Fast caching (60-second TTL) for performance
-
-### Testing
-```bash
-npm test                    # Run all tests
-npm test <file>            # Run specific test
-npm run build              # Compile TypeScript
-```
-
-### Security Priorities
-- Input validation on all user-provided data
-- Safe regex patterns (bounded quantifiers)
-- Permission system for skill execution
-- No eval() or dynamic code execution
+- **Execution-first**: Skills contain scripts that run in isolated processes
+- **Agent-first**: All commands are non-interactive by default (`--tui` enables interactive mode)
 
 ## Project Structure
 
 ```
 src/
-├── cli.ts                 # Main CLI entry point
-├── commands/              # Individual command implementations
-├── utils/                 # Shared utilities
-└── types.ts              # TypeScript type definitions
-
-tests/
-├── transclusion.test.ts  # New transclusion feature tests
-└── spec-compliance/      # Blog specification compliance tests
+├── cli.ts                 # CLI entry point (Commander.js)
+├── types.ts               # Shared TypeScript types
+│
+├── commands/              # CLI command handlers (18 files)
+│   ├── install.ts         # Install skills from GitHub
+│   ├── list.ts            # List installed skills
+│   ├── load.ts            # Output full skill prompt
+│   ├── use.ts             # Output execution payload (JSON)
+│   ├── exec.ts            # Execute skill scripts
+│   ├── sync.ts            # Sync skills to AGENTS.md
+│   └── ...
+│
+├── skill/                 # Core skill logic
+│   ├── discovery.ts       # Find skills across all sources
+│   ├── frontmatter.ts     # Parse SKILL.md YAML frontmatter
+│   ├── validation.ts      # Validate skill structure
+│   ├── scripts.ts         # Script discovery and execution
+│   ├── permissions.ts     # Permission checking
+│   ├── attachments.ts     # Build skill attachments
+│   ├── refs.ts            # Extract file references
+│   └── presentability.ts  # Filter hidden/disabled skills
+│
+├── agent/                 # Agent platform integration
+│   ├── plugins.ts         # Claude plugin discovery
+│   ├── agents-md.ts       # AGENTS.md manipulation
+│   ├── tool-description.ts # Build Skill tool descriptions
+│   └── interactive.ts     # TUI prompts
+│
+├── config/                # Configuration
+│   ├── dirs.ts            # Skill directory resolution
+│   ├── loader.ts          # Load .openskills.json config
+│   ├── settings.ts        # Edit agent settings files
+│   └── cache.ts           # Fast disk caching
+│
+├── marketplace/           # External sources
+│   └── github.ts          # GitHub skill installation
+│
+└── telemetry/             # Usage tracking
+    └── tracker.ts         # Anonymous telemetry
 ```
 
-## Current Implementation Status
+## Key Commands
 
-- ✅ Full SKILL.md parsing with YAML frontmatter
-- ✅ Multi-source skill discovery with deduplication
-- ✅ JSON outputs for headless agents
-- ✅ Permission system (allow/deny/ask)
-- ✅ Resource bundling (scripts/, references/, assets/)
-- ✅ Transclusion support (@SKILLS.md pattern)
-- ✅ GitHub marketplace installation
-- ✅ Slash command export
+```bash
+openskills install <source>    # Install skills (non-interactive by default)
+openskills list                # List skills as JSON
+openskills load <skill>        # Output skill prompt (text)
+openskills use <skill>         # Output execution payload (JSON)
+openskills exec <skill> <path> # Run a skill script
+openskills sync                # Sync to AGENTS.md (transclusion by default)
+```
 
-## References
+All commands accept `--tui` for interactive mode.
 
-- Blog specification: `references/claude-skills-blog/blog-content-full.md`
-- Implementation notes: `PHASE1-3-COMPLETE.md`
-- Security analysis: `references/PARITY_ANALYSIS.md`
+## Testing
 
----
+```bash
+npm test           # Run all 147 tests
+npm run typecheck  # TypeScript checking
+npm run build      # Build to dist/
+```
 
-## Skills
+Test structure mirrors src/:
 
-@.agent/SKILLS.md
+```
+tests/
+├── commands/      # CLI command tests
+├── skill/         # Skill logic tests
+├── agent/         # Agent integration tests
+├── config/        # Configuration tests
+├── integration/   # E2E integration tests
+└── security/      # Security tests (ReDoS, etc.)
+```
+
+## Code Conventions
+
+1. **Agent-first**: Use `tui?: boolean` option, not `yes?: boolean`. Default is non-interactive.
+2. **Transclusion default**: `sync` creates `.agent/SKILLS.md` by default, `--direct` embeds inline.
+3. **No legacy aliases**: Commands are `install`, `load`, `use`, `sync` (not `install-skill`, etc.)
+4. **Official spec only**: SKILL.md frontmatter follows [Claude Code Skills spec](https://code.claude.com/docs/en/skills.md):
+   - Required: `name`, `description`
+   - Optional: `allowed-tools`, `model`, `version`, `license`, etc.
+   - No snake_case variants (no `allowed_tools`, use `allowed-tools`)
+
+## Skill Discovery Priority
+
+Skills are discovered from these locations (highest priority first):
+
+1. `./.agent/skills/` - Project agent-agnostic
+2. `~/.agent/skills/` - Global agent-agnostic
+3. `./.claude/skills/` - Project Claude-specific
+4. `~/.claude/skills/` - Global Claude-specific
+5. Claude plugins (via `~/.claude/plugins.json`)
+6. Built-in skills
+
+## Making Changes
+
+1. Run `npm run typecheck` before committing
+2. Run `npm test` to verify all 147 tests pass
+3. Follow existing code patterns in the relevant directory
+4. Update tests in the corresponding `tests/` subdirectory

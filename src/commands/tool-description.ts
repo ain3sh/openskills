@@ -1,9 +1,9 @@
-import { findAllSkills, findSkill } from '../utils/skills.js';
+import { findAllSkills, findSkill } from '../skill/discovery.js';
 import type { ToolDescriptionJson, SkillFrontmatter } from '../types.js';
 import { readFileSync } from 'fs';
-import { parseFrontmatter } from '../utils/yaml.js';
-import { isPresentable } from '../utils/presentability.js';
-import { buildSkillToolDescription, buildCompactDescription } from '../utils/skillToolDescription.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
+import { isPresentable } from '../skill/presentability.js';
+import { buildSkillToolDescription, buildCompactDescription } from '../agent/tool-description.js';
 
 /**
  * Emit a dynamic Skill tool description text that lists available skills,

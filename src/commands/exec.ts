@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join, extname } from 'path';
-import { findSkill } from '../utils/skills.js';
+import { findSkill } from '../skill/discovery.js';
 
 export interface ExecOptions {
   args?: string[];

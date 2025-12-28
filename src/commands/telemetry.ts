@@ -1,5 +1,5 @@
-import { Telemetry, type UsageEvent } from '../utils/telemetry.js';
-import { loadConfig } from '../utils/config.js';
+import { Telemetry, type UsageEvent } from '../telemetry/tracker.js';
+import { loadConfig } from '../config/loader.js';
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';

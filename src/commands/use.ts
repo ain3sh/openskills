@@ -1,14 +1,14 @@
 import { readFileSync } from 'fs';
-import { findSkill } from '../utils/skills.js';
-import { parseFrontmatter } from '../utils/yaml.js';
+import { findSkill } from '../skill/discovery.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
 import type { SkillFrontmatter, ExecutionPayload } from '../types.js';
-import { checkSkillPermissions } from '../utils/permissions.js';
-import { validateSkillCommand } from '../utils/validation.js';
-import { loadConfig, configToPermissionRules } from '../utils/config.js';
-import { askUserPermission } from '../utils/interactive.js';
-import { discoverSkillScripts } from '../utils/script-discovery.js';
+import { checkSkillPermissions } from '../skill/permissions.js';
+import { validateSkillCommand } from '../skill/validation.js';
+import { loadConfig, configToPermissionRules } from '../config/loader.js';
+import { askUserPermission } from '../agent/interactive.js';
+import { discoverSkillScripts } from '../skill/scripts.js';
 
-export interface UseOptions { args?: string; yes?: boolean; }
+export interface UseOptions { args?: string; tui?: boolean; }
 
 /**
  * Use a skill and emit strict execution payload (JSON)
@@ -59,7 +59,7 @@ export async function useSkill(skillName: string, options: UseOptions = {}): Pro
 
   if (permissionCheck.behavior === 'ask') {
     const approved = await askUserPermission(skillName, {
-      force: options.yes,
+      force: !options.tui,
       nonInteractive: !process.stdin.isTTY
     });
     if (!approved) {
@@ -78,7 +78,7 @@ export async function useSkill(skillName: string, options: UseOptions = {}): Pro
   // Return execution context for script-based usage
   const scripts = await discoverSkillScripts(loc.baseDir);
   
-  const allowedField = frontmatter?.['allowed-tools'] ?? (frontmatter as any)?.allowed_tools;
+  const allowedField = frontmatter?.['allowed-tools'];
   const allowedTools = normalizeAllowedTools(allowedField);
   const model = typeof frontmatter?.model === 'string' ? frontmatter.model : undefined;
 

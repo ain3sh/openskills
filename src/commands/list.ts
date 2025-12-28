@@ -1,10 +1,10 @@
-import { findAllSkills, findSkill } from '../utils/skills.js';
+import { findAllSkills, findSkill } from '../skill/discovery.js';
 import { readFileSync } from 'fs';
-import { parseFrontmatter } from '../utils/yaml.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
 import type { SkillFrontmatter } from '../types.js';
-import { isPresentable } from '../utils/presentability.js';
-import { telemetry } from '../utils/telemetry.js';
-import { buildSkillToolDescription } from '../utils/skillToolDescription.js';
+import { isPresentable } from '../skill/presentability.js';
+import { telemetry } from '../telemetry/tracker.js';
+import { buildSkillToolDescription } from '../agent/tool-description.js';
 
 interface ListOptions {
   all?: boolean;
@@ -70,7 +70,7 @@ function listSkillsInternal(options?: ListOptions): void {
     if (!options?.all && !isPresentable(frontmatter, { includeHidden: options?.includeHidden, includeDisabled: options?.includeDisabled, requireDescription: true })) {
       continue;
     }
-    const allowedField = frontmatter?.['allowed-tools'] ?? (frontmatter as any)?.allowed_tools;
+    const allowedField = frontmatter?.['allowed-tools'];
     const allowedTools = allowedField ? normalizeToolsField(allowedField) : undefined;
 
     const pluginStatusMark =
@@ -89,8 +89,6 @@ function listSkillsInternal(options?: ListOptions): void {
       model: typeof frontmatter?.model === 'string' ? frontmatter.model : undefined,
       version: frontmatter?.version,
       license: frontmatter?.license,
-      whenToUse: (frontmatter as any)?.when_to_use ?? (frontmatter as any)?.['when-to-use'],
-      mode: frontmatter?.mode,
     });
   }
 

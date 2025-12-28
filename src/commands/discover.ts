@@ -1,10 +1,10 @@
-import { buildSkillToolDescription } from '../utils/skillToolDescription.js';
-import type { SkillToolDescriptionPayload } from '../utils/skillToolDescription.js';
-import { findAllSkills, findSkill } from '../utils/skills.js';
+import { buildSkillToolDescription } from '../agent/tool-description.js';
+import type { SkillToolDescriptionPayload } from '../agent/tool-description.js';
+import { findAllSkills, findSkill } from '../skill/discovery.js';
 import { readFileSync } from 'fs';
-import { parseFrontmatter } from '../utils/yaml.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
 import type { SkillFrontmatter } from '../types.js';
-import { isPresentable } from '../utils/presentability.js';
+import { isPresentable } from '../skill/presentability.js';
 
 export interface DiscoverOptions {
   format?: 'text' | 'xml' | 'json';

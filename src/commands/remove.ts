@@ -1,6 +1,6 @@
 import { rmSync } from 'fs';
 import { homedir } from 'os';
-import { findSkill } from '../utils/skills.js';
+import { findSkill } from '../skill/discovery.js';
 
 /**
  * Remove installed skill

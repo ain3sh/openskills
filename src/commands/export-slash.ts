@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { findSkill, findAllSkills } from '../utils/skills.js';
-import { parseFrontmatter } from '../utils/yaml.js';
+import { findSkill, findAllSkills } from '../skill/discovery.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
 import type { SkillFrontmatter } from '../types.js';
 
 export interface ExportSlashOptions {

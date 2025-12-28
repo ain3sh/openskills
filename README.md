@@ -22,12 +22,12 @@ OpenSkills is a CLI tool for managing skills for AI coding agents (Claude Code, 
 
 ### Key Features
 
-- 🚀 **Execution-First** - Skills run as isolated scripts via `openskills exec`
-- 📦 **Universal** - Works with any AI agent that can run shell commands
-- 🔄 **Progressive Disclosure** - Minimal metadata → execution context → full content
-- 🎯 **Token Optimized** - ~70 tokens per skill in discovery mode
-- 🛡️ **Secure** - Scripts run in isolated processes, no eval() or imports
-- ⚡ **Fast** - <50ms discovery, ~50ms execution overhead
+- **Execution-First** - Skills run as isolated scripts via `openskills exec`
+- **Agent-First** - Non-interactive by default, `--tui` for human interaction
+- **Universal** - Works with any AI agent that can run shell commands
+- **Progressive Disclosure** - Minimal metadata → execution context → full content
+- **Token Optimized** - ~70 tokens per skill in discovery mode
+- **Secure** - Scripts run in isolated processes, no eval() or imports
 
 ## Installation
 
@@ -40,20 +40,6 @@ curl -fsSL https://ain3sh.com/openskills/install.sh | bash
 
 **Windows:**
 Download from [releases](https://github.com/ain3sh/openskills/releases/latest) and add to PATH.
-
-### Manual Install
-
-Download the binary for your platform from [latest release](https://github.com/ain3sh/openskills/releases/latest):
-- Linux: `openskills-linux-x64`
-- macOS (Apple Silicon): `openskills-darwin-arm64`
-- macOS (Intel): `openskills-darwin-x64`
-- Windows: `openskills-win32-x64.exe`
-
-Make executable and move to PATH:
-```bash
-chmod +x openskills-*
-sudo mv openskills-* /usr/local/bin/openskills
-```
 
 ### From Source
 
@@ -76,22 +62,21 @@ openskills install anthropics/skills/slack-gif-creator
 # Install globally (~/.agent/skills/)
 openskills install anthropics/skills/mcp-builder --global
 
-# Install all skills from a repo (defaults to non-interactive)
-openskills install anthropics/skills
+# Interactive selection
+openskills install anthropics/skills --tui
 ```
 
-### 2. Use in AGENTS.md
+### 2. Sync to AGENTS.md
 
 ```bash
-# Sync skills to AGENTS.md (defaults to transclusion and non-interactive)
+# Creates .agent/SKILLS.md and adds reference to AGENTS.md (default)
 openskills sync
-```
 
-Your AGENTS.md will include:
-```markdown
-## Skills
+# Embed directly in AGENTS.md instead
+openskills sync --direct
 
-@.agent/SKILLS.md
+# Interactive skill selection
+openskills sync --tui
 ```
 
 ### 3. Execute Skill Scripts
@@ -100,86 +85,48 @@ Your AGENTS.md will include:
 # Run a script from a skill
 openskills exec slack-gif-creator templates/pulse.py
 
-# Pass arguments (use -- separator)
+# Pass arguments
 openskills exec skill-creator scripts/init_skill.py -- my-skill --path /tmp
 ```
 
 ### 4. For AI Agents
 
 ```bash
-# List available skills
+# List available skills (~70 tokens/skill)
 openskills list
 
-# Get execution context
+# Get execution context (JSON)
 openskills use slack-gif-creator
 
-# Read full skill content (prompt)
+# Read full skill prompt
 openskills load slack-gif-creator
 ```
 
 ## Commands
 
-### Core Commands
+| Command | Description |
+|---------|-------------|
+| `openskills install <source>` | Install skills from GitHub |
+| `openskills list` | List installed skills (enabled plugins only) |
+| `openskills sync` | Update AGENTS.md with skills (transclusion by default) |
+| `openskills exec <skill> <script>` | Execute a skill script |
+| `openskills use <skill>` | Get skill execution context (JSON) |
+| `openskills load <skill>` | Read full skill prompt |
+| `openskills describe [skill]` | Get detailed skill metadata |
+| `openskills suggest <query>` | Find relevant skills for a query |
+| `openskills manage` | Interactively remove skills |
+| `openskills validate [skill]` | Validate skill references |
+| `openskills generate-skills-md` | Generate .agent/SKILLS.md |
+| `openskills export-slash <skill>` | Export skill as slash command |
+| `openskills install-hooks` | Install agent hooks |
+| `openskills telemetry` | View usage statistics |
 
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `openskills install <source>` | `install-skill` | Install skills from GitHub |
-| `openskills list` | `list-skills` | List installed skills (~70 tokens/skill) |
-| `openskills sync` | `sync-skills` | Update AGENTS.md with skills |
-| `openskills exec <skill> <script>` | `execute-skill-script` | Execute a skill script |
-| `openskills use <skill>` | `use-skill` | Get skill execution context (JSON) |
-| `openskills load <skill>` | `load-skill` | Read full skill prompt |
-| `openskills install-hooks` | - | Install agent hooks & aliases |
+### Common Options
 
-### Additional Commands
-
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `openskills describe [skill]` | `describe-skill` | Get detailed skill metadata |
-| `openskills suggest <query>` | `suggest-skill` | Find relevant skills for a query |
-| `openskills manage` | - | Interactively remove skills |
-| `openskills validate [skill]` | - | Validate skill references |
-| `openskills generate-skills-md` | - | Generate .agent/SKILLS.md |
-| `openskills export-slash <skill>` | - | Export skill as slash command |
-| `openskills telemetry` | - | View usage statistics |
-
-### Command Options
-
-**Install:**
 ```bash
-openskills install anthropics/skills/skill-name
-  --global             # Install to ~/.agent/skills/
-  --tui                # Interactive selection (default: installs all)
-```
-
-**Sync:**
-```bash
-openskills sync
-  --no-transclusion    # Embed skills directly instead of referencing file
-  --tui                # Interactive selection (default: syncs all)
-```
-
-**Use:**
-```bash
-openskills use skill-name
-  --args <args>        # Optional arguments string for metadata
-  --tui                # Interactive permission prompt (default: auto-approves)
-```
-
-**Load:**
-```bash
-openskills load skill-name
-  --tui                # Interactive permission prompt (default: auto-approves)
-```
-
-**Install Hooks:**
-```bash
-# Install hooks and aliases for easy access
-openskills install-hooks
-  --agent <claude|droid>  # Target agent (default: claude)
-  --manual                # Print config for manual install
-  --global                # Install globally (default)
-  --project               # Install to project settings
+--tui          # Enable interactive mode (default: non-interactive)
+--global       # Install to ~/.agent/skills/ instead of project
+--direct       # Embed in AGENTS.md instead of transclusion (sync only)
 ```
 
 ## Progressive Disclosure
@@ -200,34 +147,13 @@ OpenSkills implements three levels of information disclosure:
   "execution": {
     "scripts": [
       { "path": "templates/pulse.py", "usage": "python /path/.../pulse.py" }
-    ],
-    "environment": { "SKILL_BASE": "/path/to/skill", "WORK_DIR": "/cwd" }
+    ]
   }
 }
 ```
 
 ### Level 3: Full Content
 Complete SKILL.md with all instructions, examples, and documentation.
-
-## Project Structure
-
-```
-your-project/
-├── .agent/
-│   ├── SKILLS.md              # Auto-generated skills list
-│   └── skills/                # Project-specific skills
-│       ├── slack-gif-creator/
-│       └── skill-creator/
-├── AGENTS.md                  # References @.agent/SKILLS.md
-└── ...
-```
-
-Skills are discovered from these locations (priority order):
-1. `./.agent/skills/` - Project (highest priority)
-2. `./.claude/skills/` - Project Claude-specific
-3. `~/.agent/skills/` - Global
-4. `~/.claude/skills/` - Global Claude-specific
-5. Built-in skills
 
 ## Creating Skills
 
@@ -261,84 +187,37 @@ This skill processes data files...
 ## Scripts
 
 - `scripts/process.py` - Main processing script
-  ```bash
-  python {baseDir}/scripts/process.py --input <file>
-  ```
 ```
 
-### Key Principle
+See [docs/creating-skills.md](docs/creating-skills.md) for the complete guide.
 
-**Skills are tools to execute, not documentation to read.**
+## Project Structure
 
-```bash
-# ✅ CORRECT - Execute scripts directly
-openskills exec my-skill scripts/process.py --input data.csv
-
-# ❌ WRONG - Don't import as modules
-import sys
-sys.path.append('/path/to/skill')
-from scripts import process  # NO!
 ```
-
-Scripts run with environment variables:
-- `SKILL_BASE` - Path to skill directory
-- `WORK_DIR` - Current working directory
-
-## AI Agent Integration
-
-For AI agents using OpenSkills:
-
-```python
-import subprocess
-import json
-
-# 1. Discover skills
-result = subprocess.run(['openskills', 'list'], capture_output=True)
-skills = json.loads(result.stdout)
-
-# 2. Get execution context when needed
-result = subprocess.run([
-    'openskills', 'use', 'slack-gif-creator'
-], capture_output=True)
-context = json.loads(result.stdout)
-
-# 3. Execute script
-script_usage = context['execution']['scripts'][0]['usage']
-subprocess.run(script_usage, shell=True)
+src/
+├── cli.ts              # Entry point
+├── types.ts            # Shared types
+├── commands/           # CLI command handlers
+├── skill/              # Core skill logic (discovery, validation, etc.)
+├── agent/              # Agent platform integration
+├── config/             # Configuration and paths
+├── marketplace/        # External skill sources (GitHub)
+└── telemetry/          # Usage tracking
 ```
-
-## Why Execution-First?
-
-Traditional approaches treat skills as documentation that agents interpret. This causes agents to try importing skill code as libraries. OpenSkills solves this by making skills **explicitly executable**:
-
-- **Security** - Process isolation prevents code injection
-- **Clarity** - Clear boundary between skill and agent code
-- **Simplicity** - No Python path management or dependency conflicts
-- **Universal** - Works with any language (Python, Bash, Node.js)
-
-## Performance
-
-- Discovery: <50ms for typical skill sets
-- Execution overhead: ~50ms per script
-- Token usage: ~70 tokens per skill
-- Build size: 115.67 KB
 
 ## Development
 
 ```bash
-# Run tests
-npm test
-
-# Build
-npm run build
-
-# Type check
-npm run typecheck
+npm install        # Install dependencies
+npm run build      # Build
+npm run typecheck  # Type check
+npm test           # Run tests (147 tests)
 ```
 
 ## Documentation
 
-- [Architecture](ARCHITECTURE.md) - Technical deep dive
+- [Architecture](docs/architecture.md) - Technical deep dive
+- [Creating Skills](docs/creating-skills.md) - Skill authoring guide
 - [Contributing](CONTRIBUTING.md) - How to contribute
 - [Changelog](CHANGELOG.md) - Version history
 
@@ -348,9 +227,7 @@ MIT - see [LICENSE](LICENSE)
 
 ## Credits
 
-Inspired by [Anthropic's Claude Skills](https://www.anthropic.com/news/skills) and their [engineering blog post](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills).
-
-Invaluable insights from [Claude Agent Skills: A First Principles Deep Dive](https://leehanchung.github.io/blogs/2025/10/26/claude-skills-deep-dive/) by Han Lee.
+Inspired by [Anthropic's Claude Skills](https://www.anthropic.com/news/skills) and the official [Claude Code Skills spec](https://code.claude.com/docs/en/skills.md).
 
 ---
 

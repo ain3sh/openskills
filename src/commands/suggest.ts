@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
-import { findAllSkills, findSkill } from '../utils/skills.js';
-import { parseFrontmatter } from '../utils/yaml.js';
+import { findAllSkills, findSkill } from '../skill/discovery.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
 import type { SkillFrontmatter } from '../types.js';
-import { isPresentable } from '../utils/presentability.js';
+import { isPresentable } from '../skill/presentability.js';
 
 // Security constants to prevent ReDoS (Regular Expression Denial of Service)
 const MAX_TOKEN_LENGTH = 64; // Max characters per search token
@@ -23,9 +23,9 @@ export function suggestSkills(query: string, options: SuggestOptions = {}): void
     }
     const aliases = toArray((frontmatter as any)?.aliases);
     const keywords = toArray((frontmatter as any)?.keywords);
-    const text = [s.name, s.description, frontmatter?.when_to_use, ...aliases, ...keywords].filter(Boolean).join('\n');
+    const text = [s.name, s.description, ...aliases, ...keywords].filter(Boolean).join('\n');
     const score = simpleScore(query, text);
-    const reasons = topMatches(query, text, ['name', 'description', 'when_to_use','aliases','keywords']);
+    const reasons = topMatches(query, text, ['name', 'description', 'aliases', 'keywords']);
     return { name: s.name, description: s.description, score, reasons, aliases, keywords };
   })
   .filter((r): r is { name: string; description: string; score: number; reasons: string[]; aliases: string[]; keywords: string[] } => !!r && r.score > 0)
@@ -70,10 +70,6 @@ function topMatches(query: string, text: string, fields: string[]): string[] {
     if (t.includes(tok)) phrases.push(`match:${tok}`);
   }
   return phrases.slice(0, 3);
-}
-
-function escapeReg(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function isWordCharCode(cp: number): boolean {

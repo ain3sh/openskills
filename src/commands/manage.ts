@@ -2,7 +2,7 @@ import { rmSync } from 'fs';
 import chalk from 'chalk';
 import { checkbox } from '@inquirer/prompts';
 import { ExitPromptError } from '@inquirer/core';
-import { findAllSkills, findSkill } from '../utils/skills.js';
+import { findAllSkills, findSkill } from '../skill/discovery.js';
 
 /**
  * Interactively manage (remove) installed skills

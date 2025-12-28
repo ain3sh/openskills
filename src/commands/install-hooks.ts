@@ -1,18 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { DEFAULT_FORMATTING, hasJsoncPath, parseJsonc, setJsoncPath } from '../utils/settings-edit.js';
-
-const ALIASES: Record<string, string> = {
-  'install-skill': 'install',
-  'list-skills': 'list-skills',
-  'sync-skills': 'sync',
-  'load-skill': 'load',
-  'use-skill': 'use',
-  'describe-skill': 'describe',
-  'execute-skill-script': 'exec',
-  'suggest-skill': 'suggest',
-};
+import { DEFAULT_FORMATTING, hasJsoncPath, parseJsonc, setJsoncPath } from '../config/settings.js';
 
 type AgentType = 'claude' | 'droid';
 
@@ -37,24 +26,11 @@ type SessionStartEntry = {
 
 const CLAUDE_SESSION_MATCHER = 'startup|resume|clear|compact';
 const DEFAULT_TIMEOUT_SECONDS = 10;
-const LEGACY_HOOK_COMMAND = 'openskills session-hook';
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-}
-
-function createAliasScripts(binDir: string, force: boolean): void {
-  console.log('Creating alias scripts...');
-  for (const [alias, cmd] of Object.entries(ALIASES)) {
-    const scriptPath = path.join(binDir, alias);
-    const content = `#!/usr/bin/env bash\nopenskills ${cmd} "$@"\n`;
-
-    if (fs.existsSync(scriptPath) && !force) continue;
-    fs.writeFileSync(scriptPath, content, { mode: 0o755 });
-  }
-  console.log(`✅ Created ${Object.keys(ALIASES).length} alias scripts in ${binDir}`);
 }
 
 function createSessionHookScript(scriptPath: string, force: boolean): void {
@@ -139,8 +115,7 @@ function normalizeExistingEntryForAgent(entry: any, agent: AgentType, hookScript
   if (Array.isArray(entry.hooks)) {
     for (const h of entry.hooks) {
       if (!h || h.type !== 'command') continue;
-      if (h.command === hookScriptPath || h.command === LEGACY_HOOK_COMMAND) {
-        h.command = hookScriptPath;
+      if (h.command === hookScriptPath) {
         if (typeof h.timeout !== 'number') h.timeout = DEFAULT_TIMEOUT_SECONDS;
         break;
       }
@@ -157,21 +132,11 @@ function upsertSessionStart(settings: any, agent: AgentType, hookScriptPath: str
   const existing = Array.isArray(next.hooks.SessionStart) ? next.hooks.SessionStart : [];
   const sessionStart: any[] = [...existing];
 
-  const idxNew = sessionStart.findIndex((e) => entryHasCommand(e, hookScriptPath));
-  const idxOld = sessionStart.findIndex((e) => entryHasCommand(e, LEGACY_HOOK_COMMAND));
+  const idx = sessionStart.findIndex((e) => entryHasCommand(e, hookScriptPath));
 
-  if (idxNew >= 0) {
+  if (idx >= 0) {
     if (force) {
-      sessionStart[idxNew] = normalizeExistingEntryForAgent(sessionStart[idxNew], agent, hookScriptPath);
-      next.hooks.SessionStart = sessionStart;
-      return { updated: next, changed: true };
-    }
-    return { updated: next, changed: false };
-  }
-
-  if (idxOld >= 0) {
-    if (force) {
-      sessionStart[idxOld] = normalizeExistingEntryForAgent(sessionStart[idxOld], agent, hookScriptPath);
+      sessionStart[idx] = normalizeExistingEntryForAgent(sessionStart[idx], agent, hookScriptPath);
       next.hooks.SessionStart = sessionStart;
       return { updated: next, changed: true };
     }
@@ -204,8 +169,6 @@ export async function installHooks(opts: InstallHooksOptions): Promise<void> {
   const homeDir = os.homedir();
   const binDir = path.join(homeDir, '.openskills', 'bin');
   ensureDir(binDir);
-
-  createAliasScripts(binDir, force);
 
   const sessionHookScriptPath = path.join(binDir, 'openskills-session-hook');
   createSessionHookScript(sessionHookScriptPath, force);
@@ -263,6 +226,5 @@ export async function installHooks(opts: InstallHooksOptions): Promise<void> {
     console.log(`✅ Added SessionStart hook to ${settingsPath} for agent ${agent}`);
   }
 
-  console.log('\nSetup complete! Restart your agent session to use the aliases:');
-  Object.keys(ALIASES).forEach((alias) => console.log(`  - ${alias}`));
+  console.log('\nSetup complete! Restart your agent session for changes to take effect.');
 }

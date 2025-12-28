@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import fs from 'node:fs';
+import fs, { PathOrFileDescriptor } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { parse } from 'jsonc-parser';
 import { installHooks } from '../../src/commands/install-hooks';
+
+type ReadFileSyncFn = (path: PathOrFileDescriptor) => string;
 
 vi.mock('node:fs');
 vi.mock('node:os');
@@ -28,16 +30,10 @@ describe('installHooks', () => {
     vi.mocked(fs.readFileSync).mockReturnValue('{}');
   });
 
-  it('should create aliases, install session hook script, and update global settings by default (claude)', async () => {
+  it('should install session hook script and update global settings by default (claude)', async () => {
     await installHooks({});
 
     expect(fs.mkdirSync).toHaveBeenCalledWith(expect.stringContaining(path.join('.openskills', 'bin')), { recursive: true });
-
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining(path.join('.openskills', 'bin', 'install-skill')),
-      expect.stringContaining('openskills install'),
-      expect.any(Object),
-    );
 
     const sessionHookScriptPath = path.join(homeDir, '.openskills', 'bin', 'openskills-session-hook');
     const sessionHookCall = getWriteCall(sessionHookScriptPath);
@@ -120,11 +116,11 @@ describe('installHooks', () => {
       return false;
     });
 
-    vi.mocked(fs.readFileSync).mockImplementation((p: fs.PathLike) => {
+    vi.mocked(fs.readFileSync).mockImplementation(((p: PathOrFileDescriptor) => {
       const str = p.toString();
       if (str === settingsPath) return JSON.stringify(existingSettings);
       return '{}';
-    });
+    }) as ReadFileSyncFn);
 
     await installHooks({});
 
@@ -146,7 +142,7 @@ describe('installHooks', () => {
     const jsonc = `// Factory CLI Settings\n{\n  \"commandAllowlist\": [\n    \"ls\"\n  ],\n  // Commands that will be automatically allowed without confirmation.\n  \"hooks\": {\n    \"SessionStart\": []\n  }\n}`;
 
     vi.mocked(fs.existsSync).mockImplementation((p: fs.PathLike) => p.toString() === settingsPath);
-    vi.mocked(fs.readFileSync).mockImplementation((p: fs.PathLike) => (p.toString() === settingsPath ? jsonc : '{}'));
+    vi.mocked(fs.readFileSync).mockImplementation(((p: PathOrFileDescriptor) => (p.toString() === settingsPath ? jsonc : '{}')) as ReadFileSyncFn);
 
     await installHooks({ agent: 'droid' });
 
@@ -164,7 +160,7 @@ describe('installHooks', () => {
     const settingsPath = path.join(homeDir, '.factory', 'settings.json');
 
     vi.mocked(fs.existsSync).mockImplementation((p: fs.PathLike) => p.toString() === settingsPath);
-    vi.mocked(fs.readFileSync).mockImplementation((p: fs.PathLike) => (p.toString() === settingsPath ? 'not json' : '{}'));
+    vi.mocked(fs.readFileSync).mockImplementation(((p: PathOrFileDescriptor) => (p.toString() === settingsPath ? 'not json' : '{}')) as ReadFileSyncFn);
 
     await installHooks({ agent: 'droid', force: true });
 
@@ -191,11 +187,11 @@ describe('installHooks', () => {
       return false;
     });
 
-    vi.mocked(fs.readFileSync).mockImplementation((p: fs.PathLike) => {
+    vi.mocked(fs.readFileSync).mockImplementation(((p: PathOrFileDescriptor) => {
       const str = p.toString();
       if (str === settingsPath) return settingsText;
       return '{}';
-    });
+    }) as ReadFileSyncFn);
 
     vi.mocked(fs.writeFileSync).mockImplementation((p: any, data: any) => {
       const str = p.toString();

@@ -1,7 +1,7 @@
 import { select, input, confirm } from '@inquirer/prompts';
-import { findAllSkills, findSkill } from '../utils/skills.js';
+import { findAllSkills, findSkill } from '../skill/discovery.js';
 import { readFileSync } from 'fs';
-import { parseFrontmatter } from '../utils/yaml.js';
+import { parseFrontmatter } from '../skill/frontmatter.js';
 import type { SkillFrontmatter } from '../types.js';
 import { installSkill } from './install.js';
 import { removeSkill } from './remove.js';
@@ -40,7 +40,7 @@ export async function runInteractiveShell(): Promise<void> {
           await removeSkillFlow();
           break;
         case 'sync':
-          await syncAgentsMd({ yes: await confirm({ message: 'Sync all skills without prompt?', default: true }) });
+          await syncAgentsMd({ tui: true });
           await pause('Synced AGENTS.md. Press enter to continue.');
           break;
         case 'telemetry':
@@ -99,7 +99,7 @@ async function showSkillDetails(skillName: string): Promise<void> {
   if (frontmatter?.version) console.log(`Version: ${frontmatter.version}`);
   if (frontmatter?.license) console.log(`License: ${frontmatter.license}`);
   if (frontmatter?.model) console.log(`Model: ${frontmatter.model}`);
-  const allowedField = frontmatter?.['allowed-tools'] ?? (frontmatter as any)?.allowed_tools;
+  const allowedField = frontmatter?.['allowed-tools'];
   if (allowedField) console.log(`Allowed tools: ${Array.isArray(allowedField) ? allowedField.join(', ') : String(allowedField)}`);
   console.log('\n--- Prompt Content ---\n');
   console.log(body.trim());

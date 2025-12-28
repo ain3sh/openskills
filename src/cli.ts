@@ -42,51 +42,36 @@ program
   });
 
 program
-  .command('list-skills')
-  .description('List installed skills for agents (enabled plugins only when configured)')
-  .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
-  .option('--include-hidden', 'Include hidden skills', false)
-  .option('--include-disabled', 'Include disabled skills', false)
-  .action(async (opts) => {
-    const { listSkills } = await import('./commands/list.js');
-    listSkills({ ...opts, enabledOnly: true });
-  });
-
-program
   .command('install <source>')
-  .alias('install-skill')
   .description('Install skill from GitHub or Git URL')
   .option('-g, --global', 'Install globally (default: project install to .agent/skills)')
   .option('--tui', 'Use interactive selection (default: false, installs all by default)', false)
   .action(async (source, opts) => {
     const { installSkill } = await import('./commands/install.js');
-    await installSkill(source, { ...opts, yes: !opts.tui });
+    await installSkill(source, opts);
   });
 
 program
   .command('load <skill-name>')
-  .alias('load-skill')
   .description('Load skill to stdout (for AI agents)')
   .option('--tui', 'Use interactive permission prompts (default: false, auto-approves)', false)
   .action(async (name, opts) => {
     const { loadSkill } = await import('./commands/load.js');
-    await loadSkill(name, { yes: !opts.tui });
+    await loadSkill(name, { tui: opts.tui });
   });
 
 program
   .command('use <skill-name>')
-  .alias('use-skill')
   .description('Use a skill and emit strict execution payload (JSON)')
   .option('-a, --args <args>', 'Optional arguments string for metadata display')
   .option('--tui', 'Use interactive permission prompts (default: false, auto-approves)', false)
   .action(async (name, opts) => {
     const { useSkill } = await import('./commands/use.js');
-    await useSkill(name, { args: opts.args, yes: !opts.tui });
+    await useSkill(name, { args: opts.args, tui: opts.tui });
   });
 
 program
   .command('exec <skill-name> <script-path> [args...]')
-  .alias('execute-skill-script')
   .description('Execute a skill script directly')
   .action(async (skillName, scriptPath, args) => {
     const { execSkillScript } = await import('./commands/exec.js');
@@ -95,14 +80,13 @@ program
 
 program
   .command('sync')
-  .alias('sync-skills')
-  .description('Update AGENTS.md with installed skills (interactive, pre-selects current state)')
-  .option('--tui', 'Use interactive selection (default: false, syncs all by default)', false)
-  .option('--no-transclusion', 'Disable transclusion mode (default: uses transclusion)')
+  .description('Sync skills to AGENTS.md via transclusion (creates .agent/SKILLS.md)')
+  .option('--tui', 'Interactive skill selection')
+  .option('--direct', 'Embed skills directly in AGENTS.md instead of transclusion')
   .option('--transclusion-pattern <pattern>', 'Custom transclusion pattern (default: @.agent/SKILLS.md)')
   .action(async (opts) => {
     const { syncAgentsMd } = await import('./commands/sync.js');
-    await syncAgentsMd({ ...opts, yes: !opts.tui, transclusion: opts.transclusion !== false });
+    await syncAgentsMd(opts);
   });
 
 program
@@ -135,7 +119,6 @@ program
 
 program
   .command('describe [skill-name]')
-  .alias('describe-skill')
   .description('Describe installed skills in JSON (optionally a single skill)')
   .action(async (name) => {
     const { describeSkills } = await import('./commands/describe.js');
@@ -154,7 +137,6 @@ program
 
 program
   .command('suggest <query>')
-  .alias('suggest-skill')
   .description('Suggest relevant skills for a user query')
   .option('-l, --limit <n>', 'Max results', (v) => parseInt(v, 10), 5)
   .option('--all', 'Do not filter by presentability (include hidden/disabled/undocumented)')
@@ -174,17 +156,6 @@ program
   .action(async (opts) => {
     const { toolDescription } = await import('./commands/tool-description.js');
     toolDescription(opts);
-  });
-
-program
-  .command('skill-prompt')
-  .description('Emit a meta-tool prompt snippet for presenting and using Skills')
-  .option('--all', 'Include hidden/unlisted/disabled and those lacking descriptions', false)
-  .option('--include-hidden', 'Include hidden skills', false)
-  .option('--include-disabled', 'Include disabled skills', false)
-  .action(async (opts) => {
-    const { skillPrompt } = await import('./commands/skill-prompt.js');
-    skillPrompt(opts);
   });
 
 program
@@ -241,14 +212,6 @@ program
   .action(async (opts) => {
     const { installHooks } = await import('./commands/install-hooks.js');
     await installHooks(opts);
-  });
-
-program
-  .command('session-hook', { hidden: true })
-  .description('Internal hook for Claude Code session start')
-  .action(async () => {
-    const { sessionHook } = await import('./commands/session-hook.js');
-    await sessionHook();
   });
 
 // Wrap in async IIFE for CJS compatibility (SEA binary requires CJS format)

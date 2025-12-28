@@ -1,57 +1,18 @@
 # OpenSkills Documentation
 
-## User Documentation
+## Guides
 
-- [Main README](../README.md) - Getting started and overview
-- [Architecture](../ARCHITECTURE.md) - System design and implementation
+- **[Architecture](architecture.md)** - Technical deep dive into the execution-first design
+- **[Creating Skills](creating-skills.md)** - How to author skills for AI agents
+
+## Quick Links
+
+- [Main README](../README.md) - Installation and quick start
 - [Contributing](../CONTRIBUTING.md) - How to contribute
-- [Security](../SECURITY.md) - Security model and best practices
 - [Changelog](../CHANGELOG.md) - Version history
+- [Security](../SECURITY.md) - Security policy
 
-## Technical Documentation
+## External Resources
 
-### Core Concepts
-
-- [Execution Architecture](technical/OPENSKILLS_EXECUTION.md) - How the execution-first model works
-- [Progressive Disclosure](technical/PROGRESSIVE_DISCLOSURE_OPTIMIZATION.md) - Token optimization strategy
-- [Performance Analysis](technical/PERFORMANCE_OPTIMIZATION.md) - Performance characteristics
-
-### API Reference
-
-See inline JSDoc comments in source files:
-- [`src/commands/`](../src/commands/) - CLI command implementations
-- [`src/utils/`](../src/utils/) - Utility functions
-- [`src/types.ts`](../src/types.ts) - TypeScript type definitions
-
-## Skill Development
-
-### Creating Skills
-
-1. **Skill Structure** - See [README#creating-skills](../README.md#creating-skills)
-2. **SKILL.md Format** - Frontmatter and content requirements
-3. **Script Guidelines** - Writing executable scripts
-4. **Testing Skills** - Using `openskills exec` for testing
-
-### Example Skills
-
-Browse the [Anthropic Skills Repository](https://github.com/anthropics/skills) for examples:
-- `skill-creator` - Template for new skills
-- `slack-gif-creator` - Complex skill with multiple scripts
-- `mcp-builder` - Documentation-heavy skill
-
-## Resources
-
-### External Links
-
-- [Anthropic Skills Blog Post](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
-- [Claude Agent Skills: A First Principles Deep Dive](https://leehanchung.github.io/blogs/2025/10/26/claude-skills-deep-dive/)
-- [Anthropic Skills Repository](https://github.com/anthropics/skills)
-
-### Community
-
-- GitHub Issues: [Bug Reports & Features](https://github.com/ain3sh/openskills/issues)
-- GitHub Discussions: [Questions & Ideas](https://github.com/ain3sh/openskills/discussions)
-
----
-
-Need help? Start with the [README](../README.md) or open a [discussion](https://github.com/ain3sh/openskills/discussions).
+- [Claude Code Skills Spec](https://code.claude.com/docs/en/skills.md) - Official specification
+- [Anthropic Skills Blog](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) - Design rationale

@@ -39,14 +39,10 @@ export interface SkillLocation {
 
 export interface InstallOptions {
   global?: boolean;
-  yes?: boolean;
+  tui?: boolean;
 }
 
-export interface SkillMetadata {
-  name: string;
-  description: string;
-  context?: string;
-}
+
 
 export interface ExecutionPayload {
   skill: {
@@ -73,51 +69,37 @@ export interface ExecutionPayload {
   };
 }
 
-// Parsed SKILL.md frontmatter (loosely based on blog spec)
 /**
- * Complete SkillFrontmatter interface per blog spec
- * Supports both naming conventions (hyphenated and underscored)
+ * SkillFrontmatter per official Claude Code Skills spec
+ * @see https://code.claude.com/docs/en/skills.md
  */
 export interface SkillFrontmatter {
-  // Required fields
+  // Required fields (per spec)
   name: string;
   description: string;
   
-  // Discovery & matching
-  when_to_use?: string;
-  'when-to-use'?: string;
-  
-  // Tool permissions
-  allowed_tools?: string[] | string;
+  // Optional fields (per spec)
   'allowed-tools'?: string[] | string;
+  model?: string;
   
-  // Metadata
+  // Metadata extensions
   version?: string;
   license?: string;
   author?: string;
   'created-at'?: string;
   'updated-at'?: string;
   
-  // Execution context
-  model?: string;
-  disable_model_invocation?: boolean;
-  'disable-model-invocation'?: boolean;
-  mode?: string | boolean;
-  reasoning_effort?: string;
-  'reasoning-effort'?: string;
-  tokens?: any;
-  
-  // Discovery & search
+  // Discovery extensions
   aliases?: string[] | string;
   keywords?: string[] | string;
   tags?: string[] | string;
   
-  // Visibility control
+  // Visibility control extensions
   enabled?: boolean;
   hidden?: boolean;
   unlisted?: boolean;
   
-  // Context & attachments
+  // Context extensions
   context?: string;
   'additional-context'?: string;
   notes?: string;
@@ -126,45 +108,19 @@ export interface SkillFrontmatter {
   [key: string]: unknown;
 }
 
-export interface ContextModifier {
-  allowedTools?: string[];
-  model?: string;
-  disableModelInvocation?: boolean;
-  reasoningEffort?: 'off' | 'none' | 'low' | 'medium' | 'high';
-  mode?: string | boolean;
-  tokens?: any;
-  normalizedPermissions?: {
-    tools?: string[];
-    shellAllowPatterns?: string[];
-    shellDenyPatterns?: string[];
-  }
-}
+
 
 export type AttachmentType = 'diagnostic' | 'reference' | 'context';
-
-export interface NewMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string | { type: 'command_permissions'; allowedTools?: string[]; model?: string | null };
-  isMeta?: boolean;
-  attachmentType?: AttachmentType;
-  metadata?: Record<string, unknown>;
-}
 
 /**
  * Attachment message mirrored in both JSON output and injected messages
  */
-export interface AttachmentMessage extends Omit<NewMessage, 'content' | 'role' | 'attachmentType' | 'isMeta'> {
+export interface AttachmentMessage {
   role: 'user';
   isMeta: true;
   content: string;
   attachmentType: AttachmentType;
-}
-
-export interface ReadJsonOutput {
-  skill: { name: string; baseDir: string; version?: string };
-  newMessages: NewMessage[];
-  contextModifier?: ContextModifier;
-  attachments?: AttachmentMessage[];  // Optional: included when relevant
+  metadata?: Record<string, unknown>;
 }
 
 export interface ToolDescriptionJson {
@@ -177,15 +133,13 @@ export interface ToolDescriptionJson {
 }
 
 /**
- * Skill error codes per blog spec
- * Used for structured error reporting in validation
+ * Skill error codes for validation
  */
 export enum SkillErrorCode {
   EMPTY_COMMAND = 1,           // No skill name provided
   UNKNOWN_SKILL = 2,           // Skill not found in any source
   LOAD_FAILED = 3,             // File read/parse error
-  INVOCATION_DISABLED = 4,     // disable-model-invocation: true
-  NOT_PROMPT_BASED = 5         // Missing description (not prompt-based)
+  NOT_PROMPT_BASED = 4         // Missing description (not prompt-based)
 }
 
 /**

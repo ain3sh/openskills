@@ -17,9 +17,9 @@ If you have ideas about how this could be implemented, share them here.
 
 **Compatibility Consideration**
 Please confirm:
-- [ ] This feature maintains compatibility with Anthropic's SKILL.md specification
+- [ ] This feature maintains compatibility with the Claude Code Skills specification
 - [ ] This feature works across multiple AI agents (not just Claude Code)
-- [ ] This feature aligns with the simplicity goal (.claude/skills only)
+- [ ] This feature follows the agent-first principle (non-interactive by default)
 
 **Alternatives Considered**
 Have you considered any alternative solutions or workarounds?

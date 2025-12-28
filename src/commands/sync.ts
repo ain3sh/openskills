@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import chalk from 'chalk';
-import { checkbox, confirm } from '@inquirer/prompts';
+import { checkbox } from '@inquirer/prompts';
 import { ExitPromptError } from '@inquirer/core';
-import { findAllSkills } from '../utils/skills.js';
+import { findAllSkills } from '../skill/discovery.js';
 import { 
   generateSkillsXml, 
   replaceSkillsSection, 
@@ -10,28 +10,30 @@ import {
   removeSkillsSection,
   detectTransclusionPattern,
   appendTransclusionReference
-} from '../utils/agents-md.js';
+} from '../agent/agents-md.js';
 import { generateSkillsMd } from './generate-skills-md.js';
 import type { Skill } from '../types.js';
-import { loadConfig } from '../utils/config.js';
+import { loadConfig } from '../config/loader.js';
 
 export interface SyncOptions {
-  yes?: boolean;
-  transclusion?: boolean;
+  tui?: boolean;
+  direct?: boolean;
   transclusionPattern?: string;
 }
 
 /**
  * Sync installed skills to AGENTS.md
  * 
- * Supports two modes:
- * 1. Direct injection (default) - embeds skills XML directly in AGENTS.md
- * 2. Transclusion mode - creates SKILLS.md and adds @SKILLS.md reference
+ * Agent-first: non-interactive and transclusion mode by default.
+ * - Default: Creates .agent/SKILLS.md and adds reference to AGENTS.md
+ * - --direct: Embeds skills XML directly in AGENTS.md
+ * - --tui: Interactive skill selection
  */
 export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
+  // Create AGENTS.md if it doesn't exist
   if (!existsSync('AGENTS.md')) {
-    console.log(chalk.yellow('No AGENTS.md to update'));
-    return;
+    writeFileSync('AGENTS.md', '# AGENTS.md\n\nProject instructions for AI agents.\n');
+    console.log(chalk.green('Created AGENTS.md'));
   }
 
   let skills = findAllSkills();
@@ -44,40 +46,18 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
 
   // Load config for default behavior
   const config = loadConfig();
-  let useTransclusion = options.transclusion ?? config.sync?.mode === 'transclusion';
   const transclusionPattern = options.transclusionPattern ?? config.sync?.transclusionPattern ?? '@.agent/SKILLS.md';
   
-  // Check if AGENTS.md already uses transclusion
+  // Transclusion is default, --direct overrides
   const content = readFileSync('AGENTS.md', 'utf-8');
   const existingTransclusion = detectTransclusionPattern(content);
-  
-  // If transclusion mode not specified and no existing pattern, ask user
-  if (options.transclusion === undefined && !existingTransclusion && !options.yes) {
-    try {
-      useTransclusion = await confirm({
-        message: 'Use transclusion mode? (Creates separate SKILLS.md file)',
-        default: false
-      });
-    } catch (error) {
-      if (error instanceof ExitPromptError) {
-        console.log(chalk.yellow('\nCancelled by user'));
-        process.exit(0);
-      }
-      throw error;
-    }
-  } else if (existingTransclusion) {
-    // If transclusion already exists, maintain that mode
-    useTransclusion = true;
-  }
+  const useTransclusion = !options.direct || existingTransclusion;
 
-  // Interactive mode by default (unless -y flag)
-  if (!options.yes) {
+  // Non-interactive by default, --tui enables interactive mode
+  if (options.tui) {
     try {
-      // Parse what's currently in AGENTS.md
-      const content = readFileSync('AGENTS.md', 'utf-8');
       const currentSkills = parseCurrentSkills(content);
 
-      // Sort: project first
       const sorted = skills.sort((a, b) => {
         if (a.location !== b.location) {
           return a.location === 'project' ? -1 : 1;
@@ -89,7 +69,6 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
         name: `${chalk.bold(skill.name.padEnd(25))} ${skill.location === 'project' ? chalk.blue('(project)') : chalk.dim('(global)')}`,
         value: skill.name,
         description: skill.description.slice(0, 70),
-        // Pre-select if currently in AGENTS.md, otherwise default to project skills
         checked: currentSkills.includes(skill.name) || (currentSkills.length === 0 && skill.location === 'project'),
       }));
 
@@ -100,19 +79,16 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
       });
 
       if (selected.length === 0) {
-        // User unchecked everything - remove skills section
-        const content = readFileSync('AGENTS.md', 'utf-8');
         const updated = removeSkillsSection(content);
         writeFileSync('AGENTS.md', updated);
         console.log(chalk.green('✅ Removed all skills from AGENTS.md'));
         return;
       }
 
-      // Filter skills to selected ones
       skills = skills.filter((s) => selected.includes(s.name));
     } catch (error) {
       if (error instanceof ExitPromptError) {
-        console.log(chalk.yellow('\n\nCancelled by user'));
+        console.log(chalk.yellow('\nCancelled by user'));
         process.exit(0);
       }
       throw error;

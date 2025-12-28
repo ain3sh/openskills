@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractRelativeRefs } from '../../src/utils/refs.js';
-import { normalizePermissions } from '../../src/utils/permissions.js';
+import { extractRelativeRefs } from '../../src/skill/refs.js';
 
 /**
  * ReDoS (Regular Expression Denial of Service) Security Tests
@@ -12,8 +11,31 @@ import { normalizePermissions } from '../../src/utils/permissions.js';
  * an unbounded regex vulnerability.
  */
 
-describe('ReDoS Protection', () => {
-  describe('extractRelativeRefs', () => {
+describe('extractRelativeRefs', () => {
+  describe('basic functionality', () => {
+    it('finds references/scripts/assets paths', () => {
+      const body = `See references/foo.pdf and scripts/run.sh. Image: assets/img/logo.png`;
+      const refs = extractRelativeRefs(body);
+      expect(refs).toContain('references/foo.pdf');
+      expect(refs).toContain('scripts/run.sh');
+      expect(refs).toContain('assets/img/logo.png');
+    });
+  });
+
+  describe('security bounds', () => {
+    it('ignores overly long path segments and excessive nesting', () => {
+      const longSeg = 'a'.repeat(200);
+      const many = Array.from({ length: 20 }, () => longSeg).join('/');
+      const malicious = ` see ( ${'references/' + many} ) and also scripts/${longSeg}`;
+      const ok = 'assets/img/logo.png';
+      const body = `${malicious} plus ${ok}`;
+      const refs = extractRelativeRefs(body);
+      expect(refs).toContain('assets/img/logo.png');
+      expect(refs.find((r) => r.includes(longSeg))).toBeUndefined();
+    });
+  });
+
+  describe('ReDoS protection', () => {
     it('should handle normal paths quickly', () => {
       const start = Date.now();
       const md = 'Use `scripts/init.py` and `references/guide.md`';
@@ -72,70 +94,6 @@ describe('ReDoS Protection', () => {
       
       expect(elapsed).toBeLessThan(100);
       expect(refs).toHaveLength(1);
-    });
-  });
-
-  describe('normalizePermissions', () => {
-    it('should handle normal tool names quickly', () => {
-      const start = Date.now();
-      const perms = normalizePermissions({
-        allowed: ['Read', 'Write', 'Bash(git:*)']
-      });
-      const elapsed = Date.now() - start;
-      
-      expect(perms.tools).toContain('Read');
-      expect(perms.tools).toContain('Edit'); // Write→Edit normalized
-      expect(perms.tools).toContain('Execute'); // Bash→Execute normalized
-      expect(perms.shellAllowPatterns).toContain('git:*');
-      expect(elapsed).toBeLessThan(100);
-    });
-
-    it('should reject tool names > 50 chars', () => {
-      const longToolName = 'a'.repeat(100);
-      const perms = normalizePermissions({
-        allowed: [longToolName]
-      });
-      
-      // Should not match the regex, falls back to adding trimmed string
-      expect(perms.tools).toContain(longToolName);
-    });
-
-    it('should NOT hang on malicious tool name (unbounded outer group attack)', () => {
-      const start = Date.now();
-      // Attack vector: Tool name with 10,000+ word characters
-      const malicious = 'a'.repeat(10000);
-      const perms = normalizePermissions({
-        allowed: [malicious]
-      });
-      const elapsed = Date.now() - start;
-      
-      // Should complete quickly (< 100ms) even with malicious input
-      expect(elapsed).toBeLessThan(100);
-      // Should still add to tools (fallback when regex doesn't match)
-      expect(perms.tools).toHaveLength(1);
-    });
-
-    it('should handle maximum valid tool name (50 chars)', () => {
-      const start = Date.now();
-      const maxToolName = 'a'.repeat(50);
-      const perms = normalizePermissions({
-        allowed: [`${maxToolName}(pattern)`]
-      });
-      const elapsed = Date.now() - start;
-      
-      expect(elapsed).toBeLessThan(100);
-      expect(perms.tools).toHaveLength(1);
-      expect(perms.shellAllowPatterns).toContain('pattern');
-    });
-
-    it('should reject scoped patterns > 1000 chars', () => {
-      const longPattern = 'a'.repeat(1500);
-      const perms = normalizePermissions({
-        allowed: [`Bash(${longPattern})`]
-      });
-      
-      // Regex won't match due to pattern length limit
-      expect(perms.tools).toHaveLength(1);
     });
   });
 });
