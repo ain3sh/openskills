@@ -49,7 +49,7 @@ function createAliasScripts(binDir: string, force: boolean): void {
   console.log('Creating alias scripts...');
   for (const [alias, cmd] of Object.entries(ALIASES)) {
     const scriptPath = path.join(binDir, alias);
-    const content = `#!/bin/sh\nopenskills ${cmd} "$@"\n`;
+    const content = `#!/usr/bin/env bash\nopenskills ${cmd} "$@"\n`;
 
     if (fs.existsSync(scriptPath) && !force) continue;
     fs.writeFileSync(scriptPath, content, { mode: 0o755 });
@@ -60,7 +60,7 @@ function createAliasScripts(binDir: string, force: boolean): void {
 function createSessionHookScript(scriptPath: string, force: boolean): void {
   if (fs.existsSync(scriptPath) && !force) return;
 
-  const content = `#!/bin/sh
+  const content = `#!/usr/bin/env bash
 
 # Ensure ~/.openskills/bin is on PATH for the current session
 # Works for both Claude Code (CLAUDE_ENV_FILE) and Droid/Factory (DROID_ENV_FILE)

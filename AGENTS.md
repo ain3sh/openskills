@@ -6,7 +6,7 @@ OpenSkills is a CLI tool that brings Anthropic's Claude Skills system to all AI 
 
 ## Core Architecture
 
-- **Skills Discovery**: Multi-source loading from `.openskills/`, `.agent/`, `.claude/` directories
+- **Skills Discovery**: Multi-source loading from `.agent/`, `.claude/` directories
 - **Progressive Disclosure**: Minimal metadata → Full SKILL.md → Bundled resources
 - **Two Modes**: Direct injection (embed in AGENTS.md) or Transclusion (`@SKILLS.md` reference)
 - **Format Parity**: Same SKILL.md format, frontmatter fields, and resource bundling as Claude Code
