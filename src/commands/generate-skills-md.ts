@@ -102,10 +102,10 @@ function generateMarkdownFormat(skills: Skill[], timestamp: string): string {
     '## How to use skills',
     '',
     '```bash',
-    'openskills read <skill-name>',
+    'load-skill <skill-name>',
     '```',
     '',
-    'The skill content will load with detailed instructions on how to complete the task.',
+    'The skill content will load with detailed instructions.',
     '',
     '## Skills List',
     ''

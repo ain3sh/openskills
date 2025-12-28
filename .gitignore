@@ -67,3 +67,4 @@ env/
 venv/
 .venv
 AGENT_REMINDERS.md
+.rewind/

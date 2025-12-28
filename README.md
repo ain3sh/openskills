@@ -102,6 +102,23 @@ openskills use slack-gif-creator
 openskills load slack-gif-creator
 ```
 
+### 5. Agent Aliases (Optional)
+
+After running `openskills install-hooks`, intuitive command aliases are added to PATH:
+
+```bash
+list-skills              # openskills list
+load-skill <name>        # openskills load
+use-skill <name>         # openskills use
+install-skill <source>   # openskills install
+sync-skills              # openskills sync
+describe-skill [name]    # openskills describe
+suggest-skill <query>    # openskills suggest
+execute-skill-script     # openskills exec
+```
+
+These are easier for agents to discover and use intuitively.
+
 ## Commands
 
 | Command | Description |

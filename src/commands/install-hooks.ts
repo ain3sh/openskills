@@ -3,6 +3,17 @@ import path from 'node:path';
 import os from 'node:os';
 import { DEFAULT_FORMATTING, hasJsoncPath, parseJsonc, setJsoncPath } from '../config/settings.js';
 
+const ALIASES: Record<string, string> = {
+  'install-skill': 'install',
+  'list-skills': 'list',
+  'sync-skills': 'sync',
+  'load-skill': 'load',
+  'use-skill': 'use',
+  'describe-skill': 'describe',
+  'execute-skill-script': 'exec',
+  'suggest-skill': 'suggest',
+};
+
 type AgentType = 'claude' | 'droid';
 
 interface InstallHooksOptions {
@@ -33,8 +44,15 @@ function ensureDir(dir: string): void {
   }
 }
 
-function createSessionHookScript(scriptPath: string, force: boolean): void {
-  if (fs.existsSync(scriptPath) && !force) return;
+function createAliasScripts(binDir: string): void {
+  for (const [alias, cmd] of Object.entries(ALIASES)) {
+    const scriptPath = path.join(binDir, alias);
+    const content = `#!/usr/bin/env bash\nopenskills ${cmd} "$@"\n`;
+    fs.writeFileSync(scriptPath, content, { mode: 0o755 });
+  }
+}
+
+function createSessionHookScript(scriptPath: string): void {
 
   const content = `#!/usr/bin/env bash
 
@@ -170,8 +188,11 @@ export async function installHooks(opts: InstallHooksOptions): Promise<void> {
   const binDir = path.join(homeDir, '.openskills', 'bin');
   ensureDir(binDir);
 
+  // Create/update alias wrapper scripts (load-skill, install-skill, etc.)
+  createAliasScripts(binDir);
+
   const sessionHookScriptPath = path.join(binDir, 'openskills-session-hook');
-  createSessionHookScript(sessionHookScriptPath, force);
+  createSessionHookScript(sessionHookScriptPath);
 
   const { settingsPath, configDirName } = resolveSettingsPath(agent, isGlobal);
   ensureDir(path.dirname(settingsPath));
@@ -226,5 +247,6 @@ export async function installHooks(opts: InstallHooksOptions): Promise<void> {
     console.log(`✅ Added SessionStart hook to ${settingsPath} for agent ${agent}`);
   }
 
-  console.log('\nSetup complete! Restart your agent session for changes to take effect.');
+  console.log('\nSetup complete! Restart your agent session to use the aliases:');
+  Object.keys(ALIASES).forEach((alias) => console.log(`  - ${alias}`));
 }

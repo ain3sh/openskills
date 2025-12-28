@@ -91,7 +91,9 @@ tests/
 
 1. **Agent-first**: Use `tui?: boolean` option, not `yes?: boolean`. Default is non-interactive.
 2. **Transclusion default**: `sync` creates `.agent/SKILLS.md` by default, `--direct` embeds inline.
-3. **No legacy aliases**: Commands are `install`, `load`, `use`, `sync` (not `install-skill`, etc.)
+3. **Agent aliases**: After `openskills install-hooks`, these shortcuts are available:
+   - `install-skill`, `list-skills`, `load-skill`, `use-skill`, `sync-skills`
+   - `describe-skill`, `suggest-skill`, `execute-skill-script`
 4. **Official spec only**: SKILL.md frontmatter follows [Claude Code Skills spec](https://code.claude.com/docs/en/skills.md):
    - Required: `name`, `description`
    - Optional: `allowed-tools`, `model`, `version`, `license`, etc.
@@ -114,3 +116,9 @@ Skills are discovered from these locations (highest priority first):
 2. Run `npm test` to verify all 147 tests pass
 3. Follow existing code patterns in the relevant directory
 4. Update tests in the corresponding `tests/` subdirectory
+
+---
+
+## Skills
+
+@.agent/SKILLS.md
