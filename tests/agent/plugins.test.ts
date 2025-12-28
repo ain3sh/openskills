@@ -8,7 +8,7 @@ function writeJson(path: string, value: unknown) {
   writeFileSync(path, JSON.stringify(value, null, 2));
 }
 
-describe('discoverClaudePluginSkillSources (manifest-driven)', () => {
+describe('discoverClaudePluginSkillSources (cache-based)', () => {
   let homeDir: string;
   let cwd: string;
 
@@ -24,40 +24,22 @@ describe('discoverClaudePluginSkillSources (manifest-driven)', () => {
     rmSync(cwd, { recursive: true, force: true });
   });
 
-  it('discovers single-skill directories declared via marketplace.json skills[]', () => {
+  it('discovers skills from cache directory structure', () => {
     const claudePluginsDir = join(homeDir, '.claude', 'plugins');
-    const marketplaceRoot = join(claudePluginsDir, 'marketplaces', 'mkt1');
+    // Cache structure: cache/{marketplace}/{plugin}/{version}/
+    const pluginCache = join(claudePluginsDir, 'cache', 'mkt1', 'example-skills', '1.0.0');
+    const skillsDir = join(pluginCache, 'skills');
 
-    mkdirSync(join(marketplaceRoot, '.claude-plugin'), { recursive: true });
-    mkdirSync(join(claudePluginsDir, 'marketplaces'), { recursive: true });
-
-    // Skill directories (each is a single skill with SKILL.md at root)
-    mkdirSync(join(marketplaceRoot, 'skill-a'), { recursive: true });
-    mkdirSync(join(marketplaceRoot, 'skill-b'), { recursive: true });
-    writeFileSync(join(marketplaceRoot, 'skill-a', 'SKILL.md'), '---\ndescription: A\n---\n');
-    writeFileSync(join(marketplaceRoot, 'skill-b', 'SKILL.md'), '---\ndescription: B\n---\n');
-
-    writeJson(join(claudePluginsDir, 'known_marketplaces.json'), {
-      mkt1: { installLocation: marketplaceRoot },
-    });
-
-    writeJson(join(marketplaceRoot, '.claude-plugin', 'marketplace.json'), {
-      name: 'mkt1',
-      plugins: [
-        {
-          name: 'example-skills',
-          source: './',
-          skills: ['./skill-a', './skill-b'],
-        },
-      ],
-    });
+    mkdirSync(join(skillsDir, 'skill-a'), { recursive: true });
+    mkdirSync(join(skillsDir, 'skill-b'), { recursive: true });
+    writeFileSync(join(skillsDir, 'skill-a', 'SKILL.md'), '---\ndescription: A\n---\n');
+    writeFileSync(join(skillsDir, 'skill-b', 'SKILL.md'), '---\ndescription: B\n---\n');
 
     writeJson(join(claudePluginsDir, 'installed_plugins.json'), {
       version: 1,
       plugins: {
         'example-skills@mkt1': {
-          version: 'unknown',
-          installPath: marketplaceRoot,
+          version: '1.0.0',
         },
       },
     });
@@ -69,51 +51,28 @@ describe('discoverClaudePluginSkillSources (manifest-driven)', () => {
     });
 
     const sources = discoverClaudePluginSkillSources({ homeDir, cwd });
-    expect(sources).toHaveLength(2);
-
-    for (const s of sources) {
-      expect(s.type).toBe('plugin');
-      expect(s.pluginId).toBe('example-skills@mkt1');
-      expect(s.pluginEnabled).toBe(true);
-      expect(s.layout).toBe('single');
-    }
-
-    const paths = sources.map((s) => s.path);
-    expect(paths).toContain(join(marketplaceRoot, 'skill-a'));
-    expect(paths).toContain(join(marketplaceRoot, 'skill-b'));
+    expect(sources).toHaveLength(1);
+    expect(sources[0].type).toBe('plugin');
+    expect(sources[0].pluginId).toBe('example-skills@mkt1');
+    expect(sources[0].pluginEnabled).toBe(true);
+    expect(sources[0].layout).toBe('collection');
+    expect(sources[0].path).toBe(skillsDir);
   });
 
-  it('discovers collection plugins via plugin source -> pluginRoot/skills', () => {
+  it('discovers collection plugins from cache with disabled status', () => {
     const claudePluginsDir = join(homeDir, '.claude', 'plugins');
-    const marketplaceRoot = join(claudePluginsDir, 'marketplaces', 'mkt1');
-    const pluginRoot = join(marketplaceRoot, 'plugins', 'my-plugin');
-    const skillsDir = join(pluginRoot, 'skills');
+    const pluginCache = join(claudePluginsDir, 'cache', 'mkt1', 'my-plugin', '1.0.0');
+    const skillsDir = join(pluginCache, 'skills');
     const skillX = join(skillsDir, 'x');
 
-    mkdirSync(join(marketplaceRoot, '.claude-plugin'), { recursive: true });
     mkdirSync(skillX, { recursive: true });
     writeFileSync(join(skillX, 'SKILL.md'), '---\ndescription: X\n---\n');
-
-    writeJson(join(claudePluginsDir, 'known_marketplaces.json'), {
-      mkt1: { installLocation: marketplaceRoot },
-    });
-
-    writeJson(join(marketplaceRoot, '.claude-plugin', 'marketplace.json'), {
-      name: 'mkt1',
-      plugins: [
-        {
-          name: 'my-plugin',
-          source: './plugins/my-plugin',
-        },
-      ],
-    });
 
     writeJson(join(claudePluginsDir, 'installed_plugins.json'), {
       version: 1,
       plugins: {
         'my-plugin@mkt1': {
           version: '1.0.0',
-          installPath: pluginRoot,
         },
       },
     });
@@ -134,35 +93,18 @@ describe('discoverClaudePluginSkillSources (manifest-driven)', () => {
 
   it('leaves pluginEnabled undefined when enabledPlugins is not configured', () => {
     const claudePluginsDir = join(homeDir, '.claude', 'plugins');
-    const marketplaceRoot = join(claudePluginsDir, 'marketplaces', 'mkt1');
-    const pluginRoot = join(marketplaceRoot, 'plugins', 'my-plugin');
-    const skillsDir = join(pluginRoot, 'skills');
+    const pluginCache = join(claudePluginsDir, 'cache', 'mkt1', 'my-plugin', '1.0.0');
+    const skillsDir = join(pluginCache, 'skills');
     const skillX = join(skillsDir, 'x');
 
-    mkdirSync(join(marketplaceRoot, '.claude-plugin'), { recursive: true });
     mkdirSync(skillX, { recursive: true });
     writeFileSync(join(skillX, 'SKILL.md'), '---\ndescription: X\n---\n');
-
-    writeJson(join(claudePluginsDir, 'known_marketplaces.json'), {
-      mkt1: { installLocation: marketplaceRoot },
-    });
-
-    writeJson(join(marketplaceRoot, '.claude-plugin', 'marketplace.json'), {
-      name: 'mkt1',
-      plugins: [
-        {
-          name: 'my-plugin',
-          source: './plugins/my-plugin',
-        },
-      ],
-    });
 
     writeJson(join(claudePluginsDir, 'installed_plugins.json'), {
       version: 1,
       plugins: {
         'my-plugin@mkt1': {
           version: '1.0.0',
-          installPath: pluginRoot,
         },
       },
     });
@@ -170,5 +112,47 @@ describe('discoverClaudePluginSkillSources (manifest-driven)', () => {
     const sources = discoverClaudePluginSkillSources({ homeDir, cwd });
     expect(sources).toHaveLength(1);
     expect(sources[0].pluginEnabled).toBeUndefined();
+  });
+
+  it('selects latest semver version when multiple versions exist', () => {
+    const claudePluginsDir = join(homeDir, '.claude', 'plugins');
+    const cacheBase = join(claudePluginsDir, 'cache', 'mkt1', 'my-plugin');
+
+    // Create multiple version directories
+    mkdirSync(join(cacheBase, '1.0.0', 'skills', 'old'), { recursive: true });
+    mkdirSync(join(cacheBase, '2.1.0', 'skills', 'new'), { recursive: true });
+    mkdirSync(join(cacheBase, '1.5.0', 'skills', 'mid'), { recursive: true });
+    writeFileSync(join(cacheBase, '1.0.0', 'skills', 'old', 'SKILL.md'), '---\ndescription: old\n---\n');
+    writeFileSync(join(cacheBase, '2.1.0', 'skills', 'new', 'SKILL.md'), '---\ndescription: new\n---\n');
+    writeFileSync(join(cacheBase, '1.5.0', 'skills', 'mid', 'SKILL.md'), '---\ndescription: mid\n---\n');
+
+    writeJson(join(claudePluginsDir, 'installed_plugins.json'), {
+      version: 1,
+      plugins: { 'my-plugin@mkt1': {} },
+    });
+
+    const sources = discoverClaudePluginSkillSources({ homeDir, cwd });
+    expect(sources).toHaveLength(1);
+    // Should pick 2.1.0 as latest
+    expect(sources[0].path).toBe(join(cacheBase, '2.1.0', 'skills'));
+  });
+
+  it('prefers semver versions over commit hashes', () => {
+    const claudePluginsDir = join(homeDir, '.claude', 'plugins');
+    const cacheBase = join(claudePluginsDir, 'cache', 'mkt1', 'my-plugin');
+
+    mkdirSync(join(cacheBase, 'abc123def', 'skills', 'hash'), { recursive: true });
+    mkdirSync(join(cacheBase, '1.0.0', 'skills', 'semver'), { recursive: true });
+    writeFileSync(join(cacheBase, 'abc123def', 'skills', 'hash', 'SKILL.md'), '---\ndescription: hash\n---\n');
+    writeFileSync(join(cacheBase, '1.0.0', 'skills', 'semver', 'SKILL.md'), '---\ndescription: semver\n---\n');
+
+    writeJson(join(claudePluginsDir, 'installed_plugins.json'), {
+      version: 1,
+      plugins: { 'my-plugin@mkt1': {} },
+    });
+
+    const sources = discoverClaudePluginSkillSources({ homeDir, cwd });
+    expect(sources).toHaveLength(1);
+    expect(sources[0].path).toBe(join(cacheBase, '1.0.0', 'skills'));
   });
 });

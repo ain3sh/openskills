@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import type { SkillSource } from '../types.js';
@@ -18,23 +18,6 @@ interface InstalledPluginsFile {
   >;
 }
 
-interface KnownMarketplacesFile {
-  [marketplace: string]: {
-    installLocation?: string;
-    lastUpdated?: string;
-    source?: unknown;
-  };
-}
-
-interface MarketplaceManifest {
-  name?: string;
-  plugins?: Array<{
-    name: string;
-    source?: string;
-    skills?: string[];
-  }>;
-}
-
 function safeReadJson<T>(path: string): T | null {
   if (!existsSync(path)) return null;
   try {
@@ -50,8 +33,38 @@ function splitPluginKey(pluginKey: string): { pluginName: string; marketplace: s
   return { pluginName: pluginKey.slice(0, at), marketplace: pluginKey.slice(at + 1) };
 }
 
-function normalizeRelativePath(p: string): string {
-  return p.startsWith('./') ? p.slice(2) : p;
+function findLatestVersionDir(cacheBase: string): string | null {
+  if (!existsSync(cacheBase)) return null;
+  try {
+    const entries = readdirSync(cacheBase, { withFileTypes: true });
+    const dirs = entries.filter(e => e.isDirectory()).map(e => e.name);
+    if (dirs.length === 0) return null;
+    if (dirs.length === 1) return join(cacheBase, dirs[0]);
+
+    // Sort: semver first (descending), then lexical, 'unknown' last
+    dirs.sort((a, b) => {
+      const aIsSemver = /^\d+\.\d+\.\d+/.test(a);
+      const bIsSemver = /^\d+\.\d+\.\d+/.test(b);
+
+      if (aIsSemver && bIsSemver) {
+        const aParts = a.split('.').map(Number);
+        const bParts = b.split('.').map(Number);
+        for (let i = 0; i < 3; i++) {
+          if (aParts[i] !== bParts[i]) return bParts[i] - aParts[i];
+        }
+        return 0;
+      }
+      if (aIsSemver) return -1;
+      if (bIsSemver) return 1;
+      if (a === 'unknown') return 1;
+      if (b === 'unknown') return -1;
+      return b.localeCompare(a);
+    });
+
+    return join(cacheBase, dirs[0]);
+  } catch {
+    return null;
+  }
 }
 
 function readClaudeEnabledPlugins(options: { homeDir: string; cwd: string }):
@@ -83,33 +96,6 @@ function readClaudeEnabledPlugins(options: { homeDir: string; cwd: string }):
   return { hasConfig: true, enabled };
 }
 
-function getMarketplaceManifestCached(options: {
-  knownMarketplaces: KnownMarketplacesFile;
-  marketplaceName: string;
-  cache: Map<string, { marketplaceRoot: string; manifest: MarketplaceManifest } | null>;
-}): { marketplaceRoot: string; manifest: MarketplaceManifest } | null {
-  const cached = options.cache.get(options.marketplaceName);
-  if (cached !== undefined) return cached;
-
-  const known = options.knownMarketplaces[options.marketplaceName];
-  const marketplaceRoot = known?.installLocation;
-  if (!marketplaceRoot) {
-    options.cache.set(options.marketplaceName, null);
-    return null;
-  }
-
-  const manifestPath = join(marketplaceRoot, '.claude-plugin', 'marketplace.json');
-  const manifest = safeReadJson<MarketplaceManifest>(manifestPath);
-  if (!manifest) {
-    options.cache.set(options.marketplaceName, null);
-    return null;
-  }
-
-  const loaded = { marketplaceRoot, manifest };
-  options.cache.set(options.marketplaceName, loaded);
-  return loaded;
-}
-
 export function discoverClaudePluginSkillSources(options?: {
   homeDir?: string;
   cwd?: string;
@@ -121,68 +107,29 @@ export function discoverClaudePluginSkillSources(options?: {
   const installed = safeReadJson<InstalledPluginsFile>(join(claudePluginsDir, 'installed_plugins.json'));
   if (!installed?.plugins) return [];
 
-  const knownMarketplaces =
-    safeReadJson<KnownMarketplacesFile>(join(claudePluginsDir, 'known_marketplaces.json')) ?? {};
-
-  const marketplaceManifestCache = new Map<string, { marketplaceRoot: string; manifest: MarketplaceManifest } | null>();
-
   const enabledPlugins = readClaudeEnabledPlugins({ homeDir, cwd });
 
   const sources: SkillSource[] = [];
   let priority = 7;
 
-  for (const [pluginKey, meta] of Object.entries(installed.plugins)) {
+  for (const [pluginKey] of Object.entries(installed.plugins)) {
     const split = splitPluginKey(pluginKey);
     if (!split) continue;
 
     const pluginEnabled = enabledPlugins.hasConfig ? enabledPlugins.enabled.has(pluginKey) : undefined;
-    const installPath = typeof meta?.installPath === 'string' ? meta.installPath : '';
 
-    // Fast-path: most installed plugins have an installPath that is already the plugin root.
-    // Avoid parsing large marketplace manifests unless we need them.
-    const fastCandidateRoots: string[] = [];
-    if (installPath) {
-      const skillsDir = join(installPath, 'skills');
-      if (existsSync(skillsDir)) fastCandidateRoots.push(skillsDir);
-      if (existsSync(join(installPath, 'SKILL.md'))) fastCandidateRoots.push(installPath);
-    }
+    // Derive cache path from plugin key
+    const cacheBase = join(claudePluginsDir, 'cache', split.marketplace, split.pluginName);
+    const pluginRoot = findLatestVersionDir(cacheBase);
+    if (!pluginRoot) continue;
 
     const candidateRoots: string[] = [];
-
-    // Prefer installPath-derived candidates when present.
-    candidateRoots.push(...fastCandidateRoots);
-
-    // Fallback: consult marketplace manifest for cases like anthropic-agent-skills where
-    // installPath points at the marketplace root and skills live elsewhere.
-    if (candidateRoots.length === 0) {
-      const marketplaceData = getMarketplaceManifestCached({
-        knownMarketplaces,
-        marketplaceName: split.marketplace,
-        cache: marketplaceManifestCache,
-      });
-
-      const manifestPlugins = marketplaceData?.manifest?.plugins;
-      const pluginEntry = Array.isArray(manifestPlugins)
-        ? manifestPlugins.find((p) => p?.name === split.pluginName)
-        : undefined;
-
-      if (marketplaceData && pluginEntry) {
-        if (pluginEntry.skills && Array.isArray(pluginEntry.skills)) {
-          for (const rel of pluginEntry.skills) {
-            if (typeof rel !== 'string') continue;
-            candidateRoots.push(join(marketplaceData.marketplaceRoot, normalizeRelativePath(rel)));
-          }
-        } else if (typeof pluginEntry.source === 'string') {
-          const pluginRoot = join(marketplaceData.marketplaceRoot, normalizeRelativePath(pluginEntry.source));
-          const skillsDir = join(pluginRoot, 'skills');
-          if (existsSync(skillsDir)) candidateRoots.push(skillsDir);
-          if (existsSync(join(pluginRoot, 'SKILL.md'))) candidateRoots.push(pluginRoot);
-        }
-      }
-    }
+    const skillsDir = join(pluginRoot, 'skills');
+    if (existsSync(skillsDir)) candidateRoots.push(skillsDir);
+    if (existsSync(join(pluginRoot, 'SKILL.md'))) candidateRoots.push(pluginRoot);
 
     for (const root of candidateRoots) {
-      if (!root || !existsSync(root)) continue;
+      if (!existsSync(root)) continue;
 
       const isSingle = existsSync(join(root, 'SKILL.md'));
 
@@ -197,7 +144,7 @@ export function discoverClaudePluginSkillSources(options?: {
     }
   }
 
-  // De-dupe identical paths (can happen when we add both pluginRoot and pluginRoot/skills).
+  // De-dupe identical paths
   const seenPaths = new Set<string>();
   return sources.filter((s) => {
     if (seenPaths.has(s.path)) return false;
