@@ -46,11 +46,17 @@ describe('installHooks', () => {
     expect(settingsCall).toBeDefined();
     const writtenSettings = JSON.parse((settingsCall![1] as string).toString());
     const entry = writtenSettings.hooks.SessionStart[0];
+    const syncEntry = writtenSettings.hooks.SessionStart[1];
 
-    expect(entry.matcher).toBe('startup|resume|clear|compact');
+    expect(entry.matcher).toBe('startup');
     expect(entry.hooks[0].type).toBe('command');
     expect(entry.hooks[0].command).toBe(sessionHookScriptPath);
     expect(entry.hooks[0].timeout).toBe(10);
+
+    expect(syncEntry.matcher).toBeUndefined();
+    expect(syncEntry.hooks[0].type).toBe('command');
+    expect(syncEntry.hooks[0].command).toContain('sync');
+    expect(syncEntry.hooks[0].timeout).toBe(10);
   });
 
   it('should support droid agent and write to ~/.factory/settings.json', async () => {
@@ -58,17 +64,29 @@ describe('installHooks', () => {
 
     const sessionHookScriptPath = path.join(homeDir, '.openskills', 'bin', 'openskills-session-hook');
 
+    const sessionHookCall = getWriteCall(sessionHookScriptPath);
+    expect(sessionHookCall).toBeDefined();
+    const sessionHookText = (sessionHookCall![1] as string).toString();
+    expect(sessionHookText).toContain('ENV_FILE="${CLAUDE_ENV_FILE:-}"');
+    expect(sessionHookText).toContain('# ENV_FILE="${DROID_ENV_FILE:-}"');
+
     const settingsPath = path.join(homeDir, '.factory', 'settings.json');
     const settingsCall = getWriteCall(settingsPath);
 
     expect(settingsCall).toBeDefined();
     const writtenSettings = JSON.parse((settingsCall![1] as string).toString());
     const entry = writtenSettings.hooks.SessionStart[0];
+    const syncEntry = writtenSettings.hooks.SessionStart[1];
 
-    expect(entry.matcher).toBeUndefined();
+    expect(entry.matcher).toBe('startup');
     expect(entry.hooks[0].type).toBe('command');
     expect(entry.hooks[0].command).toBe(sessionHookScriptPath);
     expect(entry.hooks[0].timeout).toBe(10);
+
+    expect(syncEntry.matcher).toBeUndefined();
+    expect(syncEntry.hooks[0].type).toBe('command');
+    expect(syncEntry.hooks[0].command).toContain('sync');
+    expect(syncEntry.hooks[0].timeout).toBe(10);
   });
 
   it('should update project settings when requested', async () => {
@@ -132,9 +150,10 @@ describe('installHooks', () => {
     expect(written.otherKey).toBe('keep-me');
     expect(written.hooks.PreToolUse[0].hooks[0].command).toBe('echo pre');
 
-    expect(written.hooks.SessionStart).toHaveLength(2);
+    expect(written.hooks.SessionStart).toHaveLength(3);
     expect(written.hooks.SessionStart[0].hooks[0].command).toBe('echo hello');
     expect(written.hooks.SessionStart[1].hooks[0].command).toBe(path.join(homeDir, '.openskills', 'bin', 'openskills-session-hook'));
+    expect(written.hooks.SessionStart[2].hooks[0].command).toContain('sync');
   });
 
   it('should parse and update Factory JSONC with in-body comments (droid)', async () => {
@@ -154,6 +173,7 @@ describe('installHooks', () => {
 
     const parsed = parse(writtenText) as any;
     expect(parsed.hooks.SessionStart[0].hooks[0].command).toBe(path.join(homeDir, '.openskills', 'bin', 'openskills-session-hook'));
+    expect(parsed.hooks.SessionStart[1].hooks[0].command).toContain('sync');
   });
 
   it('should allow force overwrite on invalid JSON and write a backup', async () => {
@@ -208,5 +228,8 @@ describe('installHooks', () => {
     const entries = parsed.hooks.SessionStart;
     const matches = entries.filter((e: any) => e?.hooks?.some((h: any) => h?.command === sessionHookScriptPath));
     expect(matches).toHaveLength(1);
+
+    const syncMatches = entries.filter((e: any) => e?.hooks?.some((h: any) => typeof h?.command === 'string' && h.command.includes('sync')));
+    expect(syncMatches).toHaveLength(1);
   });
 });

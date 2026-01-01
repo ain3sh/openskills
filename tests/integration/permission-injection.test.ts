@@ -9,6 +9,7 @@ const CLI = join(process.cwd(), 'dist', 'cli.js');
 function runCli(command: 'load' | 'use', skill: string, cwd: string) {
   const output = execSync(`node ${CLI} ${command} ${skill}`, {
     cwd,
+    env: { ...process.env, HOME: cwd },
     encoding: 'utf8'
   });
   if (command === 'use') {
@@ -45,7 +46,7 @@ describe('Permission Injection', () => {
     expect(output).toContain('<!-- baseDir: ');
   });
 
-  it('parses allowed-tools into permissions', () => {
+  it('parses allowed-tools into permissions', { timeout: 15000 }, () => {
     createSkill(
       skillsDir,
       'tool-perm',

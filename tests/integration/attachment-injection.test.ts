@@ -9,6 +9,7 @@ const CLI = join(process.cwd(), 'dist', 'cli.js');
 function run(command: 'load' | 'use', skill: string, cwd: string, extra = '') {
   const output = execSync(`node ${CLI} ${command} ${skill} ${extra}`.trim(), {
     cwd,
+    env: { ...process.env, HOME: cwd },
     encoding: 'utf8'
   });
   if (command === 'use') {
@@ -50,7 +51,7 @@ describe('Attachment Injection', () => {
     expect(output).toContain('<!-- baseDir: ');
   });
 
-  it('injects file reference attachments when resources detected', () => {
+  it('injects file reference attachments when resources detected', { timeout: 15000 }, () => {
     writeSkill(
       skillsDir,
       'file-attachments',

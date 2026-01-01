@@ -7,11 +7,18 @@ describe('load command', () => {
   const testDir = join(tmpdir(), `openskills-load-test-${Date.now()}`);
   const skillsDir = join(testDir, '.claude', 'skills');
   let originalCwd: string;
+  let originalHome: string | undefined;
 
   beforeAll(() => {
     originalCwd = process.cwd();
+    originalHome = process.env.HOME;
+
     mkdirSync(testDir, { recursive: true });
     process.chdir(testDir);
+
+    // Make this test hermetic: plugin discovery reads from ~/.claude/plugins.
+    // Point HOME at our temp dir so local developer plugin installs can't slow/hang tests.
+    process.env.HOME = testDir;
 
     // Create a complete skill
     const completeSkillDir = join(skillsDir, 'complete-skill');
@@ -50,6 +57,11 @@ This skill has only required fields.
 
   afterAll(() => {
     process.chdir(originalCwd);
+    if (originalHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = originalHome;
+    }
     try {
       rmSync(testDir, { recursive: true, force: true });
     } catch {

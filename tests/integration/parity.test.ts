@@ -9,6 +9,7 @@ const CLI = join(process.cwd(), 'dist', 'cli.js');
 function run(command: 'load' | 'use', skill: string, cwd: string, extra = '') {
   const output = execSync(`node ${CLI} ${command} ${skill} ${extra}`.trim(), {
     cwd,
+    env: { ...process.env, HOME: cwd },
     encoding: 'utf8'
   });
   if (command === 'use') {

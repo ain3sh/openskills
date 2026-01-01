@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { DEFAULT_FORMATTING, hasJsoncPath, parseJsonc, setJsoncPath } from '../config/settings.js';
+import { getAgentRuntimeVars, type AgentCli } from '../agent/runtime-vars.js';
 
 const ALIASES: Record<string, string> = {
   'install-skill': 'install',
@@ -14,7 +15,7 @@ const ALIASES: Record<string, string> = {
   'suggest-skill': 'suggest',
 };
 
-type AgentType = 'claude' | 'droid';
+type AgentType = AgentCli;
 
 interface InstallHooksOptions {
   global?: boolean;
@@ -35,8 +36,10 @@ type SessionStartEntry = {
   hooks: CommandHook[];
 };
 
-const CLAUDE_SESSION_MATCHER = 'startup|resume|clear|compact';
+const CLAUDE_SESSION_MATCHER = 'startup';
+const DROID_SESSION_MATCHER = 'startup';
 const DEFAULT_TIMEOUT_SECONDS = 10;
+const SYNC_TIMEOUT_SECONDS = 10;
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
@@ -82,16 +85,23 @@ function createAliasScripts(binDir: string): void {
   }
 }
 
-function createSessionHookScript(scriptPath: string): void {
+function createSessionHookScript(scriptPath: string, agent: AgentType): void {
+  const { AGENT_ENV_FILE } = getAgentRuntimeVars(agent);
+
+  const envFileSelector =
+    agent === 'droid'
+      ? `# Factory Droid currently exposes the env-file path via $${AGENT_ENV_FILE} in some environments.
+ENV_FILE="\${${AGENT_ENV_FILE}:-}"
+# ENV_FILE="\${DROID_ENV_FILE:-}"`
+      : `ENV_FILE="\${${AGENT_ENV_FILE}:-}"`;
 
   const content = `#!/usr/bin/env bash
 
 # Ensure ~/.openskills/bin is on PATH for the current session
-# Works for both Claude Code (CLAUDE_ENV_FILE) and Droid/Factory (DROID_ENV_FILE)
 
 set -e
 
-ENV_FILE="\${CLAUDE_ENV_FILE:-\${DROID_ENV_FILE:-}}"
+${envFileSelector}
 
 if [ -z "$ENV_FILE" ]; then
   exit 0
@@ -131,7 +141,7 @@ function resolveSettingsPath(agent: AgentType, isGlobal: boolean): { settingsPat
   };
 }
 
-function buildSessionStartEntry(agent: AgentType, hookScriptPath: string): SessionStartEntry {
+function buildSessionHookSessionStartEntry(agent: AgentType, hookScriptPath: string): SessionStartEntry {
   const hook: CommandHook = {
     type: 'command',
     command: hookScriptPath,
@@ -142,8 +152,22 @@ function buildSessionStartEntry(agent: AgentType, hookScriptPath: string): Sessi
     return { matcher: CLAUDE_SESSION_MATCHER, hooks: [hook] };
   }
 
+  return { matcher: DROID_SESSION_MATCHER, hooks: [hook] };
+}
+
+function buildSyncSessionStartEntry(): SessionStartEntry {
+  const openskillsPath = getOpenskillsPath();
+  const hook: CommandHook = {
+    type: 'command',
+    command: `"${openskillsPath}" sync`,
+    timeout: SYNC_TIMEOUT_SECONDS,
+  };
+
+  // No matcher: run on all SessionStart events.
   return { hooks: [hook] };
 }
+
+type SessionStartEntryKind = 'sessionHook' | 'sync';
 
 function entryHasCommand(entry: unknown, command: string): boolean {
   const e = entry as any;
@@ -151,11 +175,11 @@ function entryHasCommand(entry: unknown, command: string): boolean {
   return e.hooks.some((h: any) => h && h.type === 'command' && h.command === command);
 }
 
-function normalizeExistingEntryForAgent(entry: any, agent: AgentType, hookScriptPath: string): any {
+function normalizeExistingEntryForAgent(entry: any, agent: AgentType, kind: SessionStartEntryKind, hookCommand: string): any {
   if (!entry || typeof entry !== 'object') return entry;
 
-  if (agent === 'claude') {
-    entry.matcher = CLAUDE_SESSION_MATCHER;
+  if (kind === 'sessionHook') {
+    entry.matcher = agent === 'claude' ? CLAUDE_SESSION_MATCHER : DROID_SESSION_MATCHER;
   } else {
     delete entry.matcher;
   }
@@ -163,8 +187,12 @@ function normalizeExistingEntryForAgent(entry: any, agent: AgentType, hookScript
   if (Array.isArray(entry.hooks)) {
     for (const h of entry.hooks) {
       if (!h || h.type !== 'command') continue;
-      if (h.command === hookScriptPath) {
-        if (typeof h.timeout !== 'number') h.timeout = DEFAULT_TIMEOUT_SECONDS;
+      if (h.command === hookCommand) {
+        if (kind === 'sessionHook') {
+          if (typeof h.timeout !== 'number') h.timeout = DEFAULT_TIMEOUT_SECONDS;
+        } else {
+          if (typeof h.timeout !== 'number') h.timeout = SYNC_TIMEOUT_SECONDS;
+        }
         break;
       }
     }
@@ -180,20 +208,32 @@ function upsertSessionStart(settings: any, agent: AgentType, hookScriptPath: str
   const existing = Array.isArray(next.hooks.SessionStart) ? next.hooks.SessionStart : [];
   const sessionStart: any[] = [...existing];
 
-  const idx = sessionStart.findIndex((e) => entryHasCommand(e, hookScriptPath));
+  const syncEntry = buildSyncSessionStartEntry();
+  const syncCommand = syncEntry.hooks[0]?.command;
 
-  if (idx >= 0) {
-    if (force) {
-      sessionStart[idx] = normalizeExistingEntryForAgent(sessionStart[idx], agent, hookScriptPath);
-      next.hooks.SessionStart = sessionStart;
-      return { updated: next, changed: true };
+  let changed = false;
+
+  const ensureEntry = (kind: SessionStartEntryKind, command: string, entryBuilder: () => SessionStartEntry): void => {
+    const idx = sessionStart.findIndex((e) => entryHasCommand(e, command));
+    if (idx >= 0) {
+      if (force) {
+        sessionStart[idx] = normalizeExistingEntryForAgent(sessionStart[idx], agent, kind, command);
+        changed = true;
+      }
+      return;
     }
-    return { updated: next, changed: false };
+
+    sessionStart.push(entryBuilder());
+    changed = true;
+  };
+
+  ensureEntry('sessionHook', hookScriptPath, () => buildSessionHookSessionStartEntry(agent, hookScriptPath));
+  if (syncCommand) {
+    ensureEntry('sync', syncCommand, () => syncEntry);
   }
 
-  sessionStart.push(buildSessionStartEntry(agent, hookScriptPath));
   next.hooks.SessionStart = sessionStart;
-  return { updated: next, changed: true };
+  return { updated: next, changed };
 }
 
 function hasExplicitFlag(flagLong: string, flagShort: string): boolean {
@@ -222,12 +262,12 @@ export async function installHooks(opts: InstallHooksOptions): Promise<void> {
   createAliasScripts(binDir);
 
   const sessionHookScriptPath = path.join(binDir, 'openskills-session-hook');
-  createSessionHookScript(sessionHookScriptPath);
+  createSessionHookScript(sessionHookScriptPath, agent);
 
   const { settingsPath, configDirName } = resolveSettingsPath(agent, isGlobal);
   ensureDir(path.dirname(settingsPath));
 
-  const hookJson = { hooks: { SessionStart: [buildSessionStartEntry(agent, sessionHookScriptPath)] } };
+  const hookJson = { hooks: { SessionStart: [buildSessionHookSessionStartEntry(agent, sessionHookScriptPath), buildSyncSessionStartEntry()] } };
 
   if (opts.manual) {
     console.log('\n📋 Manual Configuration');
