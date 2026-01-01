@@ -156,10 +156,9 @@ function buildSessionHookSessionStartEntry(agent: AgentType, hookScriptPath: str
 }
 
 function buildSyncSessionStartEntry(): SessionStartEntry {
-  const openskillsPath = getOpenskillsPath();
   const hook: CommandHook = {
     type: 'command',
-    command: `"${openskillsPath}" sync`,
+    command: 'openskills sync',
     timeout: SYNC_TIMEOUT_SECONDS,
   };
 
