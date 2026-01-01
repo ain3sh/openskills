@@ -38,7 +38,9 @@ describe('installHooks', () => {
     const sessionHookScriptPath = path.join(homeDir, '.openskills', 'bin', 'openskills-session-hook');
     const sessionHookCall = getWriteCall(sessionHookScriptPath);
     expect(sessionHookCall).toBeDefined();
-    expect((sessionHookCall![1] as string).toString()).toContain('CLAUDE_ENV_FILE');
+    const sessionHookText = (sessionHookCall![1] as string).toString();
+    expect(sessionHookText).toContain('CLAUDE_ENV_FILE');
+    expect(sessionHookText).toContain('export PATH="%s:%s"');
 
     const settingsPath = path.join(homeDir, '.claude', 'settings.json');
     const settingsCall = getWriteCall(settingsPath);
@@ -69,6 +71,7 @@ describe('installHooks', () => {
     const sessionHookText = (sessionHookCall![1] as string).toString();
     expect(sessionHookText).toContain('ENV_FILE="${CLAUDE_ENV_FILE:-}"');
     expect(sessionHookText).toContain('# ENV_FILE="${DROID_ENV_FILE:-}"');
+    expect(sessionHookText).toContain('export PATH="%s:%s"');
 
     const settingsPath = path.join(homeDir, '.factory', 'settings.json');
     const settingsCall = getWriteCall(settingsPath);

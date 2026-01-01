@@ -116,7 +116,13 @@ if command -v grep >/dev/null 2>&1; then
   fi
 fi
 
-printf '\\nexport PATH="%s:\${PATH:-/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}"\\n' "$BIN_DIR" >> "$ENV_FILE"
+current_path="\${PATH:-/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}"
+# Escape any literal double-quotes so the emitted line remains valid.
+safe_path="\${current_path//\"/\\\"}"
+
+# IMPORTANT: The session env-file may be *parsed* rather than shell-sourced.
+# Avoid emitting \${PATH:-...} which would not be expanded by a parser.
+printf '\\nexport PATH="%s:%s"\\n' "$BIN_DIR" "$safe_path" >> "$ENV_FILE"
 
 exit 0
 `;
