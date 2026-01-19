@@ -30,7 +30,7 @@ describe('Attachment Injection', () => {
 
   beforeEach(() => {
     tempDir = join(tmpdir(), `openskills-attach-${Date.now()}`);
-    skillsDir = join(tempDir, '.agent', 'skills');
+    skillsDir = join(tempDir, '.agents', 'skills');
     mkdirSync(skillsDir, { recursive: true });
   });
 

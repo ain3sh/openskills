@@ -25,7 +25,7 @@ export interface SyncOptions {
  * Sync installed skills to AGENTS.md
  * 
  * Agent-first: non-interactive and transclusion mode by default.
- * - Default: Creates .agent/SKILLS.md and adds reference to AGENTS.md
+ * - Default: Creates .agents/SKILLS.md and adds reference to AGENTS.md
  * - --direct: Embeds skills XML directly in AGENTS.md
  * - --tui: Interactive skill selection
  */
@@ -46,7 +46,7 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
 
   // Load config for default behavior
   const config = loadConfig();
-  const transclusionPattern = options.transclusionPattern ?? config.sync?.transclusionPattern ?? '@.agent/SKILLS.md';
+  const transclusionPattern = options.transclusionPattern ?? config.sync?.transclusionPattern ?? '@.agents/SKILLS.md';
   
   // Transclusion is default, --direct overrides
   const content = readFileSync('AGENTS.md', 'utf-8');
@@ -100,7 +100,7 @@ export async function syncAgentsMd(options: SyncOptions = {}): Promise<void> {
     // Generate SKILLS.md file
     await generateSkillsMd({
       format: 'xml',
-      output: '.agent/SKILLS.md',
+      output: '.agents/SKILLS.md',
       force: true
     });
     

@@ -56,10 +56,10 @@ npm link
 ### 1. Install Skills
 
 ```bash
-# Install to project (.agent/skills/)
+# Install to project (.agents/skills/)
 openskills install anthropics/skills/slack-gif-creator
 
-# Install globally (~/.agent/skills/)
+# Install globally (~/.agents/skills/)
 openskills install anthropics/skills/mcp-builder --global
 
 # Interactive selection
@@ -69,7 +69,7 @@ openskills install anthropics/skills --tui
 ### 2. Sync to AGENTS.md
 
 ```bash
-# Creates .agent/SKILLS.md and adds reference to AGENTS.md (default)
+# Creates .agents/SKILLS.md and adds reference to AGENTS.md (default)
 openskills sync
 
 # Embed directly in AGENTS.md instead
@@ -133,7 +133,7 @@ These are easier for agents to discover and use intuitively.
 | `openskills suggest <query>` | Find relevant skills for a query |
 | `openskills manage` | Interactively remove skills |
 | `openskills validate [skill]` | Validate skill references |
-| `openskills generate-skills-md` | Generate .agent/SKILLS.md |
+| `openskills generate-skills-md` | Generate .agents/SKILLS.md |
 | `openskills export-slash <skill>` | Export skill as slash command |
 | `openskills install-hooks` | Install agent hooks |
 | `openskills telemetry` | View usage statistics |
@@ -142,7 +142,7 @@ These are easier for agents to discover and use intuitively.
 
 ```bash
 --tui          # Enable interactive mode (default: non-interactive)
---global       # Install to ~/.agent/skills/ instead of project
+--global       # Install to ~/.agents/skills/ instead of project
 --direct       # Embed in AGENTS.md instead of transclusion (sync only)
 ```
 

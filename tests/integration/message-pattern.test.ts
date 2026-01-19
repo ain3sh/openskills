@@ -10,7 +10,7 @@ describe('Two-Message Pattern', { timeout: 10000 }, () => {
   beforeEach(() => {
     tempDir = join(tmpdir(), `openskills-test-${Date.now()}`);
     mkdirSync(tempDir, { recursive: true });
-    mkdirSync(join(tempDir, '.agent', 'skills'), { recursive: true });
+    mkdirSync(join(tempDir, '.agents', 'skills'), { recursive: true });
   });
   
   afterEach(() => {
@@ -19,7 +19,7 @@ describe('Two-Message Pattern', { timeout: 10000 }, () => {
 
   it('outputs exactly 2 messages when no permissions/attachments', () => {
     // Create test skill with NO allowed-tools, NO model
-    const skillDir = join(tempDir, '.agent', 'skills', 'test-minimal');
+    const skillDir = join(tempDir, '.agents', 'skills', 'test-minimal');
     mkdirSync(skillDir, { recursive: true });
     
     const testSkill = `---
@@ -48,7 +48,7 @@ Test content for minimal skill`;
   
   it('outputs prompt text without extra metadata wrappers', () => {
     // Test skill WITH allowed-tools
-    const skillDir = join(tempDir, '.agent', 'skills', 'test-permissions');
+    const skillDir = join(tempDir, '.agents', 'skills', 'test-permissions');
     mkdirSync(skillDir, { recursive: true });
     
     const testSkill = `---
@@ -76,7 +76,7 @@ Test content with permissions`;
   });
   
   it('does not output model overrides in text mode', () => {
-    const skillDir = join(tempDir, '.agent', 'skills', 'test-model');
+    const skillDir = join(tempDir, '.agents', 'skills', 'test-model');
     mkdirSync(skillDir, { recursive: true });
     
     const testSkill = `---
@@ -100,7 +100,7 @@ Test content with model override`;
   });
   
   it('load (text) and use (json) provide consistent baseDir', { timeout: 10000 }, () => {
-    const skillDir = join(tempDir, '.agent', 'skills', 'test-consistency');
+    const skillDir = join(tempDir, '.agents', 'skills', 'test-consistency');
     mkdirSync(skillDir, { recursive: true });
     
     const testSkill = `---
@@ -138,7 +138,7 @@ Test content for consistency check`;
   });
   
   it('NEVER outputs duplicative XML metadata', () => {
-    const skillDir = join(tempDir, '.agent', 'skills', 'test-no-xml');
+    const skillDir = join(tempDir, '.agents', 'skills', 'test-no-xml');
     mkdirSync(skillDir, { recursive: true });
     
     const testSkill = `---

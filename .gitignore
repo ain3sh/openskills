@@ -40,14 +40,14 @@ Thumbs.db
 .factory
 
 # Skills (user-installed)
-.agent/skills/*
-!.agent/skills/.gitkeep
+/.agents/skills/*
+!/.agents/skills/.gitkeep
 .claude/skills/*
 !.claude/skills/.gitkeep
 
 # OpenSkills
 .openskills/
-.agent/SKILLS.md
+/.agents/SKILLS.md
 
 # OS
 .DS_Store

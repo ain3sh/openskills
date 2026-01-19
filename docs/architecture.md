@@ -327,15 +327,15 @@ skill-name/
 
 ```typescript
 const SKILL_SEARCH_PATHS = [
-  './.agent/skills/',          // 1. Project agent-agnostic (highest priority)
+  './.agents/skills/',          // 1. Project agent-agnostic (highest priority)
   './.claude/skills/',         // 2. Project Claude-specific
-  '~/.agent/skills/',          // 3. Global agent-agnostic
+  '~/.agents/skills/',          // 3. Global agent-agnostic
   '~/.claude/skills/',         // 4. Global Claude-specific
 ];
 ```
 
 **Rationale**: 
-- `.agent/skills` is the default for all new installations (agent-agnostic)
+- `.agents/skills` is the default for all new installations (agent-agnostic)
 - `.claude/skills` maintained for Claude Code compatibility
 - Project paths have priority over global (allows project-specific overrides)
 - Simplified from 6+ paths to just 4 essential ones

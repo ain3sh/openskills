@@ -30,7 +30,7 @@ describe('Permission Injection', () => {
 
   beforeEach(() => {
     tempDir = join(tmpdir(), `openskills-perm-${Date.now()}`);
-    skillsDir = join(tempDir, '.agent', 'skills');
+    skillsDir = join(tempDir, '.agents', 'skills');
     mkdirSync(skillsDir, { recursive: true });
   });
 

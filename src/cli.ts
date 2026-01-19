@@ -44,7 +44,7 @@ program
 program
   .command('install <source>')
   .description('Install skill from GitHub or Git URL')
-  .option('-g, --global', 'Install globally (default: project install to .agent/skills)')
+  .option('-g, --global', 'Install globally (default: project install to .agents/skills)')
   .option('--tui', 'Use interactive selection (default: false, installs all by default)', false)
   .action(async (source, opts) => {
     const { installSkill } = await import('./commands/install.js');
@@ -80,10 +80,10 @@ program
 
 program
   .command('sync')
-  .description('Sync skills to AGENTS.md via transclusion (creates .agent/SKILLS.md)')
+  .description('Sync skills to AGENTS.md via transclusion (creates .agents/SKILLS.md)')
   .option('--tui', 'Interactive skill selection')
   .option('--direct', 'Embed skills directly in AGENTS.md instead of transclusion')
-  .option('--transclusion-pattern <pattern>', 'Custom transclusion pattern (default: @.agent/SKILLS.md)')
+  .option('--transclusion-pattern <pattern>', 'Custom transclusion pattern (default: @.agents/SKILLS.md)')
   .action(async (opts) => {
     const { syncAgentsMd } = await import('./commands/sync.js');
     await syncAgentsMd(opts);
@@ -93,7 +93,7 @@ program
   .command('generate-skills-md')
   .description('Generate standalone SKILLS.md file with skills disclosure')
   .option('--format <type>', 'Output format: xml|markdown|compact (default: xml)')
-  .option('--output <file>', 'Output file path (default: .agent/SKILLS.md)')
+  .option('--output <file>', 'Output file path (default: .agents/SKILLS.md)')
   .option('--force', 'Overwrite existing file without confirmation')
   .action(async (opts) => {
     const { generateSkillsMd } = await import('./commands/generate-skills-md.js');

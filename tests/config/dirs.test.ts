@@ -4,24 +4,24 @@ import { homedir } from 'os';
 import { getSkillsDir, getAllSkillSources } from '../../src/config/dirs.js';
 
 describe('getSkillsDir', () => {
-  it('should return global .agent dir by default', () => {
+  it('should return global .agents dir by default', () => {
     const dir = getSkillsDir();
-    expect(dir).toBe(join(homedir(), '.agent/skills'));
+    expect(dir).toBe(join(homedir(), '.agents/skills'));
   });
 
-  it('should return project .agent dir when projectLocal is true', () => {
+  it('should return project .agents dir when projectLocal is true', () => {
     const dir = getSkillsDir(true);
-    expect(dir).toBe(join(process.cwd(), '.agent/skills'));
+    expect(dir).toBe(join(process.cwd(), '.agents/skills'));
   });
 
-  it('should return global .agent dir when universal is false', () => {
+  it('should return global .agents dir when universal is false', () => {
     const dir = getSkillsDir(false, false);
-    expect(dir).toBe(join(homedir(), '.agent/skills'));
+    expect(dir).toBe(join(homedir(), '.agents/skills'));
   });
 
-  it('should return project .agent dir when projectLocal is true and universal is false', () => {
+  it('should return project .agents dir when projectLocal is true and universal is false', () => {
     const dir = getSkillsDir(true, false);
-    expect(dir).toBe(join(process.cwd(), '.agent/skills'));
+    expect(dir).toBe(join(process.cwd(), '.agents/skills'));
   });
 });
 

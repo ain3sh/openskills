@@ -19,19 +19,19 @@ describe('Transclusion Support', () => {
   ];
 
   describe('detectTransclusionPattern', () => {
-    it('detects simple @.agent/SKILLS.md pattern', () => {
-      const content = '# AGENTS.md\n\n@.agent/SKILLS.md\n';
-      expect(detectTransclusionPattern(content)).toBe('@.agent/SKILLS.md');
+    it('detects simple @.agents/SKILLS.md pattern', () => {
+      const content = '# AGENTS.md\n\n@.agents/SKILLS.md\n';
+      expect(detectTransclusionPattern(content)).toBe('@.agents/SKILLS.md');
     });
 
     it('detects VuePress style @include pattern', () => {
-      const content = '# AGENTS.md\n\n@include: .agent/SKILLS.md\n';
-      expect(detectTransclusionPattern(content)).toBe('@include: .agent/SKILLS.md');
+      const content = '# AGENTS.md\n\n@include: .agents/SKILLS.md\n';
+      expect(detectTransclusionPattern(content)).toBe('@include: .agents/SKILLS.md');
     });
 
     it('detects HTML comment style pattern', () => {
-      const content = '# AGENTS.md\n\n<!-- @include: .agent/SKILLS.md -->\n';
-      expect(detectTransclusionPattern(content)).toBe('<!-- @include: .agent/SKILLS.md -->');
+      const content = '# AGENTS.md\n\n<!-- @include: .agents/SKILLS.md -->\n';
+      expect(detectTransclusionPattern(content)).toBe('<!-- @include: .agents/SKILLS.md -->');
     });
 
     it('returns null when no transclusion pattern found', () => {
@@ -44,7 +44,7 @@ describe('Transclusion Support', () => {
     it('appends @SKILLS.md reference to empty file', () => {
       const content = '# AGENTS.md';
       const result = appendTransclusionReference(content);
-      expect(result).toContain('@.agent/SKILLS.md');
+      expect(result).toContain('@.agents/SKILLS.md');
       expect(result).toContain('## Skills');
     });
 
@@ -61,7 +61,7 @@ describe('Transclusion Support', () => {
       const result = appendTransclusionReference(content);
       expect(result).not.toContain('<skills_system');
       expect(result).not.toContain('old');
-      expect(result).toContain('@.agent/SKILLS.md');
+      expect(result).toContain('@.agents/SKILLS.md');
     });
 
     it('uses custom transclusion pattern', () => {
@@ -80,7 +80,7 @@ Old skills content
       const result = appendTransclusionReference(content);
       expect(result).not.toContain('Old skills content');
       expect(result).not.toContain('SKILLS_TABLE_START');
-      expect(result).toContain('@.agent/SKILLS.md');
+      expect(result).toContain('@.agents/SKILLS.md');
     });
   });
 
@@ -88,7 +88,7 @@ Old skills content
     it('replaceSkillsSection handles transclusion detection', () => {
       const content = `# AGENTS.md
 
-@.agent/SKILLS.md
+@.agents/SKILLS.md
 
 Other content`;
 

@@ -31,8 +31,8 @@ function getBuiltinSkillsPath(): string {
  * Get skills directory path
  */
 export function getSkillsDir(projectLocal: boolean = false, universal: boolean = false): string {
-  // Default to .agent/skills for new installations (agent-agnostic)
-  const folder = '.agent/skills';
+  // Default to .agents/skills for new installations (agent-agnostic)
+  const folder = '.agents/skills';
   return projectLocal
     ? join(process.cwd(), folder)
     : join(homedir(), folder);
@@ -45,9 +45,9 @@ export function getSkillsDir(projectLocal: boolean = false, universal: boolean =
  */
 export function getProjectAndUserSkillSources(): SkillSource[] {
   return [
-    { type: 'project', path: join(process.cwd(), '.agent/skills'), priority: 1 },
+    { type: 'project', path: join(process.cwd(), '.agents/skills'), priority: 1 },
     { type: 'project', path: join(process.cwd(), '.claude/skills'), priority: 2 },
-    { type: 'user', path: join(homedir(), '.agent/skills'), priority: 3 },
+    { type: 'user', path: join(homedir(), '.agents/skills'), priority: 3 },
     { type: 'user', path: join(homedir(), '.claude/skills'), priority: 4 },
   ];
 }

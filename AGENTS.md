@@ -90,7 +90,7 @@ tests/
 ## Code Conventions
 
 1. **Agent-first**: Use `tui?: boolean` option, not `yes?: boolean`. Default is non-interactive.
-2. **Transclusion default**: `sync` creates `.agent/SKILLS.md` by default, `--direct` embeds inline.
+2. **Transclusion default**: `sync` creates `/SKILLS.md` by default, `--direct` embeds inline.
 3. **Agent aliases**: After `openskills install-hooks`, these shortcuts are available:
    - `install-skill`, `list-skills`, `load-skill`, `use-skill`, `sync-skills`
    - `describe-skill`, `suggest-skill`, `execute-skill-script`
@@ -103,8 +103,8 @@ tests/
 
 Skills are discovered from these locations (highest priority first):
 
-1. `./.agent/skills/` - Project agent-agnostic
-2. `~/.agent/skills/` - Global agent-agnostic
+1. `.//skills/` - Project agent-agnostic
+2. `~//skills/` - Global agent-agnostic
 3. `./.claude/skills/` - Project Claude-specific
 4. `~/.claude/skills/` - Global Claude-specific
 5. Claude plugins (via `~/.claude/plugins.json`)
@@ -121,4 +121,4 @@ Skills are discovered from these locations (highest priority first):
 
 ## Skills
 
-@.agent/SKILLS.md
+@.agents/SKILLS.md

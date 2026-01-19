@@ -19,7 +19,7 @@ export interface GenerateSkillsMdOptions {
  */
 export async function generateSkillsMd(options: GenerateSkillsMdOptions = {}): Promise<void> {
   const format = options.format || 'xml';
-  const outputPath = options.output || '.agent/SKILLS.md';
+  const outputPath = options.output || '.agents/SKILLS.md';
 
   // Ensure parent directory exists
   const parentDir = dirname(outputPath);
@@ -70,7 +70,7 @@ export async function generateSkillsMd(options: GenerateSkillsMdOptions = {}): P
   console.log(chalk.dim(`Skills: ${skills.length}`));
   console.log();
   console.log(chalk.cyan('Next steps:'));
-  console.log(`1. Add to AGENTS.md: ${chalk.bold('@.agent/SKILLS.md')}`);
+  console.log(`1. Add to AGENTS.md: ${chalk.bold('@.agents/SKILLS.md')}`);
   console.log(`2. Or sync with transclusion: ${chalk.cyan('openskills sync --transclusion')}`);
 }
 

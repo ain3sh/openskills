@@ -113,8 +113,8 @@ async function installSkillsFlow(): Promise<void> {
   const target = await select<'project' | 'global'>({
     message: 'Install location',
     choices: [
-      { name: 'Project (.agent/skills)', value: 'project' },
-      { name: 'Global (~/.agent/skills)', value: 'global' },
+      { name: 'Project (.agents/skills)', value: 'project' },
+      { name: 'Global (~/.agents/skills)', value: 'global' },
     ],
   });
   await installSkill(source.trim(), {

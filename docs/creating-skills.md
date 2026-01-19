@@ -225,8 +225,8 @@ openskills load my-skill
 
 | Location | Command | Scope |
 |----------|---------|-------|
-| `.agent/skills/` | `openskills install ./skill` | Project (default) |
-| `~/.agent/skills/` | `openskills install ./skill --global` | Global |
+| `.agents/skills/` | `openskills install ./skill` | Project (default) |
+| `~/.agents/skills/` | `openskills install ./skill --global` | Global |
 
 ## Common Patterns
 

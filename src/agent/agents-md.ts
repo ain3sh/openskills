@@ -3,25 +3,25 @@ import type { Skill } from '../types.js';
 /**
  * Detect if AGENTS.md uses transclusion pattern
  * Supports:
- * - @.agent/SKILLS.md
- * - @include: .agent/SKILLS.md
- * - <!-- @include: .agent/SKILLS.md -->
+ * - @.agents/SKILLS.md
+ * - @include: .agents/SKILLS.md
+ * - <!-- @include: .agents/SKILLS.md -->
  */
 export function detectTransclusionPattern(content: string): string | null {
   // Check for HTML comment style
-  const htmlCommentMatch = content.match(/<!--\s*@include:\s*\.agent\/SKILLS\.md\s*-->/);
+  const htmlCommentMatch = content.match(/<!--\s*@include:\s*\.agents\/SKILLS\.md\s*-->/);
   if (htmlCommentMatch) {
     return htmlCommentMatch[0];
   }
 
   // Check for VuePress style
-  if (content.includes('@include: .agent/SKILLS.md')) {
-    return '@include: .agent/SKILLS.md';
+  if (content.includes('@include: .agents/SKILLS.md')) {
+    return '@include: .agents/SKILLS.md';
   }
 
-  // Check for simple @.agent/SKILLS.md pattern
-  if (content.includes('@.agent/SKILLS.md')) {
-    return '@.agent/SKILLS.md';
+  // Check for simple @.agents/SKILLS.md pattern
+  if (content.includes('@.agents/SKILLS.md')) {
+    return '@.agents/SKILLS.md';
   }
 
   return null;
@@ -30,7 +30,7 @@ export function detectTransclusionPattern(content: string): string | null {
 /**
  * Append transclusion reference to AGENTS.md
  */
-export function appendTransclusionReference(content: string, pattern: string = '@.agent/SKILLS.md'): string {
+export function appendTransclusionReference(content: string, pattern: string = '@.agents/SKILLS.md'): string {
   // Remove any existing skills section first
   let updated = content;
   
